@@ -2,12 +2,14 @@ import telebot
 import openai
 import json 
 from configure import Settings
+from database import DB
 
 
-setting = Settings()
+_setting = Settings()
+_db = DB()
 
-bot = telebot.TeleBot(setting.get_tgToken())
-openai.api_key = setting.get_cGptToken()
+bot = telebot.TeleBot(_setting.get_tgToken())
+openai.api_key = _setting.get_cGptToken()
 
 
 

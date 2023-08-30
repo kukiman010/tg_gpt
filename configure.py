@@ -9,7 +9,7 @@ class Settings:
         self.config = configparser.ConfigParser()
         self.isInitDB = False        
 
-        self.config['Database'] = {'host': 'localhost', 'port': '5432', 'user': 'postgres', 'password': '123'}
+        self.config['Database'] = {'host': 'localhost', 'port': '5432', 'dbname': 'base', 'user': 'postgres', 'password': '123'}
 
         if self.folder_exist(self.base_way + 'conf/') == False:
             self.folder_create(self.base_way + 'conf')
@@ -36,15 +36,15 @@ class Settings:
     # get telegram bot token
     def get_tgToken(self):
         TOKEN_TG = ""
-        if not( os.path.exists(self.base_way + "/tg_token.txt") ):
-            file = open(self.base_way + "/tg_token.txt", 'w')
+        if not( os.path.exists(self.base_way + "conf/tg_token.txt") ):
+            file = open(self.base_way + "conf/tg_token.txt", 'w')
             file.close()
-            print("Файл был создан для tg bot!")
+            # print("Файл был создан для tg bot!")
         else:
-            file = open(self.base_way + "/tg_token.txt", 'r')
+            file = open(self.base_way + "conf/tg_token.txt", 'r')
             TOKEN_TG = file.read()
-            if TOKEN_TG == '':
-                print("Не задан токен для tg bot!") 
+            # if TOKEN_TG == '':
+                # print("Не задан токен для tg bot!") 
             file.close()
             return TOKEN_TG
         
@@ -52,15 +52,15 @@ class Settings:
     # get chatgpt token
     def get_cGptToken(self):
         TOKEN_GPT = ""
-        if not( os.path.exists(self.base_way + "/tg_chatgpt.txt") ):
-            file = open(self.base_way + "/tg_chatgpt.txt", 'w')
+        if not( os.path.exists(self.base_way + "conf/tg_chatgpt.txt") ):
+            file = open(self.base_way + "conf/tg_chatgpt.txt", 'w')
             file.close()
-            print("Файл был создан для chatgpt!")
+            # print("Файл был создан для chatgpt!")
         else:
-            file = open(self.base_way + "/tg_chatgpt.txt", 'r')
+            file = open(self.base_way + "conf/tg_chatgpt.txt", 'r')
             TOKEN_GPT = file.read()
-            if TOKEN_GPT == '':
-                print("Не задан токен для chatgpt!") 
+            # if TOKEN_GPT == '':
+                # print("Не задан токен для chatgpt!") 
             file.close()
         return TOKEN_GPT
 
@@ -107,6 +107,9 @@ class Settings:
 
     def get_db_port(self):
         return self.config['Database']['port']
+    
+    def get_db_dbname(self):
+        return self.config['Database']['dbname']
 
     def get_db_user(self):
         return self.config['Database']['user']
