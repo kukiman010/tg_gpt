@@ -33,14 +33,6 @@ def send_welcome(message):
     bot.reply_to(message, "Привет " + username +" ! я готов к работе, просто напиши сообщение\nP.S. я пока не помню контекст переписки, но скоро я вырасту и буду способнее")
     
 
-
-    markup = types.InlineKeyboardMarkup()
-    itembtn1 = types.InlineKeyboardButton('Озвучить', callback_data='sintez')
-    # itembtn2 = types.KeyboardButton('Button 2')
-    markup.add(itembtn1)
-    bot.send_message(message.chat.id, 'Выберите действие:', reply_markup=markup)
-    
-
 # @bot.message_handler(commands=['help'])
 # def info_o_users(message):
 #     username = str(message.chat.username)
