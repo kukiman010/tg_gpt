@@ -49,6 +49,7 @@ class dbApi:
         self.db.close()
 
         result = []
+
         for i in data:
             role = str(i[2])
             content = i[4]
@@ -69,7 +70,7 @@ class dbApi:
 
     def add_users_in_groups(self, userId, chatId):
         self.db.connect()
-        query = "SELECT add_chats_id("+str(userId)+", '{"+ str(chatId) +"}');"
+        query = "SELECT add_chats_id({}, '\{{}\}');".format(userId, chatId)
         self.db.execute_query(query)
         self.db.commit()
         self.db.close()
