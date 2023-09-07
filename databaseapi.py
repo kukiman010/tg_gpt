@@ -47,7 +47,15 @@ class dbApi:
         data = self.db.fetch_all()
         self.db.commit()
         self.db.close()
-        return data
+
+        result = []
+        for i in data:
+            role = str(i[2])
+            content = i[4]
+            result.append({"role": role, "content": content})
+
+        print( result )
+        return result
     
     def delete_user_context(self, userId, chatId):
         self.db.connect()
@@ -61,7 +69,7 @@ class dbApi:
 
     def add_users_in_groups(self, userId, chatId):
         self.db.connect()
-        query = "SELECT add_chats_id({}, '\{{}\}');".format(userId, chatId)
+        query = "SELECT add_chats_id("+str(userId)+", '{"+ str(chatId) +"}');"
         self.db.execute_query(query)
         self.db.commit()
         self.db.close()

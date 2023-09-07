@@ -44,7 +44,7 @@ openai.api_key =       TOKEN_GPT
 
 @bot.message_handler(commands=['start', 'restart'])
 def send_welcome(message):
-    user_verification()
+    user_verification(message)
     username = str(message.chat.username)
     bot.reply_to(message, "Привет " + username +" ! я готов к работе, просто напиши сообщение\nP.S. я пока не помню контекст переписки, но скоро я вырасту и буду способнее")
     
@@ -74,7 +74,7 @@ def send_welcome(message):
 
 @bot.message_handler(content_types=['voice'])
 def voice_processing(message):
-    # user_verification()
+    user_verification(message)
     bot.send_message(message.chat.id, "Распознование voice еще в разработке")
 #     filename = str(uuid.uuid4())
 #     # filename = str('voice_{message.from_user.id}_ {time.time()}')
@@ -96,19 +96,29 @@ def voice_processing(message):
 
 @bot.message_handler(func=lambda message: True)
 def handle_user_message(message):
-    if _db.find_user(message.from_user.id) == False:
-        _db.create_user(message.from_user.id, message.chat.username, 1, message.chat.type)
+    user_verification(message)
+
+    
+    # dict = _db.get_context(message.from_user.id, message.chat.id)
+    # dict.append( {"role": "user", "content": message.text})
+
+    # dict.a
     completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         # model = "text-davinci-002"
         # model = "text-babbage-001"
         messages=[
             {"role": "user", "content": message.text}
-        ])
+        ]
+        # messages=dict
+        )
 
     answer = str( completion.choices[0].message )
     data = json.loads(answer)
     content = data['content']
+
+    _db.add_context(message.from_user.id, message.chat.id, "user",  message.message_id, message.text)
+    _db.add_context(message.from_user.id, message.chat.id, "bot",  message.message_id, content)
 
     if len(content) <= 500:
         markup = types.InlineKeyboardMarkup()
@@ -125,9 +135,11 @@ def handle_button_click(call):
 
 
 
-# def user_verification(message):
-#     if _db.find_user(message.from_user.id) == False:
-#         _db.create_user(message.from_user.id, message.chat.username, 1, message.chat.type)
+def user_verification(message):
+    if _db.find_user(message.from_user.id) == False:
+        _db.create_user(message.from_user.id, message.chat.username, 1, message.chat.type)
+
+    # _db.add_users_in_groups(message.from_user.id, message.chat.id)
         
 
 
