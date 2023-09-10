@@ -55,7 +55,7 @@ class dbApi:
             content = i[4]
             result.append({"role": role, "content": content})
 
-        print( result )
+        # print( result )
         return result
     
     def delete_user_context(self, userId, chatId):
@@ -66,11 +66,9 @@ class dbApi:
         self.db.close()
     
 
-
-
     def add_users_in_groups(self, userId, chatId):
         self.db.connect()
-        query = "SELECT add_chats_id({}, '\{{}\}');".format(userId, chatId)
+        query = "SELECT add_chats_id("+str(userId)+", '{"+str(chatId) +"}');"
         self.db.execute_query(query)
         self.db.commit()
         self.db.close()
@@ -79,13 +77,24 @@ class dbApi:
         self.db.connect()
         query = "SELECT * FROM get_chats_id({});".format(userId)
         self.db.execute_query(query)
+        data = self.db.fetch_all()
         self.db.commit()
         self.db.close()
-
-
+        return data
     
-    # def (self):
-    #     print('')
+
+    def isAdmin(self, userId, username):
+        self.db.connect()
+        query = "SELECT * FROM admins WHERE user_id={};".format(userId)
+        self.db.execute_query(query)
+        data = self.db.fetch_all()
+        self.db.commit()
+        self.db.close()
+        if len(data) == 1:
+            if data[0][0] == userId and data[0][1] == username and data[0][2] != 0:
+                return True
+        return False
+
 
     # def (self):
     #     print('')

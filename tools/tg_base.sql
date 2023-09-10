@@ -1,8 +1,8 @@
-SET statement_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SET check_function_bodies = false;
-SET client_min_messages = warning;
+-- SET statement_timeout = 0;
+-- SET client_encoding = 'UTF8';
+-- SET standard_conforming_strings = on;
+-- SET check_function_bodies = false;
+-- SET client_min_messages = warning;
 
 
 CREATE TABLE users (
@@ -28,10 +28,6 @@ CREATE TABLE context (
     id BIGSERIAL PRIMARY KEY
 );
 
-
-
-
-
 CREATE TABLE admins (
     user_id BIGINT UNIQUE,
     login TEXT UNIQUE,
@@ -39,29 +35,33 @@ CREATE TABLE admins (
     id BIGSERIAL PRIMARY KEY
 );
 
-CREATE TABLE statistic (
-    id BIGSERIAL PRIMARY KEY
-);
+
+
+
+-- CREATE TABLE statistic (
+--     id BIGSERIAL PRIMARY KEY
+-- );
 
 
 CREATE TABLE model_gpt (
-
+    model TEXT,
+    description TEXT,
     id BIGSERIAL PRIMARY KEY
 );
 
 
 CREATE TABLE voices(
     name TEXT,
-    language,
-    gender,
-    language code
+    language TEXT,
+    gender TEXT,
+    language_code TEXT,
     id BIGSERIAL PRIMARY KEY
 );
 
-CREATE TABLE user_settings(
-    user_id BIGINT,
+-- CREATE TABLE user_settings(
+--     user_id BIGINT,
 
-);
+-- );
 
 
 
@@ -96,3 +96,29 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+
+
+
+
+
+-- -- https://platform.openai.com/docs/models/continuous-model-upgrades
+-- -- gpt-4-32k-0314
+-- -- text-davinci-002
+-- -- text-babbage-001
+
+-- insert into model_gpt values('gpt-3.5-turbo', 'default');
+-- insert into model_gpt values('gpt-4', '');
+-- insert into model_gpt values('gpt-4-32k-0314', 'actual(no supported)');
+-- -- insert into model_gpt values('', '');
+
+
+-- -- https://cloud.yandex.com/en-ru/docs/speechkit/tts/voices
+-- insert into voices values('dasha',  'Russian',  'F','ru-RU');
+-- insert into voices values('alena',  'Russian',  'F','ru-RU');
+-- insert into voices values('lea',    'German',   'F','de-DE');
+-- insert into voices values('john',   'English',  'M','en-US');
+-- insert into voices values('naomi',  'Hebrew',   'F','he-IL');
+-- insert into voices values('amira',  'Kazakh',   'F','kk-KK');
+-- insert into voices values('madi',   'Kazakh',   'M','kk-KK');
+-- insert into voices values('nigora', 'Uzbek',    'F','uz-UZ');
+-- -- insert into voices values('','','','');

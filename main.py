@@ -46,8 +46,35 @@ openai.api_key =       TOKEN_GPT
 def send_welcome(message):
     user_verification(message)
     username = str(message.chat.username)
-    bot.reply_to(message, "Привет " + username +" ! я готов к работе, просто напиши сообщение\nP.S. я пока не помню контекст переписки, но скоро я вырасту и буду способнее")
+    bot.reply_to(message, "Привет " + username +" ! я готов к работе, просто напиши сообщение")
     
+
+@bot.message_handler(commands=['dropcontext'])
+def drop_context(message):
+    user_verification(message)
+    _db.delete_user_context(message.from_user.id, message.chat.id)
+    bot.send_message(message.chat.id, "Контекст очищен")
+
+
+@bot.message_handler(commands=['notify_all'])
+def notify_all(message):
+    user_verification(message)
+
+    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
+        return
+
+    data = _db.get_all_chat(message.from_user.id)
+
+    text = message.text
+    words = text.split()  
+    result = ' '.join(words[1:]) 
+
+    for i in data:  # итерация по внешнему списку
+        for j in i:  # итерация по внутреннему списку
+            for k in j:  # итерация по вложенному списку
+                # print (k, result)
+                bot.send_message(k, result)
+
 
 # @bot.message_handler(commands=['help'])
 # def info_o_users(message):
@@ -98,19 +125,13 @@ def voice_processing(message):
 def handle_user_message(message):
     user_verification(message)
 
-    
-    # dict = _db.get_context(message.from_user.id, message.chat.id)
-    # dict.append( {"role": "user", "content": message.text})
+    dict = _db.get_context(message.from_user.id, message.chat.id)
+    dict.append( {"role": "user", "content": message.text})
 
-    # dict.a
+    
     completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        # model = "text-davinci-002"
-        # model = "text-babbage-001"
-        messages=[
-            {"role": "user", "content": message.text}
-        ]
-        # messages=dict
+        messages=dict
         )
 
     answer = str( completion.choices[0].message )
@@ -118,7 +139,7 @@ def handle_user_message(message):
     content = data['content']
 
     _db.add_context(message.from_user.id, message.chat.id, "user",  message.message_id, message.text)
-    _db.add_context(message.from_user.id, message.chat.id, "bot",  message.message_id, content)
+    _db.add_context(message.from_user.id, message.chat.id, "assistant",  message.message_id, content)
 
     if len(content) <= 500:
         markup = types.InlineKeyboardMarkup()
@@ -126,6 +147,7 @@ def handle_user_message(message):
         bot.send_message(message.chat.id, content, reply_markup=markup)
     else:    
         bot.send_message(message.chat.id, content)
+
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -139,7 +161,7 @@ def user_verification(message):
     if _db.find_user(message.from_user.id) == False:
         _db.create_user(message.from_user.id, message.chat.username, 1, message.chat.type)
 
-    # _db.add_users_in_groups(message.from_user.id, message.chat.id)
+    _db.add_users_in_groups(message.from_user.id, message.chat.id)
         
 
 
