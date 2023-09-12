@@ -19,6 +19,7 @@ CREATE TABLE users_in_groups (
     id BIGSERIAL PRIMARY KEY
 );
 
+-- TODO add column data
 CREATE TABLE context (
     user_id BIGINT,
     chat_id BIGINT,

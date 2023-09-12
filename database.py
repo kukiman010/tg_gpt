@@ -33,6 +33,14 @@ class Database:
         except (Exception, psycopg2.DatabaseError) as error:
             print('Error executing query:', error)
             return False
+        
+    def custom_execute_query(self, query, args):
+        try:
+            self.cursor.execute(query,(args))
+            return True
+        except (Exception, psycopg2.DatabaseError) as error:
+            print('Error executing query:', error)
+            return False
     
     def fetch_all(self):
         return self.cursor.fetchall()
@@ -46,9 +54,8 @@ class Database:
 
     def status(self):
         return self.isWork
-
+    
     def __del__(self):
         if self.isWork == False:
             self.close()
-
 

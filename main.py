@@ -4,12 +4,13 @@ import json
 import sys
 # import os
 # import uuid
-# import time
+import time
 from configure import Settings
 # from database import DB
 from telebot import types
 # import speech_recognition as sr
 from databaseapi import dbApi
+from openai.error import OpenAIError
 
 
 
@@ -103,6 +104,22 @@ def notify_all(message):
 def voice_processing(message):
     user_verification(message)
     bot.send_message(message.chat.id, "Распознование voice еще в разработке")
+    file_id = message.voice.file_id
+    file_info = bot.get_file(file_id)
+    file_path = file_info.file_path
+    downloaded_file = bot.download_file(file_path)
+
+    # Сохранение голосового сообщения в файле
+
+    current_time = time.time()
+    time_struct = time.localtime(current_time)
+    formatted_datetime = time.strftime("%Y%m%d_%H%M%S", time_struct)
+
+    filename = 'voice_{}_{}.ogg'.format(message.from_user.id, formatted_datetime)
+    with open('./voice/' + filename, 'wb') as f:
+        f.write(downloaded_file)
+
+
 #     filename = str(uuid.uuid4())
 #     # filename = str('voice_{message.from_user.id}_ {time.time()}')
 #     file_name_full="./voice/"+filename+".ogg"
@@ -125,21 +142,30 @@ def voice_processing(message):
 def handle_user_message(message):
     user_verification(message)
 
+    send_mess = bot.send_message(message.chat.id, "Пожалуйста, подождите, запрос обрабатывается...")
+
     dict = _db.get_context(message.from_user.id, message.chat.id)
     dict.append( {"role": "user", "content": message.text})
 
-    
-    completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=dict
-        )
+    try:
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=dict
+            )
+    except OpenAIError as err:
+        bot.reply_to(message, "Извините, ошибка OpenAI: {}".format(err))
+
 
     answer = str( completion.choices[0].message )
     data = json.loads(answer)
     content = data['content']
 
+    # content = message.text
+
     _db.add_context(message.from_user.id, message.chat.id, "user",  message.message_id, message.text)
     _db.add_context(message.from_user.id, message.chat.id, "assistant",  message.message_id, content)
+
+    bot.delete_message(message.chat.id, send_mess.message_id)
 
     if len(content) <= 500:
         markup = types.InlineKeyboardMarkup()
