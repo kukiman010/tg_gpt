@@ -46,7 +46,10 @@ class Database:
         return self.cursor.fetchall()
     
     def commit(self):
-        self.connection.commit()
+        try:
+            self.connection.commit()
+        except (Exception, psycopg2.DatabaseError) as error:
+            print("Ошибка при выполнении запроса:", error)
     
     def close(self):
         self.cursor.close()

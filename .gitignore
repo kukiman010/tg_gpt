@@ -73,6 +73,7 @@ docs/_build/
 conf/
 voice/
 ready/
+cloudapi/
 
 # PyBuilder
 .pybuilder/

@@ -4,7 +4,7 @@
 -- SET check_function_bodies = false;
 -- SET client_min_messages = warning;
 
-
+--TODO: add column data registration and language
 CREATE TABLE users (
     user_id BIGINT UNIQUE,
     login TEXT UNIQUE,
@@ -19,7 +19,7 @@ CREATE TABLE users_in_groups (
     id BIGSERIAL PRIMARY KEY
 );
 
--- TODO add column data
+-- TODO: add column data
 CREATE TABLE context (
     user_id BIGINT,
     chat_id BIGINT,

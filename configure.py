@@ -1,5 +1,7 @@
 import configparser
+import subprocess
 import os
+import re
 
 
 class Settings:
@@ -26,10 +28,13 @@ class Settings:
         if self.file_exist(self.base_way + 'conf/tg_chatgpt.txt') == False:
             self.file_create(self.base_way + 'conf/tg_chatgpt.txt')
 
+        if self.file_exist(self.base_way + 'conf/yandex_folderId.txt') == False:
+            self.file_create(self.base_way + 'conf/yandex_folderId.txt')
+
         if self.file_exist(self.base_way + 'conf/db_config.ini') :
-            isInitDB = self.db_conf_read()
+            self.isInitDB = self.db_conf_read()
         else:
-            isInitDB = self.db_conf_create()
+            self.isInitDB = self.db_conf_create()
 
         
         
@@ -45,12 +50,9 @@ class Settings:
         if not( os.path.exists(self.base_way + "conf/tg_token.txt") ):
             file = open(self.base_way + "conf/tg_token.txt", 'w')
             file.close()
-            # print("Файл был создан для tg bot!")
         else:
             file = open(self.base_way + "conf/tg_token.txt", 'r')
             TOKEN_TG = file.read()
-            # if TOKEN_TG == '':
-                # print("Не задан токен для tg bot!") 
             file.close()
             return TOKEN_TG
         
@@ -61,14 +63,38 @@ class Settings:
         if not( os.path.exists(self.base_way + "conf/tg_chatgpt.txt") ):
             file = open(self.base_way + "conf/tg_chatgpt.txt", 'w')
             file.close()
-            # print("Файл был создан для chatgpt!")
         else:
             file = open(self.base_way + "conf/tg_chatgpt.txt", 'r')
             TOKEN_GPT = file.read()
-            # if TOKEN_GPT == '':
-                # print("Не задан токен для chatgpt!") 
             file.close()
         return TOKEN_GPT
+    
+
+    # get yandex folder id
+    def get_yandex_folder(self):
+        TOKEN_FOLDER = ""
+        if not( os.path.exists(self.base_way + "conf/yandex_folderId.txt") ):
+            file = open(self.base_way + "conf/yandex_folderId.txt", 'w')
+            file.close()
+        else:
+            file = open(self.base_way + "conf/yandex_folderId.txt", 'r')
+            TOKEN_FOLDER = file.read()
+            file.close()
+        return TOKEN_FOLDER
+
+
+    def get_yandex_iam(self):
+        output = subprocess.check_output('yc iam create-token', shell=True, universal_newlines=True)
+        lines = output.split("\n")
+        pattern = r"^(t1.+)$"
+
+        if len(lines) >2:
+            print("Не ожаданный результат, нужно проверить вывод \'yc iam create-token\' \nВывод: {}".format(lines))
+       
+        for line in lines:
+            match = re.findall(pattern, line)
+            if match:
+                return str(match[0])
 
 
     def file_exist(self, file_path):
@@ -80,8 +106,6 @@ class Settings:
     def file_create(self, file_path):
         with open(file_path, 'w') as file:
             file.write('')
-        
-
 
     def folder_exist(self, folder_path):
         if os.path.exists(folder_path) and os.path.isdir(folder_path):

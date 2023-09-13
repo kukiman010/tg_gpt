@@ -1,22 +1,21 @@
+import requests
 import telebot
 import openai
+import sched
+import time
 import json 
 import sys
-# import os
-# import uuid
-import time
+
 from configure import Settings
-# from database import DB
 from telebot import types
-# import speech_recognition as sr
 from databaseapi import dbApi
 from openai.error import OpenAIError
 
 
-
-language='ru_RU' 
+language = 'ru_RU' 
 _setting = Settings()
-# r = sr.Recognizer() 
+scheduler = sched.scheduler(time.monotonic, time.sleep)
+
 _db = dbApi(
     dbname =    _setting.get_db_dbname(),
     user =      _setting.get_db_user(),
@@ -26,20 +25,38 @@ _db = dbApi(
 )
 
 
-
 TOKEN_TG = _setting.get_tgToken()
 TOKEN_GPT = _setting.get_cGptToken()
+TOKEN_FOLDER_ID = _setting.get_yandex_folder()
+TOKEN_IAM = _setting.get_yandex_iam()
+
 
 if TOKEN_TG == '':
-    print ('no tg token')
+    print ('no tg token!')
     sys.exit()
 
 if TOKEN_GPT == '':
-    print ('no gpts token')
+    print ('no gpts token!')
     sys.exit()
 
-bot = telebot.TeleBot( TOKEN_TG )
-openai.api_key =       TOKEN_GPT
+if TOKEN_FOLDER_ID == '':
+    print ('no yandex folder id!')
+    sys.exit()
+
+if TOKEN_IAM == '':
+    print ('no yandex iam token!')
+    sys.exit()
+
+
+try:
+    bot = telebot.TeleBot( TOKEN_TG )
+except requests.exceptions.ConnectionError as e:
+    current_time = time.time()
+    time_struct = time.localtime(current_time)
+    formatted_datetime = time.strftime("%Y.%m.%d_%H.%M.%S", time_struct)
+    print("{} Ошибка подключения:".format(formatted_datetime), e)
+
+openai.api_key = TOKEN_GPT
 
 
 
@@ -47,6 +64,7 @@ openai.api_key =       TOKEN_GPT
 def send_welcome(message):
     user_verification(message)
     username = str(message.chat.username)
+    _db.delete_user_context(message.from_user.id, message.chat.id)
     bot.reply_to(message, "Привет " + username +" ! я готов к работе, просто напиши сообщение")
     
 
@@ -65,7 +83,6 @@ def notify_all(message):
         return
 
     data = _db.get_all_chat(message.from_user.id)
-
     text = message.text
     words = text.split()  
     result = ' '.join(words[1:]) 
@@ -77,39 +94,30 @@ def notify_all(message):
                 bot.send_message(k, result)
 
 
-# @bot.message_handler(commands=['help'])
-# def info_o_users(message):
-#     username = str(message.chat.username)
-#     accaunts = users.showAll()
-#     logger.logger_add_info('Пользователь ' + username + ' запросил данные ./user.txt')
-#     bot.send_message(message.chat.id, accaunts)
+@bot.message_handler(commands=['help'])
+def help(message):
+    user_verification(message)
 
+    text = "Коротко о софте:\nОтветы генерируются при помощи ChatGPT. По умолчанию используется модель gpt-3.5-turbo.\nРаспознавание и генерация голосовых сообщений осуществляется при помощи Yandex SpeechKit v1 (позже перейдем на v3).\n\nКоманды:\n/dropcontext - удаляет весь контекст переписки."
 
+    if _db.isAdmin(message.from_user.id, message.chat.username) == True:
+        text_admin = "\n\nДоступно только для админа! будь аккуратнее с командами\n/notify_all <текст> - Эта команда отправит во все чаты твой текст, прошу, будь аккуратнее\nТут будут еще команды ..."
+        text += text_admin
 
+    bot.send_message(message.chat.id, text)
 
-# def recognise(filename):
-#     with sr.AudioFile(filename) as source:
-#         audio_text = r.listen(source)
-#         try:
-#             text = r.recognize_google(audio_text,language=language)
-#             print('Converting audio transcripts into text ...')
-#             print(text)
-#             return text
-#         except:
-#             print('Sorry.. run again...')
-#             return "Sorry.. run again..."
 
 
 @bot.message_handler(content_types=['voice'])
 def voice_processing(message):
     user_verification(message)
-    bot.send_message(message.chat.id, "Распознование voice еще в разработке")
+
+    send_mess = bot.send_message(message.chat.id, "Пожалуйста, подождите, запрос обрабатывается...")
+    
     file_id = message.voice.file_id
     file_info = bot.get_file(file_id)
     file_path = file_info.file_path
     downloaded_file = bot.download_file(file_path)
-
-    # Сохранение голосового сообщения в файле
 
     current_time = time.time()
     time_struct = time.localtime(current_time)
@@ -120,22 +128,32 @@ def voice_processing(message):
         f.write(downloaded_file)
 
 
-#     filename = str(uuid.uuid4())
-#     # filename = str('voice_{message.from_user.id}_ {time.time()}')
-#     file_name_full="./voice/"+filename+".ogg"
-#     file_name_full_converted="./ready/"+filename+".wav"
-#     file_info = bot.get_file(message.voice.file_id)
-#     downloaded_file = bot.download_file(file_info.file_path)
-#     with open(file_name_full, 'wb') as new_file:
-#         new_file.write(downloaded_file)
-#     os.system("ffmpeg -i "+file_name_full+"  "+file_name_full_converted)
-#     try:
-#         text=recognise(file_name_full_converted)
-#     except (Exception) as error:
-#         print('Error while connecting to the database:', error)
-#     bot.reply_to(message, text)
-#     os.remove(file_name_full)
-#     os.remove(file_name_full_converted)
+    url = f"https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?folderId={TOKEN_FOLDER_ID}&lang=auto"
+    headers = {"Authorization": f"Bearer {TOKEN_IAM}"}
+    binary_data = open('./voice/' + filename, "rb").read()
+
+    response = requests.post(url, headers=headers, data=binary_data)
+    
+    if response.status_code == 200:
+        response_data = response.json()
+        answer = str( response_data['result'] )
+
+        if answer == False:
+            bot.edit_message_text("Извините, но произошла ошибка", send_mess.chat.id, send_mess.message_id)
+            return
+
+        content = post_gpt(message, answer)
+
+        if len(content) <= 500:
+            markup = types.InlineKeyboardMarkup()
+            markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
+            bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id, reply_markup=markup)
+        else:    
+            bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id)
+    else:
+        bot.edit_message_text("Извините, но произошла ошибка", send_mess.chat.id, send_mess.message_id)
+
+    # TODO: добавить возможность записи длинных сообщений
 
 
 @bot.message_handler(func=lambda message: True)
@@ -144,35 +162,14 @@ def handle_user_message(message):
 
     send_mess = bot.send_message(message.chat.id, "Пожалуйста, подождите, запрос обрабатывается...")
 
-    dict = _db.get_context(message.from_user.id, message.chat.id)
-    dict.append( {"role": "user", "content": message.text})
-
-    try:
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=dict
-            )
-    except OpenAIError as err:
-        bot.reply_to(message, "Извините, ошибка OpenAI: {}".format(err))
-
-
-    answer = str( completion.choices[0].message )
-    data = json.loads(answer)
-    content = data['content']
-
-    # content = message.text
-
-    _db.add_context(message.from_user.id, message.chat.id, "user",  message.message_id, message.text)
-    _db.add_context(message.from_user.id, message.chat.id, "assistant",  message.message_id, content)
-
-    bot.delete_message(message.chat.id, send_mess.message_id)
+    content = post_gpt(message, message.text)
 
     if len(content) <= 500:
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
-        bot.send_message(message.chat.id, content, reply_markup=markup)
+        bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id, reply_markup=markup)
     else:    
-        bot.send_message(message.chat.id, content)
+        bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id)
 
 
 
@@ -188,12 +185,66 @@ def user_verification(message):
         _db.create_user(message.from_user.id, message.chat.username, 1, message.chat.type)
 
     _db.add_users_in_groups(message.from_user.id, message.chat.id)
-        
+
+
+def post_gpt(message, text):
+    dict = _db.get_context(message.from_user.id, message.chat.id)
+    dict.append( {"role": "user", "content": str(text)})
+    content = ""
+
+    try:
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=dict
+            )
+        answer = str( completion.choices[0].message )
+        data = json.loads(answer)
+        content = data['content']
+        # content = text
+
+        _db.add_context(message.from_user.id, message.chat.id, "user",  message.message_id, text)
+        _db.add_context(message.from_user.id, message.chat.id, "assistant",  message.message_id, content)
+    
+    except OpenAIError as err:
+        bot.reply_to(message, "Извините, ошибка OpenAI: {}".format(err))
+
+
+    return content
+    
 
 
 
 # def __del__():
 #     print(1)
 
-bot.infinity_polling()
-# bot.polling()
+
+try:
+    bot.infinity_polling()
+    # bot.polling()
+except requests.exceptions.ConnectionError as e:
+    current_time = time.time()
+    time_struct = time.localtime(current_time)
+    formatted_datetime = time.strftime("%Y.%m.%d_%H.%M.%S", time_struct)
+    print("{} Ошибка подключения:".format(formatted_datetime), e)
+
+
+
+
+def hourly_task():
+    current_time = time.time()
+    time_struct = time.localtime(current_time)
+    formatted_datetime = time.strftime("%Y.%m.%d_%H.%M.%S", time_struct)
+    print("Сработал планировщик задач для get_yandex_iam. дата: {}".format(formatted_datetime))
+
+    TOKEN_IAM = _setting.get_yandex_iam()
+    scheduler.enter(3600, 1, hourly_task)
+
+scheduler.enter(3600, 1, hourly_task)
+scheduler.run()
+
+
+# scheduler = sched.scheduler(time.time, time.sleep)
+# scheduler.enter(0, 1, hourly_task, ())
+# while True:
+#     scheduler.run()
+#     time.sleep(3600) 
