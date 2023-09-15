@@ -1,20 +1,20 @@
 import requests
 import telebot
 import openai
-import sched
-import time
+import speech
 import json 
 import sys
+import os
 
-from configure import Settings
-from telebot import types
-from databaseapi import dbApi
-from openai.error import OpenAIError
+from openai.error   import OpenAIError
+from configure      import Settings
+from databaseapi    import dbApi
+from telebot        import types
 
 
 language = 'ru_RU' 
 _setting = Settings()
-scheduler = sched.scheduler(time.monotonic, time.sleep)
+
 
 _db = dbApi(
     dbname =    _setting.get_db_dbname(),
@@ -28,7 +28,6 @@ _db = dbApi(
 TOKEN_TG = _setting.get_tgToken()
 TOKEN_GPT = _setting.get_cGptToken()
 TOKEN_FOLDER_ID = _setting.get_yandex_folder()
-TOKEN_IAM = _setting.get_yandex_iam()
 
 
 if TOKEN_TG == '':
@@ -43,7 +42,8 @@ if TOKEN_FOLDER_ID == '':
     print ('no yandex folder id!')
     sys.exit()
 
-if TOKEN_IAM == '':
+_speak = speech.speaker(TOKEN_FOLDER_ID)
+if _speak.get_IAM == '':
     print ('no yandex iam token!')
     sys.exit()
 
@@ -51,10 +51,7 @@ if TOKEN_IAM == '':
 try:
     bot = telebot.TeleBot( TOKEN_TG )
 except requests.exceptions.ConnectionError as e:
-    current_time = time.time()
-    time_struct = time.localtime(current_time)
-    formatted_datetime = time.strftime("%Y.%m.%d_%H.%M.%S", time_struct)
-    print("{} Ошибка подключения:".format(formatted_datetime), e)
+    print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
 
 openai.api_key = TOKEN_GPT
 
@@ -66,6 +63,7 @@ def send_welcome(message):
     username = str(message.chat.username)
     _db.delete_user_context(message.from_user.id, message.chat.id)
     bot.reply_to(message, "Привет " + username +" ! я готов к работе, просто напиши сообщение")
+    # TODO: добавить подробное описание того, что бот умеет 
     
 
 @bot.message_handler(commands=['dropcontext'])
@@ -107,7 +105,6 @@ def help(message):
     bot.send_message(message.chat.id, text)
 
 
-
 @bot.message_handler(content_types=['voice'])
 def voice_processing(message):
     user_verification(message)
@@ -119,30 +116,14 @@ def voice_processing(message):
     file_path = file_info.file_path
     downloaded_file = bot.download_file(file_path)
 
-    current_time = time.time()
-    time_struct = time.localtime(current_time)
-    formatted_datetime = time.strftime("%Y%m%d_%H%M%S", time_struct)
-
-    filename = 'voice_{}_{}.ogg'.format(message.from_user.id, formatted_datetime)
+    filename = 'voice_{}_{}.ogg'.format(message.from_user.id, _speak.get_time_string)
     with open('./voice/' + filename, 'wb') as f:
         f.write(downloaded_file)
 
+    text = _speak.gen_voice_v1(downloaded_file, message.from_user.id)
 
-    url = f"https://stt.api.cloud.yandex.net/speech/v1/stt:recognize?folderId={TOKEN_FOLDER_ID}&lang=auto"
-    headers = {"Authorization": f"Bearer {TOKEN_IAM}"}
-    binary_data = open('./voice/' + filename, "rb").read()
-
-    response = requests.post(url, headers=headers, data=binary_data)
-    
-    if response.status_code == 200:
-        response_data = response.json()
-        answer = str( response_data['result'] )
-
-        if answer == False:
-            bot.edit_message_text("Извините, но произошла ошибка", send_mess.chat.id, send_mess.message_id)
-            return
-
-        content = post_gpt(message, answer)
+    if text != '':
+        content = post_gpt(message, text)
 
         if len(content) <= 500:
             markup = types.InlineKeyboardMarkup()
@@ -152,8 +133,8 @@ def voice_processing(message):
             bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id)
     else:
         bot.edit_message_text("Извините, но произошла ошибка", send_mess.chat.id, send_mess.message_id)
-
-    # TODO: добавить возможность записи длинных сообщений
+    
+    # TODO: добавить возможность записи длинных голосовых сообщений(v3)
 
 
 @bot.message_handler(func=lambda message: True)
@@ -172,12 +153,23 @@ def handle_user_message(message):
         bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id)
 
 
-
 @bot.callback_query_handler(func=lambda call: True)
-def handle_button_click(call):
-    button_text = call.data
-    bot.send_message(chat_id=call.message.chat.id, text="Пока не доступно!")
+def handle_callback_query(call):
+    if call.data == 'sintez':
+        text = call.message.text
 
+        bot.answer_callback_query(call.id, text='Обработка начилась!')
+
+        # file = _speak.voice_synthesis_v1(text, call.message.chat.id)
+        file = _speak.voice_synthesis_v3(text, call.message.chat.id)
+        
+        with open(file, "rb") as audio:
+            bot.send_audio(call.message.chat.id, audio)
+
+        os.remove(file)
+    else:
+        bot.answer_callback_query(call.id, text='Ошибка!')
+    
 
 
 def user_verification(message):
@@ -185,6 +177,7 @@ def user_verification(message):
         _db.create_user(message.from_user.id, message.chat.username, 1, message.chat.type)
 
     _db.add_users_in_groups(message.from_user.id, message.chat.id)
+    # TODO: добавить проверку аккаунта на блокировку 
 
 
 def post_gpt(message, text):
@@ -208,10 +201,7 @@ def post_gpt(message, text):
     except OpenAIError as err:
         bot.reply_to(message, "Извините, ошибка OpenAI: {}".format(err))
 
-
     return content
-    
-
 
 
 # def __del__():
@@ -222,29 +212,5 @@ try:
     bot.infinity_polling()
     # bot.polling()
 except requests.exceptions.ConnectionError as e:
-    current_time = time.time()
-    time_struct = time.localtime(current_time)
-    formatted_datetime = time.strftime("%Y.%m.%d_%H.%M.%S", time_struct)
-    print("{} Ошибка подключения:".format(formatted_datetime), e)
+    print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
 
-
-
-
-def hourly_task():
-    current_time = time.time()
-    time_struct = time.localtime(current_time)
-    formatted_datetime = time.strftime("%Y.%m.%d_%H.%M.%S", time_struct)
-    print("Сработал планировщик задач для get_yandex_iam. дата: {}".format(formatted_datetime))
-
-    TOKEN_IAM = _setting.get_yandex_iam()
-    scheduler.enter(3600, 1, hourly_task)
-
-scheduler.enter(3600, 1, hourly_task)
-scheduler.run()
-
-
-# scheduler = sched.scheduler(time.time, time.sleep)
-# scheduler.enter(0, 1, hourly_task, ())
-# while True:
-#     scheduler.run()
-#     time.sleep(3600) 

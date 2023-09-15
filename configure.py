@@ -1,7 +1,7 @@
 import configparser
-import subprocess
+# import subprocess
 import os
-import re
+# import re
 
 
 class Settings:
@@ -83,18 +83,18 @@ class Settings:
         return TOKEN_FOLDER
 
 
-    def get_yandex_iam(self):
-        output = subprocess.check_output('yc iam create-token', shell=True, universal_newlines=True)
-        lines = output.split("\n")
-        pattern = r"^(t1.+)$"
+    # def get_yandex_iam(self):
+    #     output = subprocess.check_output('yc iam create-token', shell=True, universal_newlines=True)
+    #     lines = output.split("\n")
+    #     pattern = r"^(t1.+)$"
 
-        if len(lines) >2:
-            print("Не ожаданный результат, нужно проверить вывод \'yc iam create-token\' \nВывод: {}".format(lines))
+    #     if len(lines) >2:
+    #         print("Не ожаданный результат, нужно проверить вывод \'yc iam create-token\' \nВывод: {}".format(lines))
        
-        for line in lines:
-            match = re.findall(pattern, line)
-            if match:
-                return str(match[0])
+    #     for line in lines:
+    #         match = re.findall(pattern, line)
+    #         if match:
+    #             return str(match[0])
 
 
     def file_exist(self, file_path):

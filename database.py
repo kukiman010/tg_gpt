@@ -59,6 +59,6 @@ class Database:
         return self.isWork
     
     def __del__(self):
-        if self.isWork == False:
+        if self.isWork == True:
             self.close()
 

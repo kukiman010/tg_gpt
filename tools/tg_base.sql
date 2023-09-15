@@ -19,7 +19,7 @@ CREATE TABLE users_in_groups (
     id BIGSERIAL PRIMARY KEY
 );
 
--- TODO: add column data
+-- TODO: add column data , тип записи сообщения
 CREATE TABLE context (
     user_id BIGINT,
     chat_id BIGINT,
