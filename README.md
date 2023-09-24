@@ -1,44 +1,84 @@
+Добро пожаловать в проект!
+
+Ниже приведено руководство по установке и настройке необходимых пакетов для проекта:
+
+## Установка зависимостей
+
+Выполните следующую команду, чтобы установить необходимые зависимости:
+
+```shell
 sudo apt-get install libpq-dev python3-dev
 pip install telebot
 pip install openai
 pip install psycopg2
+```
 
+## Yandex API
 
-для работы yandexapi
-<!-- git clone https://github.com/yandex-cloud/cloudapi
-sudo apt-get install grpcurl
-sudo apt update && sudo apt install jq
-# sudo apt-get install portaudio19-dev
-# pip install grpcio-tools PyAudio
-# pip install pydub -->
+Для использования Yandex API выполните следующие действия:
 
-<!-- // install  go
-wget https://go.dev/dl/go1.21.1.linux-amd64.tar.gz
-sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.21.1.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin -->
+1. Клонирование репозитория:
 
-curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
-exec -l $SHELL
-https://oauth.yandex.ru/authorize?response_type=token&client_id=1a6990aa636648e9b2ef855fa7bec2fb
-restart terminal 
-yc init 
+   ```shell
+   git clone https://github.com/yandex-cloud/cloudapi
+   ```
 
+2. Установка grpcurl:
 
-//intal grpcurl
-wget https://github.com/fullstorydev/grpcurl/releases/download/v1.8.7/grpcurl_1.8.7_linux_x86_32.tar.gz
-tar -xf grpcurl_1.8.7_linux_x86_32.tar.gz 
-sudo cp ./grpcurl /usr/bin/
+   ```shell
+   sudo apt-get install grpcurl
+   ```
 
+3. Обновление пакетов и установка jq:
 
-TODO:
-* добавить логирование ошибок 
-* Добавить лизенцию на проект 
-* Добавить распознование языка (можно брать из tg) так же нужна смена языков интерфейса и текстов в боте
-+- Добавить распознование голосовых сообщений (нужно еще реализовать разбор от 30 сек, ну и перейти на v3 api)
-+ Добавить генерацию голосовых сообщений v3
-* Добавить возмодность генерировать IAM-токен раз в час
-* Добавить возможность собирать метрики и статистику (может пригодиться telegram-stats-bot)
-* Добавить тесты
-* Добавить Возможность премиума
-* Добавить проверку подключения к БД
-* 
+   ```shell
+   sudo apt update && sudo apt install jq
+   ```
+
+   Опционально:
+
+   - Установка portaudio19-dev:
+
+     ```shell
+     sudo apt-get install portaudio19-dev
+     ```
+
+   - Установка дополнительных пакетов для голосовых сообщений:
+
+     ```shell
+     pip install grpcio-tools PyAudio
+     pip install pydub
+     ```
+
+## Настройка базы данных
+
+Пожалуйста, обратите внимание, что база данных должна работать только в кодировке UTF-8.
+
+Выполните следующие шаги, чтобы настроить базу данных:
+
+1. Установка кодировки UTF-8 для базы данных:
+
+   ```sql
+   UPDATE pg_database SET datistemplate = FALSE WHERE datname = 'tg_base';
+   DROP DATABASE tg_base;
+   CREATE DATABASE tg_base WITH owner=postgres ENCODING = 'UTF-8' lc_collate = 'en_US.utf8' lc_ctype = 'en_US.utf8' template template0;
+   UPDATE pg_database SET datistemplate = TRUE WHERE datname = 'tg_base';
+   ```
+
+2. Установка кодировки UTF-8 для клиента:
+
+   ```sql
+   SET client_encoding = 'UTF8';
+   ```
+
+## TODO
+
+- [ ] Добавить логирование ошибок 
+- [ ] Добавить лицензию на проект 
+- [ ] Добавить распознавание языка (можно брать из tg) также нужна смена языков интерфейса и текстов в боте
+- [+] Добавить распознавание голосовых сообщений (нужно еще реализовать разбор от 30 сек, ну и перейти на v3 api)
+- [+] Добавить генерацию голосовых сообщений v3
+- [ ] Добавить возможность генерировать IAM-токен раз в час
+- [ ] Добавить возможность собирать метрики и статистику (может пригодиться telegram-stats-bot)
+- [ ] Добавить тесты
+- [ ] Добавить возможность премиума

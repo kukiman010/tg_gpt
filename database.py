@@ -16,7 +16,8 @@ class Database:
                 user=self.user,
                 password=self.password,
                 host=self.host,
-                port=self.port
+                port=self.port,
+                client_encoding="utf8"
             )
             self.cursor = self.connection.cursor()
             isWork = True
@@ -61,4 +62,3 @@ class Database:
     def __del__(self):
         if self.isWork == True:
             self.close()
-

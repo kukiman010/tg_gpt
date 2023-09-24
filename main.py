@@ -14,6 +14,7 @@ from telebot        import types
 
 language = 'ru_RU' 
 _setting = Settings()
+sys.stdout.reconfigure(encoding='utf-8')
 
 
 _db = dbApi(
@@ -46,6 +47,10 @@ _speak = speech.speaker(TOKEN_FOLDER_ID)
 if _speak.get_IAM == '':
     print ('no yandex iam token!')
     sys.exit()
+
+
+_speak.start_key_generation()
+
 
 
 try:
@@ -198,7 +203,7 @@ def post_gpt(message, text):
         _db.add_context(message.from_user.id, message.chat.id, "user",  message.message_id, text)
         _db.add_context(message.from_user.id, message.chat.id, "assistant",  message.message_id, content)
     
-    except OpenAIError as err:
+    except OpenAIError as err: 
         bot.reply_to(message, "Извините, ошибка OpenAI: {}".format(err))
 
     return content

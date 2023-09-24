@@ -1,4 +1,5 @@
 import subprocess
+import threading
 import requests
 import base64
 # import sched
@@ -9,6 +10,7 @@ import re
 class speaker:
     def __init__(self, TOKEN_FOLDER_ID):
         self.t_folder_id = TOKEN_FOLDER_ID
+        self.stop_event = threading.Event()
         self.ready_token = True
 
         self.t_IAM = self.create_iam()
@@ -70,7 +72,6 @@ class speaker:
             file.write(response.content)
 
         return str('./ready/' + filename)
-
 
 
     def voice_synthesis_v3(self, text, user): #, voice, language,
@@ -136,21 +137,24 @@ class speaker:
         # print("none")
 
 
-    def hourly_task(self):
-        print("Сработал планировщик задач для get_yandex_iam. дата: {}".format(self.get_time_string))
-
-        self.t_IAM = self.create_iam()
-        if self.t_IAM == '':
-            self.ready_token = False
-
-        # scheduler.enter(3600, 1, hourly_task)
-
-# scheduler.enter(3600, 1, hourly_task)
-# scheduler.run()
 
 
-# scheduler = sched.scheduler(time.time, time.sleep)
-# scheduler.enter(0, 1, hourly_task, ())
-# while True:
-#     scheduler.run()
-#     time.sleep(3600) 
+    def start_key_generation(self):
+        # Создаем и запускаем отдельный поток для генерации ключа
+        thread = threading.Thread(target=self.generate_keys_periodically)
+        thread.start()
+
+    def stop_key_generation(self):
+        # Останавливаем генерацию ключей
+        self.stop_event.set()
+
+    def generate_keys_periodically(self):
+        while not self.stop_event.is_set():
+            # self.generate_key()
+            self.t_IAM = self.create_iam()
+            if self.t_IAM == '':
+                self.ready_token = False
+
+            print("Сработал планировщик задач для get_yandex_iam. дата: {}".format(self.get_time_string()))
+            print(self.t_IAM)
+            time.sleep(3600) # 1 hour
