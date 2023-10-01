@@ -6,6 +6,7 @@ import json
 import sys
 import os
 
+from logger         import LoggerSingleton
 from openai.error   import OpenAIError
 from configure      import Settings
 from databaseapi    import dbApi
@@ -15,6 +16,7 @@ from telebot        import types
 language = 'ru_RU' 
 _setting = Settings()
 sys.stdout.reconfigure(encoding='utf-8')
+_logger = LoggerSingleton('log_gpt.log')
 
 
 _db = dbApi(
@@ -33,23 +35,27 @@ TOKEN_FOLDER_ID = _setting.get_yandex_folder()
 
 if TOKEN_TG == '':
     print ('no tg token!')
+    _logger.add_critical('no tg token!')
     sys.exit()
 
 if TOKEN_GPT == '':
     print ('no gpts token!')
+    _logger.add_critical('no gpts token!')
     sys.exit()
 
 if TOKEN_FOLDER_ID == '':
     print ('no yandex folder id!')
+    _logger.add_critical('no yandex folder id!')
     sys.exit()
 
 _speak = speech.speaker(TOKEN_FOLDER_ID)
 if _speak.get_IAM == '':
     print ('no yandex iam token!')
+    _logger.add_critical('no yandex iam token!')
     sys.exit()
 
 
-_speak.start_key_generation()
+# _speak.start_key_generation()
 
 
 
@@ -57,6 +63,7 @@ try:
     bot = telebot.TeleBot( TOKEN_TG )
 except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
+    _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
 
 openai.api_key = TOKEN_GPT
 
@@ -76,6 +83,31 @@ def drop_context(message):
     user_verification(message)
     _db.delete_user_context(message.from_user.id, message.chat.id)
     bot.send_message(message.chat.id, "Контекст очищен")
+
+
+@bot.message_handler(commands=['lastlog'])
+def drop_context(message):
+    user_verification(message)
+    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
+        return
+    
+    words = message.text.split()
+
+    if len(words) == 2:
+        second_word = words[1]
+        if second_word.isdigit():
+            text = _logger.read_file_from_end(int(second_word))
+            bot.send_message(message.chat.id, "Ваши последние {} лог(ов)\n\n{}".format(second_word, text))
+
+    elif len(words) == 3:
+        second_word = words[1]
+        type_log = words[2]
+
+        if second_word.isdigit():
+            text = _logger.read_file_from_end(int(second_word), type_log)
+            bot.send_message(message.chat.id, "Ваши последние {} лог(ов) по запроссу {}\n\n{}".format(second_word, type_log, text))
+    else:
+        bot.send_message(message.chat.id, "Не верный синтаксис\n подробнее в /help")
 
 
 @bot.message_handler(commands=['notify_all'])
@@ -180,6 +212,7 @@ def handle_callback_query(call):
 def user_verification(message):
     if _db.find_user(message.from_user.id) == False:
         _db.create_user(message.from_user.id, message.chat.username, 1, message.chat.type)
+        _logger.add_error('создан новый пользователь {}'.format(message.chat.username))
 
     _db.add_users_in_groups(message.from_user.id, message.chat.id)
     # TODO: добавить проверку аккаунта на блокировку 
@@ -205,6 +238,7 @@ def post_gpt(message, text):
     
     except OpenAIError as err: 
         bot.reply_to(message, "Извините, ошибка OpenAI: {}".format(err))
+        _logger.add_critical("OpenAI: {}".format(err))
 
     return content
 
@@ -218,4 +252,5 @@ try:
     # bot.polling()
 except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
+    _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
 

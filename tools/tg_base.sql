@@ -47,6 +47,7 @@ CREATE TABLE admins (
 CREATE TABLE model_gpt (
     model TEXT,
     description TEXT,
+    token_size INT,
     id BIGSERIAL PRIMARY KEY
 );
 
@@ -107,9 +108,10 @@ LANGUAGE plpgsql;
 -- -- text-davinci-002
 -- -- text-babbage-001
 
--- insert into model_gpt values('gpt-3.5-turbo', 'default');
--- insert into model_gpt values('gpt-4', '');
--- insert into model_gpt values('gpt-4-32k-0314', 'actual(no supported)');
+-- insert into model_gpt values('gpt-3.5-turbo', 'default', 4097);
+-- insert into model_gpt values('gpt-4', '', 8192);
+-- insert into model_gpt values('gpt-4-32k-0314', 'actual(no supported)', 32768);
+-- insert into model_gpt values('gpt-3.5-turbo-instruct, 'update gpt-3.5-turbo', 4097 );
 -- -- insert into model_gpt values('', '');
 
 

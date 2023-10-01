@@ -7,17 +7,21 @@ import time
 import json
 import re
 
+from logger         import LoggerSingleton
+
+
 class speaker:
     def __init__(self, TOKEN_FOLDER_ID):
         self.t_folder_id = TOKEN_FOLDER_ID
         self.stop_event = threading.Event()
+        self._logger = LoggerSingleton('log_gpt.log')
         self.ready_token = True
 
         self.t_IAM = self.create_iam()
         if self.t_IAM == '':
             self.ready_token = False
-
-        # scheduler = sched.scheduler(time.monotonic, time.sleep)
+            self._logger.add_critical("Токен IAM не создался ")
+            
 
 
     def get_IAM(self):
@@ -39,6 +43,7 @@ class speaker:
 
         if len(lines) >2:
             print("Не ожаданный результат, нужно проверить вывод \'yc iam create-token\' \nВывод: {}".format(lines))
+            self._logger.add_warning("Не ожаданный результат, нужно проверить вывод \'yc iam create-token\' \nВывод: {}".format(lines))
         
         for line in lines:
             match = re.findall(pattern, line)
@@ -143,10 +148,12 @@ class speaker:
         # Создаем и запускаем отдельный поток для генерации ключа
         thread = threading.Thread(target=self.generate_keys_periodically)
         thread.start()
+        self._logger.add_info("Запущен сценарий генерации токена")
 
     def stop_key_generation(self):
         # Останавливаем генерацию ключей
         self.stop_event.set()
+        self._logger.add_info("Остановлен сценарий генерации токена")
 
     def generate_keys_periodically(self):
         while not self.stop_event.is_set():
@@ -154,7 +161,7 @@ class speaker:
             self.t_IAM = self.create_iam()
             if self.t_IAM == '':
                 self.ready_token = False
+                self._logger.add_critical("Токен IAM не создался ")
 
-            print("Сработал планировщик задач для get_yandex_iam. дата: {}".format(self.get_time_string()))
-            print(self.t_IAM)
-            time.sleep(3600) # 1 hour
+            self._logger.add_info("Сработал планировщик задач для get_yandex_iam.")
+            time.sleep(7200) # 2 hour
