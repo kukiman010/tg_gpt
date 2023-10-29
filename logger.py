@@ -10,33 +10,31 @@ import re
 class LoggerSingleton(object):
     instance = None
     
-    def __new__(cls, *args, **kwargs):
+    @classmethod
+    def new_instance(cls, *args, **kwargs):
         if not cls.instance:
-            cls.instance = super(LoggerSingleton, cls).__new__(cls)
+            cls.instance = cls(*args, **kwargs)
         return cls.instance
     
     def __init__(self, log_file):
         self.log_file = log_file
-        # Создание экземпляра логгера
         self.logger = logging.getLogger(log_file)
         self.logger.setLevel(logging.DEBUG)
-
-        # Создание файла для хранения логов
+        
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(logging.DEBUG)
-
-        # Создание форматтера для логов
-        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
         file_handler.setFormatter(formatter)
-
-        # Добавление обработчика файлового логгера к логгеру
+        
         self.logger.addHandler(file_handler)
-
-
+    
     def add_debug(self, str):
         self.logger.debug(str)
+
+
+
+        
 
     def add_info(self, str):
         self.logger.info(str)
@@ -92,40 +90,3 @@ class LoggerSingleton(object):
         with open(self.log_file) as file:
             return sum(chunk.count('\n')
                     for chunk in iter(lambda: file.read(chunk_size), ''))
-
-
-    
-
-# _logger = LoggerSingleton('log_gpt.log')
-# print( my_logger.get_last_messages(2) )
-# print( my_logger.count_lines() ) 
-# _logger.add_critical("test")
-# _logger.add_debug("test")
-# _logger.add_error("test")
-# _logger.add_info("test")
-# _logger.add_warning("test")
-
-
-
-# message = "/debug 25"
-# message = "/debug 5 info "
-# words = message.split()
-
-    
-# if len(words) == 2:
-#     second_word = words[1]
-#     if second_word.isdigit():
-#         text = _logger.read_file_from_end1(int(second_word))
-
-#         print("Ваши последние {} лог(ов)\n\n{}".format(second_word, text))
-
-# elif len(words) == 3:
-#     second_word = words[1]
-#     type_log = words[2]
-
-#     if second_word.isdigit():
-#         text = _logger.read_file_from_end1(int(second_word), type_log)
-
-#         print("Ваши последние {} лог(ов) по запроссу {}\n\n{}".format(second_word, type_log, text))
-# else:
-#     print("Не верный синтаксис\n подробнее в /help")

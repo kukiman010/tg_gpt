@@ -14,14 +14,16 @@ class speaker:
     def __init__(self, TOKEN_FOLDER_ID):
         self.t_folder_id = TOKEN_FOLDER_ID
         self.stop_event = threading.Event()
-        self._logger = LoggerSingleton('log_gpt.log')
+        self._logger = LoggerSingleton.new_instance('log_gpt.log')
         self.ready_token = True
+        self.TIME_GEN=18000 # once to timer (18000 = 5 hours)
 
         self.t_IAM = self.create_iam()
         if self.t_IAM == '':
             self.ready_token = False
             self._logger.add_critical("Токен IAM не создался ")
-            
+        else:
+            self._logger.add_info("Токен IAM cоздан!")
 
 
     def get_IAM(self):
@@ -119,7 +121,8 @@ class speaker:
         return str('./ready/' + filename)
 
 
-    def gen_voice_v1(self, data, user):
+    # def gen_voice_v1(self, data, user):
+    def voice_text_v1(self, data, user):
         formatted_datetime = self.get_time_string()
         filename = 'voice_{}_{}.ogg'.format(user, formatted_datetime)
         with open('./voice/' + filename, 'wb') as f:
@@ -134,11 +137,16 @@ class speaker:
         
         if response.status_code == 200:
             response_data = response.json()
-            return str( response_data['result'] )
+            data = str( response_data['result'] )
+
+            if data == '':
+                self._logger.add_critical("Произошла ошибка при обработке gen_voice_v1. json: {}".format(response_data))
+
+            return data
         else:
             return ''
         
-    # def gen_voice_v3(self, data, user):
+    # def voice_text_v3(self, data, user):
         # print("none")
 
 
@@ -163,5 +171,5 @@ class speaker:
                 self.ready_token = False
                 self._logger.add_critical("Токен IAM не создался ")
 
-            self._logger.add_info("Сработал планировщик задач для get_yandex_iam.")
-            time.sleep(7200) # 2 hour
+            self._logger.add_info("Сработал планировщик задач для get_yandex_iam. раз в {} ч".format(int(self.TIME_GEN/60)/60))
+            time.sleep(self.TIME_GEN) 

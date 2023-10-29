@@ -1,0 +1,64 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tg_base\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-10-1 12:00+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: ru_RU\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+
+msgid "Yes"
+msgstr "Да"
+
+msgid "No"
+msgstr "Нет"
+
+
+
+msgid "TR_START_MESSAGE"
+msgstr "Привет {} ! я готов к работе, просто напиши сообщение"
+
+msgid "TR_CLEAR_CONTEXT"
+msgstr "Контекст очищен"
+
+msgid "TR_GET_LOG"
+msgstr "Ваши последние {} лог(ов)\n\n{}"
+
+msgid "TR_GET_LOG_POST"
+msgstr "Ваши последние {} лог(ов) по запроссу {}\n\n{}"
+
+msgid "TR_ERROR_SINTAX"
+msgstr "Не верный синтаксис\n подробнее в /help"
+
+msgid "TR_WAIT_POST"
+msgstr "Пожалуйста, подождите, запрос обрабатывается..."
+
+msgid "TR_ERROR_GET_RESULT"
+msgstr "Ошибка получения результата"
+
+msgid "TR_ERROR_DECODE_VOICE"
+msgstr "Извините, запрос не выполнен.\nСкорее всего у вас не включен микрофон"
+
+msgid "TR_START_DECODE_VOICE"
+msgstr "Обработка начилась!"
+
+msgid "TR_ERROR"
+msgstr "Ошибка!"
+
+msgid "TR_ERROR_OPENAI"
+msgstr "Извините, ошибка OpenAI: {}"
+
+#  msgid "TR_"
+#  msgstr ""
+
+#  msgid "TR_"
+#  msgstr ""
+
+#  msgid "TR_"
+#  msgstr ""
+
