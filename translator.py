@@ -48,17 +48,23 @@ class Locale:
         return translations
     
     
-    def find_translation(self, file_name, search_word):
+    def find_translation(self, file_name, search_word) -> str:
         if file_name not in self.locales:
             print(f"The file {file_name} did not load correctly or it does not exist.")
-            return None
+            return ''
 
         po = self.locales[file_name]
         for entry in po:
             if entry.msgid == search_word:
                 return entry.msgstr
 
-        return None
+        return ''
+    
+    def islanguage(self, codeLang)-> bool:
+        if codeLang in self.locales:
+            return True
+        else:
+            return False
 
 
 

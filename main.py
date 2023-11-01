@@ -15,6 +15,7 @@ from translator     import Locale
 
 
 language = 'ru_RU' 
+MAX_CHAR = 500
 
 _setting = Settings()
 sys.stdout.reconfigure(encoding='utf-8')
@@ -76,7 +77,7 @@ def send_welcome(message):
     user_verification(message)
     username = str(message.chat.username)
     _db.delete_user_context(message.from_user.id, message.chat.id)
-    t_mes = locale.find_translation(locale, 'TR_START_MESSAGE')
+    t_mes = locale.find_translation(language, 'TR_START_MESSAGE')
     bot.reply_to(message, t_mes.format(username) )
     # TODO: добавить подробное описание того, что бот умеет 
     
@@ -85,7 +86,7 @@ def send_welcome(message):
 def drop_context(message):
     user_verification(message)
     _db.delete_user_context(message.from_user.id, message.chat.id)
-    t_mes = locale.find_translation(locale, 'TR_CLEAR_CONTEXT')
+    t_mes = locale.find_translation(language, 'TR_CLEAR_CONTEXT')
     bot.send_message(message.chat.id, t_mes )
 
 
@@ -101,7 +102,7 @@ def drop_context(message):
         second_word = words[1]
         if second_word.isdigit():
             text = _logger.read_file_from_end(int(second_word))
-            t_mes = locale.find_translation(locale, 'TR_GET_LOG')
+            t_mes = locale.find_translation(language, 'TR_GET_LOG')
             bot.send_message(message.chat.id, t_mes.format(second_word, text))
 
     elif len(words) == 3:
@@ -110,10 +111,10 @@ def drop_context(message):
 
         if second_word.isdigit():
             text = _logger.read_file_from_end(int(second_word), type_log)
-            t_mes = locale.find_translation(locale, 'TR_GET_LOG_POST')
+            t_mes = locale.find_translation(language, 'TR_GET_LOG_POST')
             bot.send_message(message.chat.id, t_mes.format(second_word, type_log, text))
     else:
-        t_mes = locale.find_translation(locale, 'TR_ERROR_SINTAX')
+        t_mes = locale.find_translation(language, 'TR_ERROR_SINTAX')
         bot.send_message(message.chat.id, t_mes)
 
 
@@ -153,7 +154,7 @@ def help(message):
 def voice_processing(message):
     user_verification(message)
 
-    t_mes = locale.find_translation(locale, 'TR_WAIT_POST')
+    t_mes = locale.find_translation(language, 'TR_WAIT_POST')
     send_mess = bot.send_message(message.chat.id, t_mes)
     
     file_id = message.voice.file_id
@@ -168,23 +169,25 @@ def voice_processing(message):
     text = _speak.voice_text_v1(downloaded_file, message.from_user.id)
     # text = _speak.voice_text_v3(downloaded_file, message.from_user.id)
 
+    bot.delete_message(send_mess.chat.id, send_mess.message_id)
+
     if text != '':
         content = post_gpt(message, text)
 
         if not content:
-            t_mes = locale.find_translation(locale, 'TR_ERROR_GET_RESULT')
-            bot.edit_message_text(t_mes, send_mess.chat.id, send_mess.message_id)
+            t_mes = locale.find_translation(language, 'TR_ERROR_GET_RESULT')
+            bot.send_message(message.chat.id, t_mes)
         _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content. Сообщение для {}".format(message.chat.username))
 
-        if len(content) <= 500:
+        if len(content) <= MAX_CHAR:
             markup = types.InlineKeyboardMarkup()
             markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
-            bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id, reply_markup=markup)
+            bot.send_message(message.chat.id, content, reply_markup=markup)
         else:    
-            bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id)
+            bot.send_message(message.chat.id, content)
     else:
-        t_mes = locale.find_translation(locale, 'TR_ERROR_DECODE_VOICE')
-        bot.edit_message_text(t_mes, send_mess.chat.id, send_mess.message_id)
+        t_mes = locale.find_translation(language, 'TR_ERROR_DECODE_VOICE')
+        bot.send_message(message.chat.id, t_mes)
     
     # TODO: добавить возможность записи длинных голосовых сообщений(v3)
 
@@ -193,22 +196,24 @@ def voice_processing(message):
 def handle_user_message(message):
     user_verification(message)
 
-    t_mes = locale.find_translation(locale, 'TR_WAIT_POST')
+    t_mes = locale.find_translation(language, 'TR_WAIT_POST')
     send_mess = bot.send_message(message.chat.id, t_mes)
 
     content = post_gpt(message, message.text)
 
+    bot.delete_message(send_mess.chat.id, send_mess.message_id)
+
     if not content:
-        t_mes = locale.find_translation(locale, 'TR_ERROR_GET_RESULT')
-        bot.edit_message_text(t_mes, send_mess.chat.id, send_mess.message_id)
+        t_mes = locale.find_translation(language, 'TR_ERROR_GET_RESULT')
+        bot.send_message(message.chat.id, t_mes)
         _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content")
 
-    if len(content) <= 500:
+    if len(content) <= MAX_CHAR:
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
-        bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id, reply_markup=markup)
+        bot.send_message(message.chat.id, content, reply_markup=markup)
     else:    
-        bot.edit_message_text(content, send_mess.chat.id, send_mess.message_id)
+        bot.send_message(message.chat.id, content)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -216,7 +221,7 @@ def handle_callback_query(call):
     if call.data == 'sintez':
         text = call.message.text
 
-        t_mes = locale.find_translation(locale, 'TR_START_DECODE_VOICE')
+        t_mes = locale.find_translation(language, 'TR_START_DECODE_VOICE')
         bot.answer_callback_query(call.id, text = t_mes)
 
         # file = _speak.voice_synthesis_v1(text, call.message.chat.id)
@@ -227,7 +232,7 @@ def handle_callback_query(call):
 
         os.remove(file)
     else:
-        t_mes = locale.find_translation(locale, 'TR_ERROR')
+        t_mes = locale.find_translation(language, 'TR_ERROR')
         bot.answer_callback_query(call.id, text = t_mes)
     
 
@@ -261,7 +266,7 @@ def post_gpt(message, text):
         _db.add_context(message.from_user.id, message.chat.id, "assistant",  message.message_id, content)
     
     except OpenAIError as err: 
-        t_mes = locale.find_translation(locale, 'TR_ERROR_OPENAI')
+        t_mes = locale.find_translation(language, 'TR_ERROR_OPENAI')
         bot.reply_to(message, t_mes.format(err))
         _logger.add_critical("OpenAI: {}".format(err))
 

@@ -8,8 +8,14 @@
 CREATE TABLE users (
     user_id BIGINT UNIQUE,
     login TEXT UNIQUE,
-    status BIGINT,
+    isAdmin BOOLEAN,
+    status_user BIGINT,
     type TEXT,
+    company_ai TEXT,
+    model TEXT,
+    speaker_name TEXT,
+    contextSize BIGINT,
+    language_code TEXT,
     id BIGSERIAL PRIMARY KEY
 );
 
@@ -29,6 +35,8 @@ CREATE TABLE context (
     id BIGSERIAL PRIMARY KEY
 );
 
+
+-- remove this table
 CREATE TABLE admins (
     user_id BIGINT UNIQUE,
     login TEXT UNIQUE,
