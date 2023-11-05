@@ -12,6 +12,7 @@ from configure      import Settings
 from databaseapi    import dbApi
 from telebot        import types
 from translator     import Locale
+from user           import User
 
 
 language = 'ru_RU' 
@@ -238,12 +239,19 @@ def handle_callback_query(call):
 
 
 def user_verification(message):
-    if _db.find_user(message.from_user.id) == False:
-        _db.create_user(message.from_user.id, message.chat.username, 1, message.chat.type)
-        _logger.add_error('создан новый пользователь {}'.format(message.chat.username))
+    user = User()
 
-    _db.add_users_in_groups(message.from_user.id, message.chat.id)
+    if _db.find_user(message.from_user.id) == False:
+        _db.create_user(message.from_user.id, message.chat.username, False, 1, message.chat.type, user.get_companyAi(), user.get_model(), user.get_speaker(), user.get_contextSize(), message.from_user.language_code)
+        _logger.add_info('создан новый пользователь {}'.format(message.chat.username))
+    else:
+        _db.add_users_in_groups(message.from_user.id, message.chat.id)
+        # user.
+
+    
     # TODO: добавить проверку аккаунта на блокировку 
+
+    return user
 
 
 def post_gpt(message, text):

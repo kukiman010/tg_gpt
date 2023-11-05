@@ -11,17 +11,8 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-
-msgid "Yes"
-msgstr "Да"
-
-msgid "No"
-msgstr "Нет"
-
-
-
 msgid "TR_START_MESSAGE"
-msgstr "Привет {} ! я готов к работе, просто напиши сообщение"
+msgstr "Привет {}! я готов к работе, просто напиши сообщение"
 
 msgid "TR_CLEAR_CONTEXT"
 msgstr "Контекст очищен"
@@ -53,12 +44,9 @@ msgstr "Ошибка!"
 msgid "TR_ERROR_OPENAI"
 msgstr "Извините, ошибка OpenAI: {}"
 
-#  msgid "TR_"
-#  msgstr ""
+msgid "TR_YES"
+msgstr "Да"
 
-#  msgid "TR_"
-#  msgstr ""
-
-#  msgid "TR_"
-#  msgstr ""
+msgid "TR_NO"
+msgstr "Нет"
 

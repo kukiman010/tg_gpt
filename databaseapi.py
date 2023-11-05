@@ -16,21 +16,26 @@ class dbApi:
         # print(data)
 
         if len(data) == 1:
-            # return data[0][0]
             if data[0][0] == userId:
                 return True
 
         return False
 
-    def create_user(self, userId, username, status, type):
+    # def create_user(self, userId, username, status, type):
+    #     self.db.connect()
+    #     query = "INSERT INTO users VALUES ({},'{}', {}, '{}');".format(userId,username,status,type)
+    #     self.db.execute_query(query)
+    #     # data = self.db.fetch_all()
+    #     self.db.commit()
+    #     self.db.close()
+    
+
+    def create_user(self, userId, username, isAdmin, status_user, type, companyAI,model, speaker_name, contextSize, language_code):
         self.db.connect()
-        query = "INSERT INTO users VALUES ({},'{}', {}, '{}');".format(userId,username,status,type)
+        query = "INSERT INTO users VALUES ({}, '{}', {}, {}, '{}', '{}', '{}', '{}', {}, '{}');".format(userId,username,isAdmin,status_user,type,companyAI,model,speaker_name,contextSize,language_code)
         self.db.execute_query(query)
-        # data = self.db.fetch_all()
         self.db.commit()
-        self.db.close()
-    
-    
+        self.db.close()   
 
 
     def add_context(self, userId, chatId, role, messageId, message):
@@ -96,6 +101,7 @@ class dbApi:
                 return True
         return False
 
+    # def get_user(self)
 
     # def (self):
     #     print('')

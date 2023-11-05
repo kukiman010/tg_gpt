@@ -24,6 +24,12 @@ class User:
         self._donate = 0
 
 
+    def is_active(self):
+        if self._user_id != 0 and self._login != '':
+            return True
+        else:
+            return False
+
     def set_base_info(self, userId, login, isAdmin, status, companyAi, model, speakerName, contextSize, language):
         self._user_id = userId
         # self._userChats_id = chatsId

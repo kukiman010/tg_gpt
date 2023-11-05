@@ -5,7 +5,7 @@
 -- SET client_min_messages = warning;
 
 --TODO: add column data registration and language
-CREATE TABLE users (
+CREATE TABLE users2 (
     user_id BIGINT UNIQUE,
     login TEXT UNIQUE,
     isAdmin BOOLEAN,

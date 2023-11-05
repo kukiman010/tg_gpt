@@ -21,7 +21,7 @@ class LoggerSingleton(object):
         self.logger = logging.getLogger(log_file)
         self.logger.setLevel(logging.DEBUG)
         
-        file_handler = logging.FileHandler(log_file)
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setLevel(logging.DEBUG)
         
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
