@@ -1,9 +1,7 @@
 import openai
-# import base64
 import json
 
 from logger         import LoggerSingleton
-from openai.error   import OpenAIError
 
 
 _logger = LoggerSingleton.new_instance('log_gpt.log')

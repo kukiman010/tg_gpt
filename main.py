@@ -1,9 +1,7 @@
 import requests
 import telebot
-# import openai
 import speech
 import base64
-import json 
 import sys
 import os
 
@@ -248,52 +246,6 @@ def handle_callback_query(call):
         bot.answer_callback_query(call.id, text = t_mes)
     
 
-
-
-# @bot.message_handler(content_types=['photo'])
-# def handle_message(message):
-
-#     file_id = message.photo[-1].file_id
-#     file_info = bot.get_file(file_id)
-    
-#     downloaded_file = bot.download_file(file_info.file_path)
-    
-    
-#     name = 'photo_{}_{}.jpg'.format(message.from_user.id, _speak.get_time_string())
-#     with open(os.path.join('photos/', f'{name}'), 'wb') as new_file:
-#         new_file.write(downloaded_file)
-    
-#     base64_image = encode_image(f'photos/{name}')
-
-#     text = message.caption
-
-#     if text == '' or text == None:
-#         text = 'What’s in this image?'
-    
-#     print(text)
-#     completion = openai.ChatCompletion.create(
-#     model="gpt-4-vision-preview",
-#     messages=[
-#         {
-#         "role": "user",
-#         "content": [
-#             {"type": "text", "text": "{}".format(text)},
-#             {
-#             "type": "image_url",
-#             "image_url": {
-#                 "url": f"data:image/jpeg;base64,{base64_image}"
-#             },
-#             },
-#         ],
-#         }
-#     ],
-#     max_tokens=1300,
-#     )
-
-#     answer = str( completion.choices[0].message )
-#     data = json.loads(answer)
-#     content = data['content']
-#     bot.reply_to(message, "{}".format(content) )
 
 
 @bot.message_handler(content_types=['photo'])

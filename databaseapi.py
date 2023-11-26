@@ -1,5 +1,4 @@
 from database import Database
-import json
 
 class dbApi:
     def __init__(self, dbname, user, password, host, port):
