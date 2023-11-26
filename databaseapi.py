@@ -1,5 +1,5 @@
 from database import Database
-
+import json
 
 class dbApi:
     def __init__(self, dbname, user, password, host, port):
@@ -38,10 +38,10 @@ class dbApi:
         self.db.close()   
 
 
-    def add_context(self, userId, chatId, role, messageId, message):
+    def add_context(self, userId, chatId, role, messageId, message, isPhoto):
         self.db.connect()
-        query = "INSERT INTO context VALUES (%s,%s,%s,%s,%s);"
-        self.db.custom_execute_query(query, (userId, chatId, role, messageId, message))
+        query = "INSERT INTO context VALUES (%s,%s,%s,%s,%s,%s);"
+        self.db.custom_execute_query(query, (userId, chatId, role, messageId, str(message), isPhoto) )
 
         self.db.commit()
         self.db.close()
@@ -59,7 +59,16 @@ class dbApi:
         for i in data:
             role = str(i[2])
             content = i[4]
-            result.append({"role": role, "content": content})
+
+            if i[5] == False:
+                result.append({"role": role, "content": content})
+            else:
+                result.append( {"role": role,"content": [
+            {"type": "image_url","image_url": {"url": f"data:image/jpeg;base64,{content}"},},
+            ]} )
+            # json_string = i[4].replace("\'", '"').replace('\\', '')
+            # data = 
+            # result.append( json.loads(json_string) )
 
         # print( result )
         return result

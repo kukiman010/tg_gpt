@@ -19,6 +19,9 @@ class Settings:
         if self.folder_exist(self.base_way + 'voice/') == False:
             self.folder_create(self.base_way + 'voice')
 
+        if self.folder_exist(self.base_way + 'photos/') == False:
+            self.folder_create(self.base_way + 'photos')
+
         if self.folder_exist(self.base_way + 'ready/') == False:
             self.folder_create(self.base_way + 'ready')
 

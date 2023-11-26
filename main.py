@@ -1,7 +1,8 @@
 import requests
 import telebot
-import openai
+# import openai
 import speech
+import base64
 import json 
 import sys
 import os
@@ -13,6 +14,7 @@ from databaseapi    import dbApi
 from telebot        import types
 from translator     import Locale
 from user           import User
+from gpt_api        import chatgpt
 
 
 language = 'ru_RU' 
@@ -69,8 +71,8 @@ except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
     _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
 
-openai.api_key = TOKEN_GPT
-
+# openai.api_key = TOKEN_GPT
+_gpt = chatgpt(TOKEN_GPT, TOKEN_FOLDER_ID)
 
 
 @bot.message_handler(commands=['start', 'restart'])
@@ -151,6 +153,15 @@ def help(message):
     bot.send_message(message.chat.id, text)
 
 
+@bot.message_handler(commands=['assistantmode'])
+def help(message):
+    user_verification(message)
+
+    ##################################################################################
+    # TODO
+    ##########################################
+
+
 @bot.message_handler(content_types=['voice'])
 def voice_processing(message):
     user_verification(message)
@@ -163,7 +174,7 @@ def voice_processing(message):
     file_path = file_info.file_path
     downloaded_file = bot.download_file(file_path)
 
-    filename = 'voice_{}_{}.ogg'.format(message.from_user.id, _speak.get_time_string)
+    filename = 'voice_{}_{}.ogg'.format(message.from_user.id, _speak.get_time_string())
     with open('./voice/' + filename, 'wb') as f:
         f.write(downloaded_file)
 
@@ -238,6 +249,107 @@ def handle_callback_query(call):
     
 
 
+
+# @bot.message_handler(content_types=['photo'])
+# def handle_message(message):
+
+#     file_id = message.photo[-1].file_id
+#     file_info = bot.get_file(file_id)
+    
+#     downloaded_file = bot.download_file(file_info.file_path)
+    
+    
+#     name = 'photo_{}_{}.jpg'.format(message.from_user.id, _speak.get_time_string())
+#     with open(os.path.join('photos/', f'{name}'), 'wb') as new_file:
+#         new_file.write(downloaded_file)
+    
+#     base64_image = encode_image(f'photos/{name}')
+
+#     text = message.caption
+
+#     if text == '' or text == None:
+#         text = 'What’s in this image?'
+    
+#     print(text)
+#     completion = openai.ChatCompletion.create(
+#     model="gpt-4-vision-preview",
+#     messages=[
+#         {
+#         "role": "user",
+#         "content": [
+#             {"type": "text", "text": "{}".format(text)},
+#             {
+#             "type": "image_url",
+#             "image_url": {
+#                 "url": f"data:image/jpeg;base64,{base64_image}"
+#             },
+#             },
+#         ],
+#         }
+#     ],
+#     max_tokens=1300,
+#     )
+
+#     answer = str( completion.choices[0].message )
+#     data = json.loads(answer)
+#     content = data['content']
+#     bot.reply_to(message, "{}".format(content) )
+
+
+@bot.message_handler(content_types=['photo'])
+def handle_message(message):
+    user = user_verification(message)
+
+    t_mes = locale.find_translation(language, 'TR_WAIT_POST')
+    send_mess = bot.send_message(message.chat.id, t_mes)
+
+    file_id = message.photo[-1].file_id
+    file_info = bot.get_file(file_id)
+    
+    downloaded_file = bot.download_file(file_info.file_path)
+    
+    
+    name = 'photo_{}_{}.jpg'.format(message.from_user.id, _speak.get_time_string())
+    with open(os.path.join('photos/', f'{name}'), 'wb') as new_file:
+        new_file.write(downloaded_file)
+    
+    base64_image = encode_image(f'photos/{name}')
+
+    text_to_photo = message.caption
+
+    if text_to_photo == '' or text_to_photo == None:
+        text_to_photo = 'What’s in this image?'
+    
+
+    mes_json = {"role": "user","content": [
+            {"type": "text", "text": "{}".format(text_to_photo)},
+            {"type": "image_url","image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},},
+            ],}
+
+    dict = _db.get_context(message.from_user.id, message.chat.id)
+    dict.append( mes_json )
+    
+    content = ""
+
+
+    try:
+        content = _gpt.gpt_post_view(dict, 1300 )
+
+        bot.delete_message(send_mess.chat.id, send_mess.message_id)
+        _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id,     text_to_photo,  False)
+        # _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id,     base64_image,   True)
+        _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id,     content,        False)
+
+
+        bot.reply_to(message, "{}".format(content) )
+
+    except OpenAIError as err: 
+        t_mes = locale.find_translation(language, 'TR_ERROR_OPENAI')
+        bot.reply_to(message, t_mes.format(err))
+        _logger.add_critical("OpenAI: {}".format(err))
+
+    
+
 def user_verification(message):
     user = User()
 
@@ -255,23 +367,18 @@ def user_verification(message):
 
 
 def post_gpt(message, text):
+
+    mes_json = {"role": "user", "content": str(text)}
+
     dict = _db.get_context(message.from_user.id, message.chat.id)
-    dict.append( {"role": "user", "content": str(text)})
+    dict.append( mes_json )
     content = ""
 
     try:
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            # model="gpt-4",
-            messages=dict
-            )
-        answer = str( completion.choices[0].message )
-        data = json.loads(answer)
-        content = data['content']
-        # content = text
+        content = _gpt.post_gpt(dict, "gpt-4-1106-preview")
 
-        _db.add_context(message.from_user.id, message.chat.id, "user",  message.message_id, text)
-        _db.add_context(message.from_user.id, message.chat.id, "assistant",  message.message_id, content)
+        _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id, text,       False)
+        _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id, content,    False)
     
     except OpenAIError as err: 
         t_mes = locale.find_translation(language, 'TR_ERROR_OPENAI')
@@ -283,6 +390,9 @@ def post_gpt(message, text):
 
 # def __del__():
 #     print(1)
+def encode_image(image_path):
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
 
 
 try:

@@ -5,7 +5,7 @@
 -- SET client_min_messages = warning;
 
 --TODO: add column data registration and language
-CREATE TABLE users2 (
+CREATE TABLE users (
     user_id BIGINT UNIQUE,
     login TEXT UNIQUE,
     isAdmin BOOLEAN,
@@ -32,6 +32,7 @@ CREATE TABLE context (
     role    TEXT,
     message_id BIGINT,
     message TEXT,
+    isPhoto BOOLEAN,
     id BIGSERIAL PRIMARY KEY
 );
 
@@ -52,10 +53,15 @@ CREATE TABLE admins (
 -- );
 
 
-CREATE TABLE model_gpt (
-    model TEXT,
+
+
+CREATE TABLE assistant_ai (
+    company_ai TEXT,
+    model_name TEXT,
     description TEXT,
     token_size INT,
+    last_update TEXT,
+    isView BOOLEAN,
     id BIGSERIAL PRIMARY KEY
 );
 
@@ -112,14 +118,13 @@ LANGUAGE plpgsql;
 
 
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades
--- -- gpt-4-32k-0314
--- -- text-davinci-002
--- -- text-babbage-001
 
--- insert into model_gpt values('gpt-3.5-turbo', 'default', 4097);
--- insert into model_gpt values('gpt-4', '', 8192);
--- insert into model_gpt values('gpt-4-32k-0314', 'actual(no supported)', 32768);
--- insert into model_gpt values('gpt-3.5-turbo-instruct, 'update gpt-3.5-turbo', 4097 );
+insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          'default',  4097,   'Up to Sep 2021',   True);
+insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         8192,   'Up to Sep 2021',   True);
+insert into assistant_ai values('OpenAi', 'gpt-4-1106-preview',     '',         128000, 'Up to Apr 2023',   True);
+insert into assistant_ai values('OpenAi', 'gpt-4-vision-preview',   '',         128000, 'Up to Apr 2023',   False);
+insert into assistant_ai values('Yandex', 'ya-chat',                'yandex',   0,      '-',                False);
+insert into assistant_ai values('Sber',   'giga-chat',              'sber',     0,      '-',                False);
 -- -- insert into model_gpt values('', '');
 
 
