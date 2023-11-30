@@ -241,6 +241,15 @@ def handle_callback_query(call):
             bot.send_audio(call.message.chat.id, audio)
 
         os.remove(file)
+
+        # Удаление кнопки
+        # bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+
+    elif call.data == 'errorPost':
+        text = call.message.text
+        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+        post_gpt(call, text)
+        
     else:
         t_mes = locale.find_translation(language, 'TR_ERROR')
         bot.answer_callback_query(call.id, text = t_mes)
@@ -327,14 +336,18 @@ def post_gpt(message, text):
     content = ""
 
     try:
-        content = _gpt.post_gpt(dict, "gpt-4-1106-preview")
+        # content = _gpt.post_gpt(dict, "gpt-4-1106-preview")
+        content = _gpt.post_gpt(dict, "gpt-3.5-turbo")
 
         _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id, text,       False)
         _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id, content,    False)
     
     except OpenAIError as err: 
         t_mes = locale.find_translation(language, 'TR_ERROR_OPENAI')
-        bot.reply_to(message, t_mes.format(err))
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost') )
+        # bot.send_message(message.chat.id, content, reply_markup=markup)
+        bot.reply_to(message, t_mes.format(err),reply_markup=markup)
         _logger.add_critical("OpenAI: {}".format(err))
 
     return content
