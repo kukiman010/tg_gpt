@@ -19,6 +19,12 @@ CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY
 );
 
+CREATE TABLE users (
+    user_id BIGINT UNIQUE,
+    login TEXT UNIQUE,
+
+);
+
 CREATE TABLE users_in_groups (
     user_id BIGINT UNIQUE,
     chats_id BIGINT[],
@@ -61,6 +67,7 @@ CREATE TABLE assistant_ai (
     description TEXT,
     token_size INT,
     last_update TEXT,
+    status_lvl BIGINT,
     isView BOOLEAN,
     id BIGSERIAL PRIMARY KEY
 );
@@ -119,12 +126,12 @@ LANGUAGE plpgsql;
 
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades
 
-insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          'default',  4097,   'Up to Sep 2021',   True);
-insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         8192,   'Up to Sep 2021',   True);
-insert into assistant_ai values('OpenAi', 'gpt-4-1106-preview',     '',         128000, 'Up to Apr 2023',   True);
-insert into assistant_ai values('OpenAi', 'gpt-4-vision-preview',   '',         128000, 'Up to Apr 2023',   False);
-insert into assistant_ai values('Yandex', 'ya-chat',                'yandex',   0,      '-',                False);
-insert into assistant_ai values('Sber',   'giga-chat',              'sber',     0,      '-',                False);
+insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          'default',  4097,   'Up to Sep 2021',   1, True);
+insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         8192,   'Up to Sep 2021',   1, True);
+insert into assistant_ai values('OpenAi', 'gpt-4-1106-preview',     '',         128000, 'Up to Apr 2023',   2, True);
+insert into assistant_ai values('OpenAi', 'gpt-4-vision-preview',   '',         128000, 'Up to Apr 2023',   2, False);
+insert into assistant_ai values('Yandex', 'ya-chat',                'yandex',   0,      '-',                1, False);
+insert into assistant_ai values('Sber',   'giga-chat',              'sber',     0,      '-',                1, False);
 -- -- insert into model_gpt values('', '');
 
 

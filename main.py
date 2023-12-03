@@ -4,6 +4,7 @@ import speech
 import base64
 import sys
 import os
+import re
 
 from logger         import LoggerSingleton
 from openai.error   import OpenAIError
@@ -13,6 +14,7 @@ from telebot        import types
 from translator     import Locale
 from user           import User
 from gpt_api        import chatgpt
+from data_models    import assistent_api
 
 
 language = 'ru_RU' 
@@ -61,7 +63,8 @@ if _speak.get_IAM == '':
 
 _speak.start_key_generation()
 
-
+# _list_assistant = _db.get_assistant_ai()
+_assistent_api = assistent_api( _db.get_assistant_ai() )
 
 try:
     bot = telebot.TeleBot( TOKEN_TG )
@@ -151,18 +154,40 @@ def help(message):
     bot.send_message(message.chat.id, text)
 
 
+@bot.message_handler(commands=['premium'])
+def premium(message):
+    bot.send_message(message.chat.id, "Пока не реализовано!")
+
+@bot.message_handler(commands=['settings'])
+def settings(message):
+    bot.send_message(message.chat.id, "Пока не реализовано!")
+    
+
 @bot.message_handler(commands=['assistantmode'])
 def help(message):
-    user_verification(message)
+    user = user_verification(message)
 
-    ##################################################################################
-    # TODO
-    ##########################################
+    if user == None or _assistent_api.size() == 0:
+        bot.send_message(message.chat.id, "Инзвините, но модели не найдены!")
+        return
+    
+    # buttons = _assistent_api.available_by_status(user.get_status())
+    buttons = _assistent_api.available_by_status()
+
+    markup = types.InlineKeyboardMarkup()
+    for key, value in buttons.items():
+        but = types.InlineKeyboardButton(value, callback_data=key)
+        markup.add(but)
+
+    text = str( "У вас сейчас выбрана модель " + user.get_model() + " от компании " + user.get_companyAi() + 
+    "\nВы можете выбрать другого асистента:")
+
+    bot.send_message(message.chat.id, text, reply_markup=markup)
 
 
 @bot.message_handler(content_types=['voice'])
 def voice_processing(message):
-    user_verification(message)
+    user = user_verification(message)
 
     t_mes = locale.find_translation(language, 'TR_WAIT_POST')
     send_mess = bot.send_message(message.chat.id, t_mes)
@@ -182,7 +207,7 @@ def voice_processing(message):
     bot.delete_message(send_mess.chat.id, send_mess.message_id)
 
     if text != '':
-        content = post_gpt(message, text)
+        content = post_gpt(message, text, user.get_model())
 
         if not content:
             t_mes = locale.find_translation(language, 'TR_ERROR_GET_RESULT')
@@ -204,12 +229,12 @@ def voice_processing(message):
 
 @bot.message_handler(func=lambda message: True)
 def handle_user_message(message):
-    user_verification(message)
+    user = user_verification(message)
 
     t_mes = locale.find_translation(language, 'TR_WAIT_POST')
     send_mess = bot.send_message(message.chat.id, t_mes)
 
-    content = post_gpt(message, message.text)
+    content = post_gpt(message, message.text, user.get_model())
 
     bot.delete_message(send_mess.chat.id, send_mess.message_id)
 
@@ -228,7 +253,12 @@ def handle_user_message(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback_query(call):
-    if call.data == 'sintez':
+    user = user_verification_custom(call.message.chat.id, call.message.message_id, call.message.chat.username, call.message.chat.type, call.from_user.language_code)    
+    key = call.data
+    assistent_pattern = r'^set_model_(\d+)$'
+    assistent_match = re.match(assistent_pattern, key)
+
+    if key == 'sintez':
         text = call.message.text
 
         t_mes = locale.find_translation(language, 'TR_START_DECODE_VOICE')
@@ -242,19 +272,33 @@ def handle_callback_query(call):
 
         os.remove(file)
 
-        # Удаление кнопки
-        # bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
-
-    elif call.data == 'errorPost':
+    elif key == 'errorPost':
         text = call.message.text
         bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
-        post_gpt(call, text)
+        post_gpt(call.message, text, user.get_model())
+
+    elif assistent_match:
         
+        id = int(assistent_match.group(1))
+        assistent = _assistent_api.find_assistent(id)
+
+        if not _assistent_api.isAvailable(id, user.get_status()):
+            text = str( "У вас нет доступа к этой модели, но вы всегда можете расширить свои возможности с премиум.\nПодробнее о нем /premium" )
+            bot.send_message(call.message.chat.id, text)
+            bot.answer_callback_query(call.id, "Не достаточно привелегий!")
+            return
+
+        for first, second in assistent.items():
+            _db.update_user_assistent(user.get_userId(),second,first ) 
+            break
+        
+        bot.send_message(call.message.chat.id, "Выбран новый асиситент!")
+        bot.answer_callback_query(call.id, "Успех!")
+
     else:
         t_mes = locale.find_translation(language, 'TR_ERROR')
         bot.answer_callback_query(call.id, text = t_mes)
     
-
 
 
 @bot.message_handler(content_types=['photo'])
@@ -319,15 +363,31 @@ def user_verification(message):
         _logger.add_info('создан новый пользователь {}'.format(message.chat.username))
     else:
         _db.add_users_in_groups(message.from_user.id, message.chat.id)
-        # user.
-
     
-    # TODO: добавить проверку аккаунта на блокировку 
+    user = _db.get_user_def(message.from_user.id)
+
+    if user.get_status() == 0: # TODO: добавить проверку аккаунта на блокировку 
+        return None
 
     return user
 
 
-def post_gpt(message, text):
+def user_verification_custom(userId, chatId, chat_username, chatType, lang_code):
+    user = User()
+    if _db.find_user(userId) == False:
+        _db.create_user(userId, chat_username, False, 1, chatType, user.get_companyAi(), user.get_model(), user.get_speaker(), user.get_contextSize(), lang_code)
+        _logger.add_info('создан новый пользователь {}'.format(chat_username))
+    else:
+        _db.add_users_in_groups(userId, chatId)
+    
+    user = _db.get_user_def(userId)
+
+    if user.get_status() == 0: # TODO: добавить проверку аккаунта на блокировку 
+        return None
+
+    return user
+
+def post_gpt(message, text, model):
 
     mes_json = {"role": "user", "content": str(text)}
 
@@ -337,7 +397,8 @@ def post_gpt(message, text):
 
     try:
         # content = _gpt.post_gpt(dict, "gpt-4-1106-preview")
-        content = _gpt.post_gpt(dict, "gpt-3.5-turbo")
+        # content = _gpt.post_gpt(dict, "gpt-3.5-turbo")
+        content = _gpt.post_gpt(dict, model)
 
         _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id, text,       False)
         _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id, content,    False)

@@ -53,7 +53,7 @@ class User:
         self._donate = donate
 
 
-    def get_systemId(self):
+    def get_userId(self):
         return self._user_id
     # def get_userChatsId(self):
         # return self._userChats_id
@@ -91,3 +91,9 @@ class User:
         return self._lastActivity 
     def get_donate(self):
         return self._donate
+
+
+    def set_companyAi(self, company):
+        self._companyAi = company
+    def set_model(self, model):
+        self._model  = model
