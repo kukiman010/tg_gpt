@@ -1,6 +1,4 @@
 
-
-
 class assistent_model:
     def __init__(self):
         self.company_ai = ""
@@ -46,7 +44,6 @@ class assistent_api:
             self.button_name.append( "set_model_" + str(i) )
             self.text_to_button[i] = str( self.model[i].get_company_ai() + ":\n" + self.model[i].get_model_name())
 
-
     def find_button(self, key):
         if self.button_name[key] != None:
             return self.button_name[key]
@@ -80,6 +77,12 @@ class assistent_api:
             return True
         else:
             return False
+        
+    def getToken(self, model):
+        for i in range(len(self.model)):
+            if self.model[i].get_model_name() == model:
+                return self.model[i].get_token_size()
+        return 0
 
 
 

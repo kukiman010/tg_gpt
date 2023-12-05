@@ -239,8 +239,8 @@ def handle_user_message(message):
     bot.delete_message(send_mess.chat.id, send_mess.message_id)
 
     if not content:
-        t_mes = locale.find_translation(language, 'TR_ERROR_GET_RESULT')
-        bot.send_message(message.chat.id, t_mes)
+        # t_mes = locale.find_translation(language, 'TR_ERROR_GET_RESULT')
+        # bot.send_message(message.chat.id, t_mes)
         _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content")
 
     if len(content) <= MAX_CHAR:
@@ -394,6 +394,16 @@ def post_gpt(message, text, model):
     dict = _db.get_context(message.from_user.id, message.chat.id)
     dict.append( mes_json )
     content = ""
+
+    tokenSizeNow = _gpt.num_tokens_from_messages(dict, model)
+    maxToken = _assistent_api.getToken(model)
+
+    if tokenSizeNow > maxToken:
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost') )
+        text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
+        bot.reply_to(message, text, reply_markup=markup)
+        return ""
 
     try:
         # content = _gpt.post_gpt(dict, "gpt-4-1106-preview")
