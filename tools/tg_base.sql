@@ -130,7 +130,8 @@ insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          'default',  
 insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         8192,   'Up to Sep 2021',   1, True);
 insert into assistant_ai values('OpenAi', 'gpt-4-1106-preview',     '',         128000, 'Up to Apr 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'gpt-4-vision-preview',   '',         128000, 'Up to Apr 2023',   2, False);
-insert into assistant_ai values('Yandex', 'ya-chat',                'yandex',   0,      '-',                1, False);
+insert into assistant_ai values('Yandex', 'yandexgpt',              'yandex',   8000,   '06.12.2023',       2, False);
+insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   8000,   '06.12.2023',       2, True);
 insert into assistant_ai values('Sber',   'giga-chat',              'sber',     0,      '-',                1, False);
 -- -- insert into model_gpt values('', '');
 

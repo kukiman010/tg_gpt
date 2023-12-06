@@ -6,6 +6,9 @@ import sys
 import os
 import re
 
+import yandexgpt
+import Control.context_model
+
 from logger         import LoggerSingleton
 from openai.error   import OpenAIError
 from configure      import Settings
@@ -55,7 +58,7 @@ if TOKEN_FOLDER_ID == '':
     sys.exit()
 
 _speak = speech.speaker(TOKEN_FOLDER_ID)
-if _speak.get_IAM == '':
+if _speak.get_IAM() == '':
     print ('no yandex iam token!')
     _logger.add_critical('no yandex iam token!')
     sys.exit()
@@ -74,6 +77,8 @@ except requests.exceptions.ConnectionError as e:
 
 # openai.api_key = TOKEN_GPT
 _gpt = chatgpt(TOKEN_GPT, TOKEN_FOLDER_ID)
+
+_yag = yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
 
 
 @bot.message_handler(commands=['start', 'restart'])
@@ -207,7 +212,7 @@ def voice_processing(message):
     bot.delete_message(send_mess.chat.id, send_mess.message_id)
 
     if text != '':
-        content = post_gpt(message, text, user.get_model())
+        content = post_gpt(message, user, text, user.get_model())
 
         if not content:
             t_mes = locale.find_translation(language, 'TR_ERROR_GET_RESULT')
@@ -234,21 +239,22 @@ def handle_user_message(message):
     t_mes = locale.find_translation(language, 'TR_WAIT_POST')
     send_mess = bot.send_message(message.chat.id, t_mes)
 
-    content = post_gpt(message, message.text, user.get_model())
+    content = post_gpt(message, user, message.text, user.get_model())
+    content.grt_result()
 
     bot.delete_message(send_mess.chat.id, send_mess.message_id)
 
-    if not content:
+    if not content.grt_result():
         # t_mes = locale.find_translation(language, 'TR_ERROR_GET_RESULT')
         # bot.send_message(message.chat.id, t_mes)
         _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content")
 
-    if len(content) <= MAX_CHAR:
+    if len(content.grt_result()) <= MAX_CHAR:
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
-        bot.send_message(message.chat.id, content, reply_markup=markup)
+        bot.send_message(message.chat.id, content.grt_result(), reply_markup=markup)
     else:    
-        bot.send_message(message.chat.id, content)
+        bot.send_message(message.chat.id, content.grt_result())
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -275,7 +281,7 @@ def handle_callback_query(call):
     elif key == 'errorPost':
         text = call.message.text
         bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
-        post_gpt(call.message, text, user.get_model())
+        post_gpt(call.message, user, text, user.get_model())
 
     elif assistent_match:
         
@@ -387,28 +393,50 @@ def user_verification_custom(userId, chatId, chat_username, chatType, lang_code)
 
     return user
 
-def post_gpt(message, text, model):
+def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAssistent() :
 
-    mes_json = {"role": "user", "content": str(text)}
+    # mes_json = {"role": "user", "content": str(text)}
+    # dict = _db.get_context(message.from_user.id, message.chat.id)
+    # dict.append( mes_json )
+    mes = Control.context_model.Context_model()
+    mes.set_data(message.from_user.id, message.chat.id,"user",message.message_id,text,False )
 
-    dict = _db.get_context(message.from_user.id, message.chat.id)
-    dict.append( mes_json )
+    dict = _db.get_context(user.get_userId(), message.chat.id)
+    dict.append(mes)
+    json = Control.context_model.convert(user.get_companyAi(), dict)
+
     content = ""
+    tokenSizeNow = 0
 
-    tokenSizeNow = _gpt.num_tokens_from_messages(dict, model)
+    if str(user.get_companyAi()).upper() == str("OpenAi").upper():
+        tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
+    elif str(user.get_companyAi()).upper() == str("Yandex").upper():
+        tokenSizeNow = _yag.count_tokens(json, "yandexgpt-lite")
+
     maxToken = _assistent_api.getToken(model)
 
     if tokenSizeNow > maxToken:
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost') )
-        text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
+        text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель  или преобретите премиум /premium".format(tokenSizeNow, maxToken)
         bot.reply_to(message, text, reply_markup=markup)
         return ""
 
     try:
+        if str(user.get_companyAi()).upper() == str("OpenAi").upper():
+            content = _gpt.post_gpt(json, model)
+        elif str(user.get_companyAi()).upper() == str("Yandex").upper():
+            _yag.set_token( _speak.get_IAM() )
+            content = _yag.post_gpt(json,model)
+            # dict2 = [
+            #     {'role': 'user', 'text': 'hi'}
+            #     ]
+            # _yag.post_gpt(dict2, model)
+        # elif str(user.get_companyAi()).upper() == str("Sber").upper():
+
         # content = _gpt.post_gpt(dict, "gpt-4-1106-preview")
         # content = _gpt.post_gpt(dict, "gpt-3.5-turbo")
-        content = _gpt.post_gpt(dict, model)
+        # content = _gpt.post_gpt(json, model)
 
         _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id, text,       False)
         _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id, content,    False)

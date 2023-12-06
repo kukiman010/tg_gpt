@@ -1,6 +1,9 @@
 from database import Database
 from data_models import assistent_model
 from user import User
+from typing import List
+
+import Control.context_model
 
 class dbApi:
     def __init__(self, dbname, user, password, host, port):
@@ -47,7 +50,7 @@ class dbApi:
         self.db.commit()
         self.db.close()
 
-    def get_context(self, userId, chatId):
+    def get_context(self, userId, chatId) -> List[Control.context_model.Context_model]:
         self.db.connect()
         query = "SELECT * FROM context WHERE user_id='{}' AND chat_id='{}';".format(userId, chatId)
         self.db.execute_query(query)
@@ -58,20 +61,22 @@ class dbApi:
         result = []
 
         for i in data:
-            role = str(i[2])
-            content = i[4]
+            context = Control.context_model.Context_model()
 
-            if i[5] == False:
-                result.append({"role": role, "content": content})
-            else:
-                result.append( {"role": role,"content": [
-            {"type": "image_url","image_url": {"url": f"data:image/jpeg;base64,{content}"},},
-            ]} )
-            # json_string = i[4].replace("\'", '"').replace('\\', '')
-            # data = 
-            # result.append( json.loads(json_string) )
+            context.set_data(i[0],i[1],i[2],i[3],i[4],i[5])
 
-        # print( result )
+            if  i[4] != "":
+                result.append( context )
+            # role = str(i[2])
+            # content = i[4]
+
+            # if i[5] == False:
+                # result.append({"role": role, "content": content})
+            # else:
+                # result.append( {"role": role,"content": [
+            # {"type": "image_url","image_url": {"url": f"data:image/jpeg;base64,{content}"},},
+            # ]} )
+
         return result
     
     def delete_user_context(self, userId, chatId):
