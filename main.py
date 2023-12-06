@@ -439,7 +439,7 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
         # content = _gpt.post_gpt(json, model)
 
         _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id, text,       False)
-        _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id, content,    False)
+        _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id, content.grt_result(),    False)
     
     except OpenAIError as err: 
         t_mes = locale.find_translation(language, 'TR_ERROR_OPENAI')

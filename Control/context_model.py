@@ -1,0 +1,75 @@
+from typing import List
+
+class Context_model():
+    def __init__(self) -> None:
+        self.user_id = 0
+        self.chat_id = 0
+        self.role    = ""
+        self.message_id = 0
+        self.message = ""
+        self.isPhoto = False
+
+    def set_data(self, userid, chatId, role, messageId, message, isPhoto):
+        self.user_id = userid
+        self.chat_id = chatId
+        self.role    = role
+        self.message_id = messageId
+        self.message = message
+        self.isPhoto = isPhoto
+
+    def get_userId(self):
+        return self.user_id
+    def get_chatId(self):
+        return self.chat_id
+    def get_role(self):
+        return self.role
+    def get_messegeId(self):
+        return self.message_id
+    def get_message(self):
+        return self.message
+    def get_isPhoto(self):
+        return self.isPhoto
+    
+
+class AnswerAssistent():
+    def __init__(self) -> None:
+        self.code = 0
+        self.result = ""
+        self.token = 0
+
+    def set_answer(self, code:int, result:str, token:int):
+        self.code = code
+        self.result = result
+        self.token = token
+
+    def grt_code(self):
+        return self.code
+    def grt_result(self):
+        return self.result
+    def grt_token(self):
+        return self.token
+
+
+# class convert_context_to_struct():
+    # def convert(self, company:str, context:List[Context_model]) -> List:
+
+def convert(company:str, context:List[Context_model]) -> List:
+    dict = []
+
+    if str(company).upper() == str("OpenAi").upper():
+        for i in context:
+            if i.get_isPhoto == True:
+                dict.append( {"role": i.get_role(),"content": [
+            {"type": "image_url","image_url": {"url": f"data:image/jpeg;base64,{i.message()}"},},  ]} )
+            else:
+                dict.append( {"role": i.get_role(), "content": i.get_message()}, )
+
+    elif str(company).upper() == str("Yandex").upper():
+        for i in context:
+            dict.append( {"role": i.get_role(),"text": i.get_message()} ) 
+
+    elif str(company).upper() == str("Sber").upper():
+        for i in context:
+            dict.append( {"role": i.get_role(),"content": i.get_message()} )
+
+    return dict
