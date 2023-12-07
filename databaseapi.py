@@ -62,20 +62,10 @@ class dbApi:
 
         for i in data:
             context = Control.context_model.Context_model()
-
             context.set_data(i[0],i[1],i[2],i[3],i[4],i[5])
 
             if  i[4] != "":
                 result.append( context )
-            # role = str(i[2])
-            # content = i[4]
-
-            # if i[5] == False:
-                # result.append({"role": role, "content": content})
-            # else:
-                # result.append( {"role": role,"content": [
-            # {"type": "image_url","image_url": {"url": f"data:image/jpeg;base64,{content}"},},
-            # ]} )
 
         return result
     

@@ -44,7 +44,8 @@ class YandexGpt():
             # model_version = json['result']['modelVersion']
             answer.set_answer(status_code, text, total_tokens)
         else:
-            answer.set_answer(status_code, response.text, 0)
+            error_message = data['error']['message']
+            answer.set_answer(status_code, error_message)
 
         return answer
 

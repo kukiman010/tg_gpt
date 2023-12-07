@@ -214,17 +214,17 @@ def voice_processing(message):
     if text != '':
         content = post_gpt(message, user, text, user.get_model())
 
-        if not content:
+        if not content.get_result():
             t_mes = locale.find_translation(language, 'TR_ERROR_GET_RESULT')
             bot.send_message(message.chat.id, t_mes)
-        _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content. Сообщение для {}".format(message.chat.username))
+            _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content. Сообщение для {}".format(message.chat.username))
 
-        if len(content) <= MAX_CHAR:
+        if len(content.get_result()) <= MAX_CHAR and content.get_code() == 200:
             markup = types.InlineKeyboardMarkup()
             markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
-            bot.send_message(message.chat.id, content, reply_markup=markup)
+            bot.send_message(message.chat.id, content.get_result(), reply_markup=markup)
         else:    
-            bot.send_message(message.chat.id, content)
+            bot.send_message(message.chat.id, content.get_result())
     else:
         t_mes = locale.find_translation(language, 'TR_ERROR_DECODE_VOICE')
         bot.send_message(message.chat.id, t_mes)
@@ -240,21 +240,21 @@ def handle_user_message(message):
     send_mess = bot.send_message(message.chat.id, t_mes)
 
     content = post_gpt(message, user, message.text, user.get_model())
-    content.grt_result()
+    # content.get_result()
 
     bot.delete_message(send_mess.chat.id, send_mess.message_id)
 
-    if not content.grt_result():
+    if not content.get_result():
         # t_mes = locale.find_translation(language, 'TR_ERROR_GET_RESULT')
         # bot.send_message(message.chat.id, t_mes)
         _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content")
 
-    if len(content.grt_result()) <= MAX_CHAR:
+    if len(content.get_result()) <= MAX_CHAR:
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
-        bot.send_message(message.chat.id, content.grt_result(), reply_markup=markup)
+        bot.send_message(message.chat.id, content.get_result(), reply_markup=markup)
     else:    
-        bot.send_message(message.chat.id, content.grt_result())
+        bot.send_message(message.chat.id, content.get_result())
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -311,6 +311,11 @@ def handle_callback_query(call):
 def handle_message(message):
     user = user_verification(message)
 
+    if user.get_status() != 2:
+        text = "Извините, но обработка фото вам не доступна, вам нужно приобрести этот функционал /premium"
+        bot.send_message(message.chat.id, text)
+        return
+
     t_mes = locale.find_translation(language, 'TR_WAIT_POST')
     send_mess = bot.send_message(message.chat.id, t_mes)
 
@@ -330,29 +335,48 @@ def handle_message(message):
 
     if text_to_photo == '' or text_to_photo == None:
         text_to_photo = 'What’s in this image?'
-    
 
-    mes_json = {"role": "user","content": [
-            {"type": "text", "text": "{}".format(text_to_photo)},
-            {"type": "image_url","image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},},
-            ],}
 
-    dict = _db.get_context(message.from_user.id, message.chat.id)
-    dict.append( mes_json )
-    
+
+    mes = Control.context_model.Context_model()
+    mes_photo = Control.context_model.Context_model()
+    mes.set_data(message.from_user.id, message.chat.id,"user",message.message_id,text_to_photo,False )
+    mes_photo.set_data(message.from_user.id, message.chat.id,"user",message.message_id,base64_image,True )
+
+    dict = _db.get_context(user.get_userId(), message.chat.id)
+    dict.append(mes)
+    dict.append(mes_photo)
+    json = Control.context_model.convert(user.get_companyAi(), dict, True)
+
     content = ""
+    # tokenSizeNow = 0
+    model = "gpt-4-vision-preview"
+
+    # if str(user.get_companyAi()).upper() == str("OpenAi").upper():
+        # tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
+
+    maxToken = _assistent_api.getToken(model)
+
+    # if tokenSizeNow > maxToken:
+    #     markup = types.InlineKeyboardMarkup()
+    #     markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost') )
+    #     text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель  или преобретите премиум /premium".format(tokenSizeNow, maxToken)
+    #     bot.reply_to(message, text, reply_markup=markup)
+    #     return ""
 
 
     try:
-        content = _gpt.gpt_post_view(dict, 1300 )
+        content = _gpt.gpt_post_view(json, model, 1300 )
 
         bot.delete_message(send_mess.chat.id, send_mess.message_id)
-        _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id,     text_to_photo,  False)
-        # _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id,     base64_image,   True)
-        _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id,     content,        False)
+
+        if content.get_code() == 200:
+            _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id,     text_to_photo,  False)
+            _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id,     base64_image,   True)
+            _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id,     content.get_result(),        False)
 
 
-        bot.reply_to(message, "{}".format(content) )
+        bot.reply_to(message, "{}".format(content.get_result()) )
 
     except OpenAIError as err: 
         t_mes = locale.find_translation(language, 'TR_ERROR_OPENAI')
@@ -394,14 +418,11 @@ def user_verification_custom(userId, chatId, chat_username, chatType, lang_code)
     return user
 
 def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAssistent() :
-
-    # mes_json = {"role": "user", "content": str(text)}
-    # dict = _db.get_context(message.from_user.id, message.chat.id)
-    # dict.append( mes_json )
     mes = Control.context_model.Context_model()
     mes.set_data(message.from_user.id, message.chat.id,"user",message.message_id,text,False )
 
     dict = _db.get_context(user.get_userId(), message.chat.id)
+    # dict = Control.context_model.rm_photos_in_dict(dict)
     dict.append(mes)
     json = Control.context_model.convert(user.get_companyAi(), dict)
 
@@ -418,7 +439,7 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
     if tokenSizeNow > maxToken:
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost') )
-        text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель  или преобретите премиум /premium".format(tokenSizeNow, maxToken)
+        text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
         bot.reply_to(message, text, reply_markup=markup)
         return ""
 
@@ -428,18 +449,12 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
         elif str(user.get_companyAi()).upper() == str("Yandex").upper():
             _yag.set_token( _speak.get_IAM() )
             content = _yag.post_gpt(json,model)
-            # dict2 = [
-            #     {'role': 'user', 'text': 'hi'}
-            #     ]
-            # _yag.post_gpt(dict2, model)
         # elif str(user.get_companyAi()).upper() == str("Sber").upper():
 
-        # content = _gpt.post_gpt(dict, "gpt-4-1106-preview")
-        # content = _gpt.post_gpt(dict, "gpt-3.5-turbo")
-        # content = _gpt.post_gpt(json, model)
 
-        _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id, text,       False)
-        _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id, content.grt_result(),    False)
+        if content.get_code() == 200:
+            _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id, text,       False)
+            _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id, content.get_result(),    False)
     
     except OpenAIError as err: 
         t_mes = locale.find_translation(language, 'TR_ERROR_OPENAI')

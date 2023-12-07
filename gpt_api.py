@@ -1,6 +1,7 @@
 import openai
 import json
 import tiktoken
+import Control.context_model
 
 from logger         import LoggerSingleton
 
@@ -14,16 +15,20 @@ class chatgpt():
         openai.api_key = tokenID
 
     
-    def gpt_post_view(self, context, MAX_TOLENS):
+    def gpt_post_view(self, context, gpt_model, MAX_TOLENS):
         completion = openai.ChatCompletion.create(
-        model="gpt-4-vision-preview",
+        # model="gpt-4-vision-preview",
+        model=gpt_model,
         messages=context,
         max_tokens=MAX_TOLENS,
         )
 
-        answer = str( completion.choices[0].message )
-        data = json.loads(answer)
-        return data['content']
+        answer = Control.context_model.AnswerAssistent()
+        total_tokens = completion['usage']['total_tokens'] 
+        data = json.loads( str( completion.choices[0].message ) )
+        content = data['content']
+        answer.set_answer(200, content, total_tokens)
+        return answer
 
 
     def post_gpt(self, context, gpt_model):
@@ -31,12 +36,13 @@ class chatgpt():
             model=gpt_model,
             messages=context
             )
-        answer = str( completion.choices[0].message )
-        data = json.loads(answer)
-        content = data['content']
 
-        return content
-    
+        answer = Control.context_model.AnswerAssistent()
+        total_tokens = completion['usage']['total_tokens'] 
+        data = json.loads( str( completion.choices[0].message ) )
+        content = data['content']
+        answer.set_answer(200, content, total_tokens)
+        return answer
 
 
 
@@ -82,6 +88,8 @@ class chatgpt():
         for message in messages:
             num_tokens += tokens_per_message
             for key, value in message.items():
+                if not isinstance(value, str):
+                    continue
                 num_tokens += len(encoding.encode(value))
                 if key == "name":
                     num_tokens += tokens_per_name
