@@ -8,15 +8,16 @@ import Control.context_model
 class dbApi:
     def __init__(self, dbname, user, password, host, port):
         self.db = Database(dbname,user, password, host, port)
+        self.db.connect()
 
 
     def find_user(self, userId):
-        self.db.connect()
+        # self.db.connect()
         query = "SELECT * FROM users WHERE user_id='{}';".format(userId)
         self.db.execute_query(query)
         data = self.db.fetch_all()
         self.db.commit()
-        self.db.close()
+        # self.db.close()
         # print(data)
 
         if len(data) == 1:
@@ -35,28 +36,28 @@ class dbApi:
     
 
     def create_user(self, userId, username, isAdmin, status_user, type, companyAI,model, speaker_name, contextSize, language_code):
-        self.db.connect()
+        # self.db.connect()
         query = "INSERT INTO users VALUES ({}, '{}', {}, {}, '{}', '{}', '{}', '{}', {}, '{}');".format(userId,username,isAdmin,status_user,type,companyAI,model,speaker_name,contextSize,language_code)
         self.db.execute_query(query)
         self.db.commit()
-        self.db.close()   
+        # self.db.close()   
 
 
     def add_context(self, userId, chatId, role, messageId, message, isPhoto):
-        self.db.connect()
+        # self.db.connect()
         query = "INSERT INTO context VALUES (%s,%s,%s,%s,%s,%s);"
         self.db.custom_execute_query(query, (userId, chatId, role, messageId, str(message), isPhoto) )
 
         self.db.commit()
-        self.db.close()
+        # self.db.close()
 
     def get_context(self, userId, chatId) -> List[Control.context_model.Context_model]:
-        self.db.connect()
+        # self.db.connect()
         query = "SELECT * FROM context WHERE user_id='{}' AND chat_id='{}';".format(userId, chatId)
         self.db.execute_query(query)
         data = self.db.fetch_all()
         self.db.commit()
-        self.db.close()
+        # self.db.close()
 
         result = []
 
@@ -70,49 +71,49 @@ class dbApi:
         return result
     
     def delete_user_context(self, userId, chatId):
-        self.db.connect()
+        # self.db.connect()
         query = "DELETE FROM context WHERE user_id='{}' AND chat_id='{}';".format(userId, chatId)
         self.db.execute_query(query)
         self.db.commit()
-        self.db.close()
+        # self.db.close()
     
 
     def add_users_in_groups(self, userId, chatId):
-        self.db.connect()
+        # self.db.connect()
         query = "SELECT add_chats_id("+str(userId)+", '{"+str(chatId) +"}');"
         self.db.execute_query(query)
         self.db.commit()
-        self.db.close()
+        # self.db.close()
 
     def get_all_chat(self, userId):
-        self.db.connect()
+        # self.db.connect()
         query = "SELECT * FROM get_chats_id({});".format(userId)
         self.db.execute_query(query)
         data = self.db.fetch_all()
         self.db.commit()
-        self.db.close()
+        # self.db.close()
         return data
     
 
     def isAdmin(self, userId, username):
-        self.db.connect()
+        # self.db.connect()
         query = "SELECT * FROM admins WHERE user_id={};".format(userId)
         self.db.execute_query(query)
         data = self.db.fetch_all()
         self.db.commit()
-        self.db.close()
+        # self.db.close()
         if len(data) == 1:
             if data[0][0] == userId and data[0][1] == username and data[0][2] != 0:
                 return True
         return False
     
     def get_assistant_ai(self):
-        self.db.connect()
+        # self.db.connect()
         query = "select * from assistant_ai;"
         self.db.execute_query(query)
         data = self.db.fetch_all()
         self.db.commit()
-        self.db.close()
+        # self.db.close()
 
         array = []
 
@@ -124,19 +125,19 @@ class dbApi:
         return array
         
     def update_user_assistent(self, userId, company, model): # drop tokens
-        self.db.connect()
+        # self.db.connect()
         query = "UPDATE users SET company_ai='{}',model='{}' WHERE user_id={};".format(company,model,userId)
         self.db.execute_query(query)
         self.db.commit()
-        self.db.close()
+        # self.db.close()
 
     def get_user_def(self, userId):
-        self.db.connect()
+        # self.db.connect()
         query = "select * from users WHERE user_id={};".format(userId)
         self.db.execute_query(query)
         data = self.db.fetch_all()
         self.db.commit()
-        self.db.close()
+        # self.db.close()
 
         for i in data:
             user = User()
@@ -149,5 +150,9 @@ class dbApi:
 
     # def (self):
     #     print('')
+
+    def __del__(self):
+        self.db.close()
+#     print(1)
 
     

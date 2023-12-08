@@ -10,8 +10,6 @@ class YandexGpt():
         self._token = token
 
     def post_gpt(self, context, gpt_model) -> Control.context_model.AnswerAssistent() :
-        # FOLDER_ID = '<идентификатор_каталога>'
-        # IAM_TOKEN = '<IAM-токен>'
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self._token}',
@@ -19,6 +17,7 @@ class YandexGpt():
         }
 
         data = {
+        # "modelUri": f"gpt://{self._folder}/{gpt_model}/latest",
         "modelUri": f"gpt://{self._folder}/{gpt_model}",
         "completionOptions": {
             "stream": False,

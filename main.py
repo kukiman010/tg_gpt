@@ -209,8 +209,6 @@ def voice_processing(message):
     text = _speak.voice_text_v1(downloaded_file, message.from_user.id)
     # text = _speak.voice_text_v3(downloaded_file, message.from_user.id)
 
-    bot.delete_message(send_mess.chat.id, send_mess.message_id)
-
     if text != '':
         content = post_gpt(message, user, text, user.get_model())
 
@@ -219,6 +217,8 @@ def voice_processing(message):
             bot.send_message(message.chat.id, t_mes)
             _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content. Сообщение для {}".format(message.chat.username))
 
+        bot.delete_message(send_mess.chat.id, send_mess.message_id)
+
         if len(content.get_result()) <= MAX_CHAR and content.get_code() == 200:
             markup = types.InlineKeyboardMarkup()
             markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
@@ -226,6 +226,7 @@ def voice_processing(message):
         else:    
             bot.send_message(message.chat.id, content.get_result())
     else:
+        bot.delete_message(send_mess.chat.id, send_mess.message_id)
         t_mes = locale.find_translation(language, 'TR_ERROR_DECODE_VOICE')
         bot.send_message(message.chat.id, t_mes)
     
@@ -459,7 +460,7 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
     except OpenAIError as err: 
         t_mes = locale.find_translation(language, 'TR_ERROR_OPENAI')
         markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost') )
+        markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost ') )
         # bot.send_message(message.chat.id, content, reply_markup=markup)
         bot.reply_to(message, t_mes.format(err),reply_markup=markup)
         _logger.add_critical("OpenAI: {}".format(err))
