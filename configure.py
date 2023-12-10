@@ -9,9 +9,12 @@ class Settings:
         self.base_way = os.path.dirname(os.path.realpath(__file__)) + '/'
 
         self.config = configparser.ConfigParser()
-        self.isInitDB = False        
+        self.sberConfig = configparser.ConfigParser()
+        self.isInitDB = False
+        self.isInitSber = False   
 
         self.config['Database'] = {'host': 'localhost', 'port': '5432', 'dbname': 'base', 'user': 'postgres', 'password': '123'}
+        self.sberConfig['Conf'] = {'reg_data': -1, 'guid': -1}
 
         if self.folder_exist(self.base_way + 'conf/') == False:
             self.folder_create(self.base_way + 'conf')
@@ -41,6 +44,12 @@ class Settings:
             self.isInitDB = self.db_conf_read()
         else:
             self.isInitDB = self.db_conf_create()
+
+        if self.file_exist(self.base_way + 'conf/sber_config.ini') :
+            self.isInitSber = self.sber_conf_read()
+        else:
+            self.isInitSber = self.sber_conf_create()
+            
 
         
         
@@ -130,9 +139,21 @@ class Settings:
         
         return self.file_exist(self.base_way + 'conf/db_config.ini') 
             
-
     def db_conf_read(self):
         if self.base_way + 'conf/db_config.ini' in self.config.read(self.base_way + 'conf/db_config.ini'):
+            return True
+        else:
+            return False
+        
+
+    def sber_conf_create(self):
+        with open(self.base_way + 'conf/sber_config.ini', 'w') as configfile:
+            self.sberConfig.write(configfile)
+        
+        return self.file_exist(self.base_way + 'conf/sber_config.ini') 
+    
+    def sber_conf_read(self):
+        if self.base_way + 'conf/sber_config.ini' in self.sberConfig.read(self.base_way + 'conf/sber_config.ini'):
             return True
         else:
             return False
@@ -152,6 +173,13 @@ class Settings:
 
     def get_db_pass(self):
         return self.config['Database']['password']
+    
+
+    def get_sber_regData(self):
+        return self.sberConfig['Conf']['reg_data']
+    
+    def get_sber_guid(self):
+        return self.sberConfig['Conf']['guid']
 
 
 

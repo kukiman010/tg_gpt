@@ -7,6 +7,7 @@ import os
 import re
 
 import yandexgpt
+import sbergpt
 import Control.context_model
 
 from logger         import LoggerSingleton
@@ -77,8 +78,12 @@ except requests.exceptions.ConnectionError as e:
 
 # openai.api_key = TOKEN_GPT
 _gpt = chatgpt(TOKEN_GPT, TOKEN_FOLDER_ID)
-
 _yag = yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
+_sber = sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), False)
+# _sber.set_isSertificat(False)
+# _sber.sertifecat = False
+# _sber.set_serteficat(False)
+
 
 
 @bot.message_handler(commands=['start', 'restart'])
@@ -433,7 +438,9 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
     if str(user.get_companyAi()).upper() == str("OpenAi").upper():
         tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
     elif str(user.get_companyAi()).upper() == str("Yandex").upper():
-        tokenSizeNow = _yag.count_tokens(json, "yandexgpt-lite")
+        tokenSizeNow = _yag.count_tokens(json, model)
+    elif str(user.get_companyAi()).upper() == str("Sber").upper():
+        tokenSizeNow = _sber.count_tokens(json, model)
 
     maxToken = _assistent_api.getToken(model)
 
@@ -449,8 +456,9 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
             content = _gpt.post_gpt(json, model)
         elif str(user.get_companyAi()).upper() == str("Yandex").upper():
             _yag.set_token( _speak.get_IAM() )
-            content = _yag.post_gpt(json,model)
-        # elif str(user.get_companyAi()).upper() == str("Sber").upper():
+            content = _yag.post_gpt(json, model)
+        elif str(user.get_companyAi()).upper() == str("Sber").upper():
+            content = _sber.post_gpt(json, model)
 
 
         if content.get_code() == 200:
