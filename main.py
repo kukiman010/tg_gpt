@@ -79,10 +79,7 @@ except requests.exceptions.ConnectionError as e:
 # openai.api_key = TOKEN_GPT
 _gpt = chatgpt(TOKEN_GPT, TOKEN_FOLDER_ID)
 _yag = yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
-_sber = sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), False)
-# _sber.set_isSertificat(False)
-# _sber.sertifecat = False
-# _sber.set_serteficat(False)
+_sber = sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), _setting.get_sber_certificate())
 
 
 

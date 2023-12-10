@@ -14,7 +14,7 @@ class Settings:
         self.isInitSber = False   
 
         self.config['Database'] = {'host': 'localhost', 'port': '5432', 'dbname': 'base', 'user': 'postgres', 'password': '123'}
-        self.sberConfig['Conf'] = {'reg_data': -1, 'guid': -1}
+        self.sberConfig['Conf'] = {'reg_data': -1, 'guid': -1, 'certificate': True}
 
         if self.folder_exist(self.base_way + 'conf/') == False:
             self.folder_create(self.base_way + 'conf')
@@ -180,6 +180,9 @@ class Settings:
     
     def get_sber_guid(self):
         return self.sberConfig['Conf']['guid']
+    
+    def get_sber_certificate(self) -> bool:
+        return self.sberConfig['Conf']['certificate']
 
 
 

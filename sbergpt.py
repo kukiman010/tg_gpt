@@ -5,23 +5,17 @@ import time
 import Control.context_model
 
 class Sber_gpt:
-    def __init__(self, authorization_data, rq_uid, isSertificat = True):
+    def __init__(self, authorization_data, rq_uid, isSertificat:bool):
         self.authorization_data = authorization_data
         self.rq_uid = rq_uid
         self.stop_event = threading.Event()
-        self.sertifecat = isSertificat
+        self.sertificat : bool = isSertificat
         self.TIME_GEN=900 # once to timer (900 = 15 minuts)
         self.token = self.create_token()
-        # self._isSertificat = True
 
 
     def set_serteficat(self, bo):
-        self.sertifecat  = bo
-    # def set_isSertificat(self, isSer:bool):
-    #     self._isSertificat = isSer
-
-    # def get_isSertificat(self) -> bool:
-    #     return self._isSertificat
+        self.sertificat  = bo
 
     def create_token(self) -> str:
         url = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
@@ -33,7 +27,7 @@ class Sber_gpt:
         data = {'scope':'GIGACHAT_API_PERS'}
 
         # if self.isSertificat == True:
-        if self.sertifecat == True:
+        if self.sertificat == 'True':
             response = requests.post(url, headers=headers, data=data)               # for linux
         else:
             response = requests.post(url, headers=headers, data=data, verify=False) # for windows
@@ -64,10 +58,10 @@ class Sber_gpt:
             "temperature": 0.5
         }
 
-        if self.sertifecat is True:
-            response = requests.post(url, headers=headers, json=data)               # for linux
+        if self.sertificat == 'True':
+            response = requests.post(url, headers=headers, data=data)               # for linux
         else:
-            response = requests.post(url, headers=headers, json=data, verify=False) # for windows
+            response = requests.post(url, headers=headers, data=data, verify=False) # for windows
 
 
         answer = Control.context_model.AnswerAssistent()
