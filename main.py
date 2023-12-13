@@ -16,7 +16,7 @@ from configure      import Settings
 from databaseapi    import dbApi
 from telebot        import types
 from translator     import Locale
-from user           import User
+from Control.user   import User
 from gpt_api        import chatgpt
 from data_models    import assistent_api
 
@@ -66,8 +66,6 @@ if _speak.get_IAM() == '':
 
 
 _speak.start_key_generation()
-
-# _list_assistant = _db.get_assistant_ai()
 _assistent_api = assistent_api( _db.get_assistant_ai() )
 
 try:
@@ -80,6 +78,7 @@ except requests.exceptions.ConnectionError as e:
 _gpt = chatgpt(TOKEN_GPT, TOKEN_FOLDER_ID)
 _yag = yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
 _sber = sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), _setting.get_sber_certificate())
+_sber.start_key_generation()
 
 
 

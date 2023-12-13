@@ -91,9 +91,9 @@ class Sber_gpt:
     def generate_keys_periodically(self):
         while not self.stop_event.is_set():
             self.token = self.create_token()
-            if self.t_IAM == '':
-                self.ready_token = False
+            # if self.token == '':
+                # self.ready_token = False
                 # self._logger.add_critical("Токен IAM не создался ")
                 # self._logger.add_info("Сработал планировщик задач для get_yandex_iam. раз в {} ч".format(int(self.TIME_GEN/60)/60))
-                time.sleep(self.TIME_GEN) 
+            time.sleep(self.TIME_GEN) 
 

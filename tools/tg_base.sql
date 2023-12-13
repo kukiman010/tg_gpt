@@ -52,15 +52,6 @@ CREATE TABLE admins (
 );
 
 
-
-
--- CREATE TABLE statistic (
---     id BIGSERIAL PRIMARY KEY
--- );
-
-
-
-
 CREATE TABLE assistant_ai (
     company_ai TEXT,
     model_name TEXT,
@@ -81,13 +72,45 @@ CREATE TABLE voices(
     id BIGSERIAL PRIMARY KEY
 );
 
+
+
+CREATE TABLE user_statistic (
+    user_id BIGINT UNIQUE,
+    login TEXT UNIQUE,
+    buy_prem INT,
+    text_request BIGINT,
+    photo_request BIGINT,
+    photo_generation BIGINT,
+    voice_request BIGINT,
+    voice_generation BIGINT,
+    id BIGSERIAL PRIMARY KEY
+);
+
 -- CREATE TABLE user_settings(
 --     user_id BIGINT,
 
 -- );
 
 
+CREATE TABLE user_usage (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    model VARCHAR(255) NOT NULL,
+    usage_count INT NOT NULL
+);
+```
 
+Вторая таблица, `model_usage_summary` для хранения обобщенных данных:
+```sql
+CREATE TABLE model_usage_summary (
+    model VARCHAR(255) NOT NULL,
+    total_usage_count INT NOT NULL,
+    PRIMARY KEY (model)
+);
+
+
+
+CREATE UNIQUE INDEX idx_assistant_ai_unique ON assistant_ai(company_ai, model_name);
 
 -- DROP FUNCTION add_chats_id(p_user_id BIGINT, p_chats_id BIGINT[]) 
 CREATE FUNCTION add_chats_id(p_user_id BIGINT, p_chats_id BIGINT[]) 
@@ -119,6 +142,40 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION add_assistant_ai_with_usage(
+    _company_ai TEXT,
+    _model_name TEXT,
+    _description TEXT,
+    _token_size INT,
+    _last_update TEXT,
+    _status_lvl BIGINT,
+    _isView BOOLEAN
+)
+RETURNS void AS $$
+BEGIN
+    -- Начинаем транзакцию
+    BEGIN;
+        -- Вставляем данные в таблицу assistant_ai
+        INSERT INTO assistant_ai (company_ai, model_name, description, token_size, last_update, status_lvl, isView)
+        VALUES (_company_ai, _model_name, _description, _token_size, _last_update, _status_lvl, _isView);
+
+        -- Обновляем или вставляем данные в таблицу assistant_ai_usage
+        INSERT INTO assistant_ai_usage (company_ai, model_name, usage_count)
+        VALUES (_company_ai, _model_name, 1)
+        ON CONFLICT (company_ai, model_name) DO UPDATE
+        SET usage_count = assistant_ai_usage.usage_count + 1;
+        
+    -- Завершаем транзакцию, подтверждаем изменения
+    COMMIT;
+EXCEPTION
+    -- Если возникла ошибка, откатываем транзакцию
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
+END;
+$$ LANGUAGE plpgsql;
 
 
 

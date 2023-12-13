@@ -1,6 +1,6 @@
 from database import Database
 from data_models import assistent_model
-from user import User
+from Control.user import User
 from typing import List
 
 import Control.context_model
