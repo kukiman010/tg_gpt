@@ -16,7 +16,7 @@ class chatgpt():
 
     
     def gpt_post_view(self, context, gpt_model, MAX_TOLENS):
-        completion = openai.ChatCompletion.create(
+        completion = openai.chat.completions.create(
         # model="gpt-4-vision-preview",
         model=gpt_model,
         messages=context,
@@ -24,24 +24,23 @@ class chatgpt():
         )
 
         answer = Control.context_model.AnswerAssistent()
-        total_tokens = completion['usage']['total_tokens'] 
-        data = json.loads( str( completion.choices[0].message ) )
-        content = data['content']
+        data = json.loads( str( completion.json() ) )
+        total_tokens = data['usage']['total_tokens']
+        content = data['choices'][0]['message']['content']
         answer.set_answer(200, content, total_tokens)
         return answer
 
 
     def post_gpt(self, context, gpt_model):
         completion = openai.chat.completions.create(
-        # completion = openai.ChatCompletion.create(
             model=gpt_model,
             messages=context
             )
 
         answer = Control.context_model.AnswerAssistent()
-        total_tokens = completion['usage']['total_tokens'] 
-        data = json.loads( str( completion.choices[0].message ) )
-        content = data['content']
+        data = json.loads( str( completion.json() ) )
+        total_tokens = data['usage']['total_tokens']
+        content = data['choices'][0]['message']['content']
         answer.set_answer(200, content, total_tokens)
         return answer
 
