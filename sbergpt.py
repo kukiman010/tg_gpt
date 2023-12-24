@@ -46,23 +46,39 @@ class Sber_gpt:
 
 
     def post_gpt(self, context, model):
-        url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+        url = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions'
         headers = {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             "Authorization": 'Bearer {}'.format(self.token)
         }
         data = {
             "model": "{}:latest".format(model),
-            # "model": "GigaChat:latest",
             "messages": context,
-            "temperature": 0.5
+            "temperature": 0.7
         }
 
-        if self.sertificat == 'True':
-            response = requests.post(url, headers=headers, data=data)               # for linux
-        else:
-            response = requests.post(url, headers=headers, data=data, verify=False) # for windows
+        # url = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions'
+        # headers = {
+        #     'Content-Type': 'application/json',
+        #     "Authorization": 'Bearer {}'.format(self.token)
+        # }
+        # data = {
+        #     "model": "GigaChat:latest",
+        #     "messages": [
+        #         {
+        #             "role": "user",
+        #             "content": "Когда уже ИИ захватит этот мир?"
+        #         }
+        #     ],
+        #     "temperature": 0.7
+        # }
 
+        # response = requests.post(url, headers=headers, json=data, verify=False)
+
+        if self.sertificat == 'True':
+            response = requests.post(url, headers=headers, json=data)               # for linux
+        else:
+            response = requests.post(url, headers=headers, json=data, verify=False) # for windows
 
         answer = Control.context_model.AnswerAssistent()
         status_code = response.status_code

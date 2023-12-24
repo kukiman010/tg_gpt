@@ -20,19 +20,23 @@ pip install tiktoken
 
 Для использования Yandex API выполните следующие действия:
 
-1. Клонирование репозитория:
+1. Создание профиля
+
+   Следовать этой [инструкции][df3]
+
+2. Клонирование репозитория:
 
    ```shell
    git clone https://github.com/yandex-cloud/cloudapi
    ```
 
-2. Установка grpcurl:
+3. Установка grpcurl:
 
    ```shell
    sudo apt-get install grpcurl
    ```
 
-3. Обновление пакетов и установка jq:
+4. Обновление пакетов и установка jq:
 
    ```shell
    sudo apt update && sudo apt install jq
@@ -141,3 +145,4 @@ MIT
 
 [df1]: <https://www.gosuslugi.ru/crt>
 [df2]: <https://developers.sber.ru/docs/ru/gigachat/api/authorization>
+[df3]: <https://cloud.yandex.ru/docs/cli/quickstart#linux_1>

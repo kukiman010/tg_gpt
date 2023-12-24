@@ -32,7 +32,8 @@ class chatgpt():
 
 
     def post_gpt(self, context, gpt_model):
-        completion = openai.ChatCompletion.create(
+        completion = openai.chat.completions.create(
+        # completion = openai.ChatCompletion.create(
             model=gpt_model,
             messages=context
             )
