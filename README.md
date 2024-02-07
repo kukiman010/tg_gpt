@@ -1,5 +1,7 @@
 Добро пожаловать в проект!
 
+проверить работу можно в [телеграме][tg]
+
 Ниже приведено руководство по установке и настройке необходимых пакетов для проекта:
 
 ## Установка зависимостей
@@ -146,3 +148,4 @@ MIT
 [df1]: <https://www.gosuslugi.ru/crt>
 [df2]: <https://developers.sber.ru/docs/ru/gigachat/api/authorization>
 [df3]: <https://cloud.yandex.ru/docs/cli/quickstart#linux_1>
+[tg]:  <https://t.me/kukimanGptBot>

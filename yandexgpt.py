@@ -13,6 +13,7 @@ class YandexGpt():
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self._token}',
+            'x-data-logging-enabled': 'false',
             'x-folder-id': self._folder
         }
 
