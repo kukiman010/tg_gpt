@@ -9,7 +9,7 @@ class YandexGpt():
     def set_token(self, token):
         self._token = token
 
-    def post_gpt(self, context, gpt_model) -> Control.context_model.AnswerAssistent() :
+    def post_gpt(self, context, gpt_model) -> Control.context_model.AnswerAssistent :
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self._token}',

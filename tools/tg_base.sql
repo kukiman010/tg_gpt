@@ -72,7 +72,11 @@ CREATE TABLE voices(
     id BIGSERIAL PRIMARY KEY
 );
 
-
+CREATE TABLE languages (
+    language TEXT UNIQUE,
+    code TEXT,
+    _isView BOOLEAN
+);
 
 CREATE TABLE user_statistic (
     user_id BIGINT UNIQUE,
@@ -98,12 +102,11 @@ CREATE TABLE user_usage (
     model VARCHAR(255) NOT NULL,
     usage_count INT NOT NULL
 );
-```
 
-Вторая таблица, `model_usage_summary` для хранения обобщенных данных:
-```sql
+
+-- Вторая таблица, `model_usage_summary` для хранения обобщенных данных:
 CREATE TABLE model_usage_summary (
-    model VARCHAR(255) NOT NULL,
+    model VARCHAR(255) NOT NULL UNIQUE,
     total_usage_count INT NOT NULL,
     PRIMARY KEY (model)
 );
@@ -187,10 +190,10 @@ insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          'default',  
 insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         8192,   'Up to Sep 2021',   1, True);
 insert into assistant_ai values('OpenAi', 'gpt-4-1106-preview',     '',         128000, 'Up to Apr 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'gpt-4-vision-preview',   '',         128000, 'Up to Apr 2023',   2, False);
-insert into assistant_ai values('Yandex', 'yandexgpt',              'yandex',   8000,   '06.12.2023',       2, False);
-insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   8000,   '06.12.2023',       2, True);
+insert into assistant_ai values('Yandex', 'yandexgpt',              'yandex',   8000,   '06.12.2023',       2, True);
+insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   8000,   '06.12.2023',       2, False);
 insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, True);
--- -- insert into model_gpt values('', '');
+-- insert into model_gpt values('', '');
 
 
 -- -- https://cloud.yandex.com/en-ru/docs/speechkit/tts/voices
@@ -202,4 +205,10 @@ insert into assistant_ai values('Sber',   'GigaChat',               'sber',     
 -- insert into voices values('amira',  'Kazakh',   'F','kk-KK');
 -- insert into voices values('madi',   'Kazakh',   'M','kk-KK');
 -- insert into voices values('nigora', 'Uzbek',    'F','uz-UZ');
--- -- insert into voices values('','','','');
+-- insert into voices values('','','','');
+
+
+insert into languages values ('Chine',     'zh', False);
+insert into languages values ('Espanol',   'es', False);
+insert into languages values ('English',   'en', True);
+insert into languages values ('Russian',   'ru', True);

@@ -18,6 +18,7 @@ class Database:
                 host=self.host,
                 port=self.port,
                 client_encoding="utf8"
+                # options="-c client_encoding=UTF8"
             )
             self.cursor = self.connection.cursor()
             isWork = True

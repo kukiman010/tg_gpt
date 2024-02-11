@@ -12,7 +12,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "TR_START_MESSAGE"
-msgstr "Hello {}! I'm ready to work, just send a message"
+msgstr "Hello, {}! I am a chat-bot created to be your assistant in communication and information retrieval. I offer a wide selection of language models to ensure comfortable and pleasant communication in any language you prefer.\n\nI can accept and respond to voice messages, making our communication more interesting and efficient. If you have photos, I can also recognize them and provide assistance (currently, this feature is available for a fee).\n\nHow will our communication work?\nYou ask me questions, and I will provide answers. If you decide to change the topic, simply click on the /dropcontext command in the contextual menu, and I will forget everything and focus on the new questions.\n\nThe menu also includes the following main commands:\n/dropcontext - delete current conversation\n/assistantmode - select communication mode\n/help - get detailed information about capabilities\n/settings - settings\n/premium - information about the premium version"
 
 msgid "TR_CLEAR_CONTEXT"
 msgstr "Context cleared"
@@ -49,3 +49,6 @@ msgstr "Yes"
 
 msgid "TR_NO"
 msgstr "No"
+
+msgid "TR_SETTING"
+msgstr "So far, you can only change the language here, but later other settings will appear here"

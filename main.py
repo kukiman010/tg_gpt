@@ -19,6 +19,7 @@ from translator     import Locale
 from Control.user   import User
 from gpt_api        import chatgpt
 from data_models    import assistent_api
+from data_models    import languages_api
 
 
 MAX_CHAR = 1000
@@ -66,6 +67,7 @@ if _speak.get_IAM() == '':
 
 _speak.start_key_generation()
 _assistent_api = assistent_api( _db.get_assistant_ai() )
+_languages_api = languages_api( _db.get_languages() )
 
 try:
     bot = telebot.TeleBot( TOKEN_TG )
@@ -81,6 +83,10 @@ _sber.start_key_generation()
 
 
 
+
+
+
+
 @bot.message_handler(commands=['start', 'restart'])
 def send_welcome(message):
     user = user_verification(message)
@@ -88,7 +94,6 @@ def send_welcome(message):
     _db.delete_user_context(message.from_user.id, message.chat.id)
     t_mes = locale.find_translation(user.get_language(), 'TR_START_MESSAGE')
     bot.reply_to(message, t_mes.format(username) )
-    # TODO: добавить подробное описание того, что бот умеет 
     
 
 @bot.message_handler(commands=['dropcontext'])
@@ -165,7 +170,20 @@ def premium(message):
 
 @bot.message_handler(commands=['settings'])
 def settings(message):
-    bot.send_message(message.chat.id, "Пока не реализовано!")
+    user = user_verification(message)
+    t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
+
+    if user == None or _languages_api.size() == 0:
+        bot.send_message(message.chat.id, "Инзвините, но в данный момент смена языков не доступна!")
+        return
+    
+    buttons = _languages_api.available_by_status()
+    markup = types.InlineKeyboardMarkup()
+    for key, value in buttons.items():
+        but = types.InlineKeyboardButton(value, callback_data=key)
+        markup.add(but)
+
+    bot.send_message(message.chat.id, t_mes, reply_markup=markup)
     
 
 @bot.message_handler(commands=['assistantmode'])
@@ -264,6 +282,9 @@ def handle_callback_query(call):
     key = call.data
     assistent_pattern = r'^set_model_(\d+)$'
     assistent_match = re.match(assistent_pattern, key)
+    
+    language_pattern = r'^set_lang_model_(\d+)$'
+    language_match = re.match(language_pattern, key)
 
     if key == 'sintez':
         text = call.message.text
@@ -285,7 +306,6 @@ def handle_callback_query(call):
         post_gpt(call.message, user, text, user.get_model())
 
     elif assistent_match:
-        
         id = int(assistent_match.group(1))
         assistent = _assistent_api.find_assistent(id)
 
@@ -301,6 +321,17 @@ def handle_callback_query(call):
         
         bot.send_message(call.message.chat.id, "Выбран новый асиситент!")
         bot.answer_callback_query(call.id, "Успех!")
+
+    elif language_match:
+        id = int(language_match.group(1))
+        code_lang = _languages_api.find_bottom(id)
+        if locale.islanguage( code_lang ):
+            _db.update_user_lang_code(user.get_userId(), code_lang)
+            bot.send_message(call.message.chat.id, "Системный язык изменен!")
+            bot.answer_callback_query(call.id, "Успех!")
+        else:
+            bot.send_message(call.message.chat.id, "Системный язык не поддерживается!")
+            bot.answer_callback_query(call.id, "Провал!")
 
     else:
         t_mes = locale.find_translation(user.get_language(), 'TR_ERROR')
@@ -418,7 +449,7 @@ def user_verification_custom(userId, chatId, chat_username, chatType, lang_code)
 
     return user
 
-def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAssistent() :
+def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAssistent :
     mes = Control.context_model.Context_model()
     mes.set_data(message.from_user.id, message.chat.id,"user",message.message_id,text,False )
 
