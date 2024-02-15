@@ -324,8 +324,8 @@ def handle_callback_query(call):
         code_lang = _languages_api.find_bottom(id)
         if locale.islanguage( code_lang ):
             _db.update_user_lang_code(user.get_userId(), code_lang)
-            bot.send_message(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_CHANGE'))
-            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
+            bot.send_message(call.message.chat.id, locale.find_translation(code_lang, 'TR_SYSTEM_LANGUAGE_CHANGE'))
+            bot.answer_callback_query(call.id, locale.find_translation(code_lang, 'TR_SUCCESS'))
         else:
             bot.send_message(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_SUPPORT'))
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
