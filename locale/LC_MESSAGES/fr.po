@@ -1,0 +1,102 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tg_base\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-10-1 12:00+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "TR_START_MESSAGE"
+msgstr "Salut, {}! Je suis un chatbot créé pour être ton assistant de communication et ta source d'information. Je propose un large choix de modèles linguistiques pour que notre communication soit confortable et agréable dans n'importe quelle langue qui te convient.\n\nJe peux recevoir et répondre aux messages vocaux, ce qui rend la communication plus intéressante et efficace. Si tu as des photos, je peux aussi les reconnaître et t'aider avec (payant pour le moment).\n\nComment fonctionnera notre communication ?\nTu me poses des questions, je te réponds. Dès que tu décides de changer de sujet, tu peux appuyer sur la commande /dropcontext dans le menu contextuel, alors j'oublierai tout et je me baserai sur tes nouvelles questions.\n\nDans le menu, il y a aussi des commandes principales :\n/dropcontext - supprimer la conversation en cours\n/assistantmode - choisir le mode de communication\n/help - obtenir des informations détaillées sur les fonctionnalités\n/settings - paramètres\n/premium - informations sur la version payante"
+
+msgid "TR_CLEAR_CONTEXT"
+msgstr "Le contexte est effacé"
+
+msgid "TR_GET_LOG"
+msgstr "Vos derniers {} journaux\n\n{}"
+
+msgid "TR_GET_LOG_POST"
+msgstr "Vos derniers {} journaux pour la requête {}\n\n{}"
+
+msgid "TR_ERROR_SINTAX"
+msgstr "Syntaxe incorrecte\n plus d'informations sur /help"
+
+msgid "TR_WAIT_POST"
+msgstr "Veuillez patienter, la requête est en cours de traitement..."
+
+msgid "TR_ERROR_GET_RESULT"
+msgstr "Erreur lors de la récupération du résultat"
+
+msgid "TR_ERROR_DECODE_VOICE"
+msgstr "Désolé, la requête n'a pas été exécutée.\nIl est probable que votre microphone soit désactivé"
+
+msgid "TR_START_DECODE_VOICE"
+msgstr "Le traitement a commencé !"
+
+msgid "TR_ERROR"
+msgstr "Erreur !"
+
+msgid "TR_ERROR_OPENAI"
+msgstr "Désolé, erreur OpenAI : {}"
+
+msgid "TR_YES"
+msgstr "Oui"
+
+msgid "TR_NO"
+msgstr "Non"
+
+msgid "TR_SETTING"
+msgstr "Pour l'instant, vous ne pouvez changer que la langue, mais d'autres paramètres seront disponibles plus tard."
+
+msgid "TR_DONT_RELEASES_FUNC"
+msgstr "Pas encore implémenté !"
+
+msgid "TR_ERROR_NOT_CHANGE_LANGUAGE"
+msgstr "Désolé, mais pour l'instant, il n'est pas possible de changer de langue !"
+
+msgid "TR_ERROR_NOT_FIND_MODELS"
+msgstr "Désolé, mais les modèles ne sont pas trouvés !"
+
+msgid "TR_DESCRIPTION_MODELS"
+msgstr "Vous avez actuellement sélectionné le modèle {} de la société {}\nVous pouvez choisir un autre assistant :"
+
+msgid "TR_VOCALIZE"
+msgstr "Vocaliser"
+
+msgid "TR_NEED_PREMIUM_ASSISTANT"
+msgstr "Vous n'avez pas accès à ce modèle, mais vous pouvez toujours étendre vos possibilités avec le mode premium.\nPlus d'informations à ce sujet /premium"
+
+msgid "TR_NEED_PERMISSION"
+msgstr "Permission insuffisante !"
+
+msgid "TR_USE_NEW_ASSISTANT"
+msgstr "Nouvel assistant sélectionné !"
+
+msgid "TR_SUCCESS"
+msgstr "Succès"
+
+msgid "TR_SYSTEM_LANGUAGE_CHANGE"
+msgstr "La langue système a été modifiée !"
+
+msgid "TR_SYSTEM_LANGUAGE_SUPPORT"
+msgstr "La langue système n'est pas prise en charge !"
+
+msgid "TR_FAILURE"
+msgstr "Échec"
+
+msgid "TR_NEED_PERMISSION_UPLOAD_PHOTO"
+msgstr "Désolé, mais le traitement des photos n'est pas disponible pour vous, vous devez acheter cette fonctionnalité /premium"
+
+msgid "TR_REPEAT_REQUEST"
+msgstr "Répéter la demande"
+
+msgid "TR_HAVE_NOT_TOKENS"
+msgstr "Désolé, mais votre demande dépasse la longueur maximale du contexte.\nVotre demande : {}\nLongueur maximale : {}\nPour continuer, veuillez supprimer le contexte avec la commande /dropcontext, utiliser un autre modèle ou acheter le mode premium /premium"
+
+msgid "TR_"
+msgstr ""

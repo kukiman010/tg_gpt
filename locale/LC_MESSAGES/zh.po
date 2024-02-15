@@ -1,0 +1,102 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: tg_base\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-10-1 12:00+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "TR_START_MESSAGE"
+msgstr "你好, {}! 我是一个聊天机器人，旨在成为你的交流和信息搜索助手。我提供多种语言模型，让我们的交流无论在什么语言上都变得轻松愉快。\n\n我可以接收和回答语音消息，这使得交流更有趣和高效。如果你有照片，我也可以识别它们并提供帮助（此功能需付费）。\n\n我们的交流将如何进行？\n你问我问题，我回答。一旦你决定更换话题，你可以在上下文菜单中放心地点击'/dropcontext'命令，我将忘记一切并根据新的问题重新开始。\n\n主菜单中还有一些常用命令：\n/dropcontext - 删除当前的对话\n/assistantmode - 选择交谈模式\n/help - 获取详细的功能信息\n/settings - 设置\n/premium - 付费版本信息"
+
+msgid "TR_CLEAR_CONTEXT"
+msgstr "上下文已清除"
+
+msgid "TR_GET_LOG"
+msgstr "您最近的{}个日志\n\n{}"
+
+msgid "TR_GET_LOG_POST"
+msgstr "您关于'{}'的最近{}条日志\n\n{}"
+
+msgid "TR_ERROR_SINTAX"
+msgstr "语法错误\n详细信息请查看/help"
+
+msgid "TR_WAIT_POST"
+msgstr "请稍等，请求正在处理中..."
+
+msgid "TR_ERROR_GET_RESULT"
+msgstr "获取结果时出错"
+
+msgid "TR_ERROR_DECODE_VOICE"
+msgstr "很抱歉，请求无法执行。\n您的麦克风很可能没有打开"
+
+msgid "TR_START_DECODE_VOICE"
+msgstr "开始处理！"
+
+msgid "TR_ERROR"
+msgstr "错误！"
+
+msgid "TR_ERROR_OPENAI"
+msgstr "很抱歉，OpenAI 出错：{}"
+
+msgid "TR_YES"
+msgstr "是"
+
+msgid "TR_NO"
+msgstr "否"
+
+msgid "TR_SETTING"
+msgstr "当前只支持更改语言设置，未来将添加更多选项。"
+
+msgid "TR_DONT_RELEASES_FUNC"
+msgstr "该功能尚未实现！"
+
+msgid "TR_ERROR_NOT_CHANGE_LANGUAGE"
+msgstr "很抱歉，目前无法更改语言！"
+
+msgid "TR_ERROR_NOT_FIND_MODELS"
+msgstr "很抱歉，找不到模型！"
+
+msgid "TR_DESCRIPTION_MODELS"
+msgstr "您当前选择了{}模型，该模型由{}提供\n您可以选择其他助手："
+
+msgid "TR_VOCALIZE"
+msgstr "朗读"
+
+msgid "TR_NEED_PREMIUM_ASSISTANT"
+msgstr "您无法访问此模型，但您可以随时升级为 Premium 以扩展您的功能。\n有关更多信息，请查看/premium"
+
+msgid "TR_NEED_PERMISSION"
+msgstr "权限不足！"
+
+msgid "TR_USE_NEW_ASSISTANT"
+msgstr "选择了新的助手！"
+
+msgid "TR_SUCCESS"
+msgstr "成功"
+
+msgid "TR_SYSTEM_LANGUAGE_CHANGE"
+msgstr "系统语言已更改！"
+
+msgid "TR_SYSTEM_LANGUAGE_SUPPORT"
+msgstr "不支持系统语言！"
+
+msgid "TR_FAILURE"
+msgstr "失败"
+
+msgid "TR_NEED_PERMISSION_UPLOAD_PHOTO"
+msgstr "很抱歉，您无法处理照片，请购买此功能：/premium"
+
+msgid "TR_REPEAT_REQUEST"
+msgstr "重复请求"
+
+msgid "TR_HAVE_NOT_TOKENS"
+msgstr "很抱歉，您的请求超过了最大上下文长度。\n您的请求: {}\n最大长度: {}\n要继续，请使用/dropcontext命令清除上下文，或选择其他模型，或购买高级服务：/premium"
+
+msgid "TR_"
+msgstr ""
