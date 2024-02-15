@@ -208,7 +208,8 @@ insert into assistant_ai values('Sber',   'GigaChat',               'sber',     
 -- insert into voices values('','','','');
 
 
-insert into languages values ('Chine',     'zh', False);
-insert into languages values ('Espanol',   'es', False);
-insert into languages values ('English',   'en', True);
-insert into languages values ('Russian',   'ru', True);
+insert into languages values ('Chine',      'zh', True);
+insert into languages values ('Espanol',    'es', True);
+insert into languages values ('English',    'en', True);
+insert into languages values ('Russian',    'ru', True);
+insert into languages values ('France',     'fr', True);

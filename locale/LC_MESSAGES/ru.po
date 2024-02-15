@@ -52,3 +52,51 @@ msgstr "Нет"
 
 msgid "TR_SETTING"
 msgstr "Пока тут можно изменить только язык, но позже тут появиться другие настройки."
+
+msgid "TR_DONT_RELEASES_FUNC"
+msgstr "Пока не реализовано!"
+
+msgid "TR_ERROR_NOT_CHANGE_LANGUAGE"
+msgstr "Инзвините, но в данный момент смена языков не доступна!"
+
+msgid "TR_ERROR_NOT_FIND_MODELS"
+msgstr "Инзвините, но модели не найдены!"
+
+msgid "TR_DESCRIPTION_MODELS"
+msgstr "У вас сейчас выбрана модель {} от компании {}\nВы можете выбрать другого асистента:"
+
+msgid "TR_VOCALIZE"
+msgstr "Озвучить"
+
+msgid "TR_NEED_PREMIUM_ASSISTANT"
+msgstr "У вас нет доступа к этой модели, но вы всегда можете расширить свои возможности с премиум.\nПодробнее о нем /premium"
+
+msgid "TR_NEED_PERMISSION"
+msgstr "Не достаточно привелегий!"
+
+msgid "TR_USE_NEW_ASSISTANT"
+msgstr "Выбран новый асиситент!"
+
+msgid "TR_SUCCESS"
+msgstr "Успех"
+
+msgid "TR_SYSTEM_LANGUAGE_CHANGE"
+msgstr "Системный язык изменен!"
+
+msgid "TR_SYSTEM_LANGUAGE_SUPPORT"
+msgstr "Системный язык не поддерживается!"
+
+msgid "TR_FAILURE"
+msgstr "Провал"
+
+msgid "TR_NEED_PERMISSION_UPLOAD_PHOTO"
+msgstr "Извините, но обработка фото вам не доступна, вам нужно приобрести этот функционал /premium"
+
+msgid "TR_REPEAT_REQUEST"
+msgstr "Повторить запрос"
+
+msgid "TR_HAVE_NOT_TOKENS"
+msgstr "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium"
+
+msgid "TR_"
+msgstr ""

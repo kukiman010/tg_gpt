@@ -166,7 +166,8 @@ def help(message):
 
 @bot.message_handler(commands=['premium'])
 def premium(message):
-    bot.send_message(message.chat.id, "Пока не реализовано!")
+    user = user_verification(message)
+    bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC'))
 
 @bot.message_handler(commands=['settings'])
 def settings(message):
@@ -174,7 +175,7 @@ def settings(message):
     t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
 
     if user == None or _languages_api.size() == 0:
-        bot.send_message(message.chat.id, "Инзвините, но в данный момент смена языков не доступна!")
+        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_CHANGE_LANGUAGE'))
         return
     
     buttons = _languages_api.available_by_status()
@@ -191,10 +192,9 @@ def help(message):
     user = user_verification(message)
 
     if user == None or _assistent_api.size() == 0:
-        bot.send_message(message.chat.id, "Инзвините, но модели не найдены!")
+        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_FIND_MODELS'))
         return
     
-    # buttons = _assistent_api.available_by_status(user.get_status())
     buttons = _assistent_api.available_by_status()
 
     markup = types.InlineKeyboardMarkup()
@@ -202,9 +202,7 @@ def help(message):
         but = types.InlineKeyboardButton(value, callback_data=key)
         markup.add(but)
 
-    text = str( "У вас сейчас выбрана модель " + user.get_model() + " от компании " + user.get_companyAi() + 
-    "\nВы можете выбрать другого асистента:")
-
+    text = locale.find_translation(user.get_language(), 'TR_DESCRIPTION_MODELS').format(user.get_model(), user.get_companyAi())
     bot.send_message(message.chat.id, text, reply_markup=markup)
 
 
@@ -239,7 +237,7 @@ def voice_processing(message):
 
         if len(content.get_result()) <= MAX_CHAR and content.get_code() == 200:
             markup = types.InlineKeyboardMarkup()
-            markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
             bot.send_message(message.chat.id, content.get_result(), reply_markup=markup)
         else:    
             bot.send_message(message.chat.id, content.get_result())
@@ -270,7 +268,7 @@ def handle_user_message(message):
 
     if len(content.get_result()) <= MAX_CHAR:
         markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton('Озвучить', callback_data='sintez') )
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
         bot.send_message(message.chat.id, content.get_result(), reply_markup=markup)
     else:    
         bot.send_message(message.chat.id, content.get_result())
@@ -310,28 +308,27 @@ def handle_callback_query(call):
         assistent = _assistent_api.find_assistent(id)
 
         if not _assistent_api.isAvailable(id, user.get_status()):
-            text = str( "У вас нет доступа к этой модели, но вы всегда можете расширить свои возможности с премиум.\nПодробнее о нем /premium" )
-            bot.send_message(call.message.chat.id, text)
-            bot.answer_callback_query(call.id, "Не достаточно привелегий!")
+            bot.send_message(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PREMIUM_ASSISTANT'))
+            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION'))
             return
 
         for first, second in assistent.items():
             _db.update_user_assistent(user.get_userId(),second,first ) 
             break
         
-        bot.send_message(call.message.chat.id, "Выбран новый асиситент!")
-        bot.answer_callback_query(call.id, "Успех!")
+        bot.send_message(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_USE_NEW_ASSISTANT'))
+        bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
 
     elif language_match:
         id = int(language_match.group(1))
         code_lang = _languages_api.find_bottom(id)
         if locale.islanguage( code_lang ):
             _db.update_user_lang_code(user.get_userId(), code_lang)
-            bot.send_message(call.message.chat.id, "Системный язык изменен!")
-            bot.answer_callback_query(call.id, "Успех!")
+            bot.send_message(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_CHANGE'))
+            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
         else:
-            bot.send_message(call.message.chat.id, "Системный язык не поддерживается!")
-            bot.answer_callback_query(call.id, "Провал!")
+            bot.send_message(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_SUPPORT'))
+            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
 
     else:
         t_mes = locale.find_translation(user.get_language(), 'TR_ERROR')
@@ -344,8 +341,7 @@ def handle_message(message):
     user = user_verification(message)
 
     if user.get_status() != 2:
-        text = "Извините, но обработка фото вам не доступна, вам нужно приобрести этот функционал /premium"
-        bot.send_message(message.chat.id, text)
+        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION_UPLOAD_PHOTO'))
         return
 
     t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
@@ -472,9 +468,9 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
 
     if tokenSizeNow > maxToken:
         markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost') )
-        text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
-        bot.reply_to(message, text, reply_markup=markup)
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost') )
+        # text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
+        bot.reply_to(message, locale.find_translation(user.get_language(), 'TR_HAVE_NOT_TOKENS'), reply_markup=markup)
         return ""
 
     try:
@@ -494,7 +490,7 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
     except OpenAIError as err: 
         t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_OPENAI')
         markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost ') )
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost ') )
         # bot.send_message(message.chat.id, content, reply_markup=markup)
         bot.reply_to(message, t_mes.format(err),reply_markup=markup)
         _logger.add_critical("OpenAI: {}".format(err))

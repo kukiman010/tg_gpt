@@ -52,3 +52,51 @@ msgstr "No"
 
 msgid "TR_SETTING"
 msgstr "So far, you can only change the language here, but later other settings will appear here"
+
+msgid "TR_DONT_RELEASES_FUNC"
+msgstr "Not implemented yet!"
+
+msgid "TR_ERROR_NOT_CHANGE_LANGUAGE"
+msgstr "Sorry, language change is currently unavailable!"
+
+msgid "TR_ERROR_NOT_FIND_MODELS"
+msgstr "Sorry, models not found!"
+
+msgid "TR_DESCRIPTION_MODELS"
+msgstr "You currently have selected the {} model from {}. You can choose another assistant:"
+
+msgid "TR_VOCALIZE"
+msgstr "Vocalize"
+
+msgid "TR_NEED_PREMIUM_ASSISTANT"
+msgstr "You do not have access to this model, but you can always expand your capabilities with Premium. Learn more about it at /premium"
+
+msgid "TR_NEED_PERMISSION"
+msgstr "Insufficient privileges!"
+
+msgid "TR_USE_NEW_ASSISTANT"
+msgstr "New assistant selected!"
+
+msgid "TR_SUCCESS"
+msgstr "Success"
+
+msgid "TR_SYSTEM_LANGUAGE_CHANGE"
+msgstr "System language changed!"
+
+msgid "TR_SYSTEM_LANGUAGE_SUPPORT"
+msgstr "System language is not supported!"
+
+msgid "TR_FAILURE"
+msgstr "Failure"
+
+msgid "TR_NEED_PERMISSION_UPLOAD_PHOTO"
+msgstr "Sorry, photo processing is not available to you. You need to purchase this feature at /premium"
+
+msgid "TR_REPEAT_REQUEST"
+msgstr "Repeat request"
+
+msgid "TR_HAVE_NOT_TOKENS"
+msgstr "Sorry, but your request exceeds the maximum context length.\nYour request: {}\nMaximum length: {}\nTo continue, please simplify the context with the /dropcontext command, use another model, or purchase Premium at /premium."
+
+msgid "TR_"
+msgstr ""
