@@ -75,7 +75,6 @@ except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
     _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
 
-# openai.api_key = TOKEN_GPT
 _gpt = chatgpt(TOKEN_GPT, TOKEN_FOLDER_ID)
 _yag = yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
 _sber = sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), _setting.get_sber_certificate())
@@ -155,7 +154,7 @@ def notify_all(message):
 def help(message):
     user_verification(message)
 
-    text = "Коротко о софте:\nОтветы генерируются при помощи ChatGPT. По умолчанию используется модель gpt-3.5-turbo.\nРаспознавание и генерация голосовых сообщений осуществляется при помощи Yandex SpeechKit v1 (позже перейдем на v3).\n\nКоманды:\n/dropcontext - удаляет весь контекст переписки."
+    text = "Коротко о софте:\nОтветы генерируются при помощи GPT. По умолчанию используется модель gpt-3.5-turbo.\nРаспознавание и генерация голосовых сообщений осуществляется при помощи Yandex SpeechKit v1 (позже перейдем на v3).\n\nКоманды:\n/dropcontext - удаляет весь контекст переписки."
 
     if _db.isAdmin(message.from_user.id, message.chat.username) == True:
         text_admin = "\n\nДоступно только для админа! будь аккуратнее с командами\n/notify_all <текст> - Эта команда отправит во все чаты твой текст, прошу, будь аккуратнее\nТут будут еще команды ..."
@@ -238,9 +237,9 @@ def voice_processing(message):
         if len(content.get_result()) <= MAX_CHAR and content.get_code() == 200:
             markup = types.InlineKeyboardMarkup()
             markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
-            bot.send_message(message.chat.id, content.get_result(), reply_markup=markup)
+            send_text(message.chat.id, content.get_result(), reply_markup=markup)
         else:    
-            bot.send_message(message.chat.id, content.get_result())
+            send_text(message.chat.id, content.get_result())
     else:
         bot.delete_message(send_mess.chat.id, send_mess.message_id)
         t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_DECODE_VOICE')
@@ -269,9 +268,10 @@ def handle_user_message(message):
     if len(content.get_result()) <= MAX_CHAR:
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
-        bot.send_message(message.chat.id, content.get_result(), reply_markup=markup)
+
+        send_text(message.chat.id, content.get_result(), reply_markup=markup)
     else:    
-        bot.send_message(message.chat.id, content.get_result())
+        send_text(message.chat.id, content.get_result())
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -292,6 +292,7 @@ def handle_callback_query(call):
 
         # file = _speak.voice_synthesis_v1(text, call.message.chat.id)
         file = _speak.voice_synthesis_v3(text, call.message.chat.id)
+        # file = _speak.synthesize(text)
         
         with open(file, "rb") as audio:
             bot.send_audio(call.message.chat.id, audio)
@@ -301,7 +302,8 @@ def handle_callback_query(call):
     elif key == 'errorPost':
         text = call.message.text
         bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
-        post_gpt(call.message, user, text, user.get_model())
+        content = post_gpt(call.message, user, text, user.get_model())
+        send_text(call.message.chat.id, content.get_result())
 
     elif assistent_match:
         id = int(assistent_match.group(1))
@@ -496,6 +498,17 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
         _logger.add_critical("OpenAI: {}".format(err))
 
     return content
+
+
+
+def send_text(chat_id, text, reply_markup=None):
+    max_message_length = 4096
+    while len(text) > 0:
+        message_chunk = text[:max_message_length]  # Вырезаем часть текста
+        text = text[max_message_length:]  # Уменьшаем текст на размер отправленной части
+
+        bot.send_message(chat_id, message_chunk, reply_markup=reply_markup)
+
 
 
 # def __del__():
