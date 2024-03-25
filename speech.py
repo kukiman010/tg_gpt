@@ -8,7 +8,6 @@ import json
 import re
 
 from logger         import LoggerSingleton
-from speechkit import model_repository, configure_credentials, creds
 
 
 class speaker:
@@ -94,20 +93,20 @@ class speaker:
             ],
             "loudnessNormalizationType": "LUFS"
         })
+        json_obj = json.loads(json_str)
 
-        headers = {
-            'authorization': f'Bearer {self.t_IAM}',
-            'x-folder-id': f'{self.t_folder_id}',
-            'content-type': 'application/json',
-        }
+        command = [
+            'grpcurl',
+            '-H', f'authorization: Bearer {self.t_IAM}',
+            '-H', f'x-folder-id: {self.t_folder_id}',
+            '-d', '@',
+            'tts.api.cloud.yandex.net:443',
+            'speechkit.tts.v3.Synthesizer/UtteranceSynthesis'
+        ]
+        proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate(json_str.encode('utf-8'))
 
-        response = requests.post(
-            'https://tts.api.cloud.yandex.net:443/speechkit.tts.v3.Synthesizer/UtteranceSynthesis',
-            headers=headers,
-            data=json_str
-        )
-
-        json_obj = response.json()
+        json_obj = json.loads(stdout)
         audio_data = json_obj['audioChunk']['data']
 
         formatted_datetime = self.get_time_string()
@@ -120,23 +119,6 @@ class speaker:
             file.write(audio_bytes)
 
         return str('./ready/' + filename)
-    
-
-    def synthesize(self, text):
-        configure_credentials(
-            yandex_credentials=creds.YandexCredentials(
-                api_key=self.t_IAM)            )
-        
-        model = model_repository.synthesis_model()
-
-        # Задайте настройки синтеза.
-        model.voice = 'jane'
-        model.role = 'good'
-
-        # Синтез речи и создание аудио с результатом.
-        result = model.synthesize(text, raw_format=False)
-
-        print()
 
 
     # def gen_voice_v1(self, data, user):
