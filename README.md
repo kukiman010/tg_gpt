@@ -16,6 +16,7 @@ pip install psycopg2
 pip install babel
 pip install polib
 pip install tiktoken
+pip install groq
 ```
 
 ## Yandex API
