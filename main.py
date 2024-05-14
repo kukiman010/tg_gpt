@@ -6,8 +6,10 @@ import sys
 import os
 import re
 
-import yandexgpt
-import sbergpt
+import Gpt_models.yandexgpt
+import Gpt_models.sbergpt
+import Gpt_models.metagpt
+# import Gpt_models.googlegpt
 import Control.context_model
 
 from logger         import LoggerSingleton
@@ -17,7 +19,7 @@ from databaseapi    import dbApi
 from telebot        import types
 from translator     import Locale
 from Control.user   import User
-from gpt_api        import chatgpt
+from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
 from data_models    import languages_api
 
@@ -41,6 +43,7 @@ _db = dbApi(
 TOKEN_TG = _setting.get_tgToken()
 TOKEN_GPT = _setting.get_cGptToken()
 TOKEN_FOLDER_ID = _setting.get_yandex_folder()
+TOKEN_META_GPT = _setting.get_meta_gpt()
 
 
 if TOKEN_TG == '':
@@ -56,6 +59,11 @@ if TOKEN_GPT == '':
 if TOKEN_FOLDER_ID == '':
     print ('no yandex folder id!')
     _logger.add_critical('no yandex folder id!')
+    sys.exit()
+
+if TOKEN_META_GPT == '':
+    print ('no meta gpt token!')
+    _logger.add_critical('no meta gpt toke!')
     sys.exit()
 
 _speak = speech.speaker(TOKEN_FOLDER_ID)
@@ -76,10 +84,10 @@ except requests.exceptions.ConnectionError as e:
     _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
 
 _gpt = chatgpt(TOKEN_GPT, TOKEN_FOLDER_ID)
-_yag = yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
-_sber = sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), _setting.get_sber_certificate())
+_yag = Gpt_models.yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
+_metaG = Gpt_models.metagpt.MetaGpt(TOKEN_META_GPT)
+_sber = Gpt_models.sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), _setting.get_sber_certificate())
 _sber.start_key_generation()
-
 
 
 
@@ -465,6 +473,9 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
         tokenSizeNow = _yag.count_tokens(json, model)
     elif str(user.get_companyAi()).upper() == str("Sber").upper():
         tokenSizeNow = _sber.count_tokens(json, model)
+    elif str(user.get_companyAi()).upper() == str("Meta").upper():
+        tokenSizeNow = _metaG.count_tokens(json, model)
+    
 
     maxToken = _assistent_api.getToken(model)
 
@@ -483,6 +494,8 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
             content = _yag.post_gpt(json, model)
         elif str(user.get_companyAi()).upper() == str("Sber").upper():
             content = _sber.post_gpt(json, model)
+        elif str(user.get_companyAi()).upper() == str("Meta").upper():
+            content = _metaG.post_gpt(json, model)
 
 
         if content.get_code() == 200:

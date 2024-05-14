@@ -75,6 +75,10 @@ def convert(company:str, context:List[Context_model], isPhoto:bool = False) -> L
         for i in context:
             dict.append( {"role": i.get_role(),"content": i.get_message()} )
 
+    elif str(company).upper() == str("Meta").upper():
+        for i in context:
+            dict.append( {"role": i.get_role(),"content": i.get_message()} )
+
     return dict
 
 # def rm_photos_in_dict(dict:List[Context_model]):

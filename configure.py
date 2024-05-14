@@ -40,6 +40,9 @@ class Settings:
         if self.file_exist(self.base_way + 'conf/yandex_folderId.txt') == False:
             self.file_create(self.base_way + 'conf/yandex_folderId.txt')
 
+        if self.file_exist(self.base_way + 'conf/meta_config.ini') == False:
+            self.file_create(self.base_way + 'conf/meta_config.ini')
+
         if self.file_exist(self.base_way + 'conf/db_config.ini') :
             self.isInitDB = self.db_conf_read()
         else:
@@ -49,9 +52,6 @@ class Settings:
             self.isInitSber = self.sber_conf_read()
         else:
             self.isInitSber = self.sber_conf_create()
-            
-
-        
         
 
     def get_path(self):
@@ -93,6 +93,18 @@ class Settings:
             file.close()
         else:
             file = open(self.base_way + "conf/yandex_folderId.txt", 'r')
+            TOKEN_FOLDER = file.read()
+            file.close()
+        return TOKEN_FOLDER
+    
+
+    def get_meta_gpt(self):
+        TOKEN_FOLDER = ""
+        if not( os.path.exists(self.base_way + "conf/meta_config.ini") ):
+            file = open(self.base_way + "conf/meta_config.ini", 'w')
+            file.close()
+        else:
+            file = open(self.base_way + "conf/meta_config.ini", 'r')
             TOKEN_FOLDER = file.read()
             file.close()
         return TOKEN_FOLDER
