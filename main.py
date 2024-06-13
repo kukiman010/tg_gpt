@@ -427,14 +427,14 @@ def user_verification(message):
     user = User()
 
     if _db.find_user(message.from_user.id) == False:
-        _db.create_user(message.from_user.id, message.chat.username, False, 1, message.chat.type, user.get_companyAi(), user.get_model(), user.get_speaker(), user.get_contextSize(), message.from_user.language_code)
+        _db.create_user(message.from_user.id, message.chat.username, 1, user.get_wait_action(), message.chat.type, user.get_companyAi(), user.get_model(), user.get_speaker(), message.from_user.language_code, user.get_model_recognizes_photo(), user.get_model_generate_pthoto(), user.get_text_to_audio(), user.get_audio_to_text())
         _logger.add_info('создан новый пользователь {}'.format(message.chat.username))
     else:
         _db.add_users_in_groups(message.from_user.id, message.chat.id)
     
     user = _db.get_user_def(message.from_user.id)
 
-    if user.get_status() == 0: # TODO: добавить проверку аккаунта на блокировку 
+    if user.get_status() == 0: 
         return None
 
     return user

@@ -28,9 +28,12 @@ class Database:
             print('Error while connecting to the database:', error)
             return False
             
-    def execute_query(self, query):
+    def execute_query(self, query, params=None):
         try:
-            self.cursor.execute(query)
+            if params:
+                self.cursor.execute(query, params)
+            else:
+                self.cursor.execute(query)
             return True
         except (Exception, psycopg2.DatabaseError) as error:
             print('Error executing query:', error)

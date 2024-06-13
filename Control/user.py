@@ -2,16 +2,20 @@
 class User:
     def __init__(self) -> None:
         self._user_id = 0
-        # self._userChats_id = []
         self._login = ''
-        self._isAdmin = False
         self._status = 1  # 0-lock, 1-default user, 2-donater
-        # self._name = ''
         self._companyAi = 'openAi'
         self._model = "gpt-3.5-turbo"
         self._speakerName = "alena"
-        self._contextSize = 0
         self._language = 'en_EN'
+        
+        self._wait_action =         ""
+        self._model_recognizes_photo = "gpt-4o"
+        self._model_generate_pthoto =  "dall-e3"
+        self._text_to_audio =      "yandex"
+        self._audio_to_text =      "yandex"
+        self._registration_date =   ""
+        self._last_login =          ""
 
         #statistics
         # self.gender = ''
@@ -30,18 +34,22 @@ class User:
         else:
             return False
 
-    def set_base_info(self, userId, login, isAdmin, status, companyAi, model, speakerName, contextSize, language):
+    # def set_base_info(self, userId, login, isAdmin, status, companyAi, model, speakerName, contextSize, language):
+    def set_base_info(self, userId, login, status, companyAi, model, speakerName, language, wait_action, model_recognizes_photo, model_generate_pthoto, text_to_audio, audio_to_text, last_login, reg_date):
         self._user_id = userId
-        # self._userChats_id = chatsId
         self._login = login
-        self._isAdmin = isAdmin
         self._status = status  
-        # self._name = name
         self._companyAi = companyAi
         self._model = model
         self._speakerName = speakerName
-        self._contextSize = contextSize
         self._language = language
+        self._wait_action = wait_action
+        self._model_recognizes_photo = model_recognizes_photo
+        self._model_generate_pthoto = model_generate_pthoto
+        self._text_to_audio = text_to_audio
+        self._audio_to_text = audio_to_text
+        self._last_login = last_login
+        self._registration_date = reg_date
 
     def set_statistics(self,c_message, c_image, c_audio, c_dropContext, createTime, lastQueryTime, donate):
         self._send_mess = c_message
@@ -53,28 +61,33 @@ class User:
         self._donate = donate
 
 
+
     def get_userId(self):
         return self._user_id
-    # def get_userChatsId(self):
-        # return self._userChats_id
     def get_login(self):
         return self._login 
-    def get_isAdmin(self):
-        return self._isAdmin 
     def get_status(self):
         return self._status
-    # def get_name(self):
-        # return self._name 
     def get_companyAi(self):
         return self._companyAi 
     def get_model(self):
         return self._model 
     def get_speaker(self):
         return self._speakerName 
-    def get_contextSize(self):
-        return self._contextSize 
     def get_language(self):
         return self._language 
+    
+    def get_wait_action(self):
+        return self._wait_action
+    def get_model_recognizes_photo(self):
+        return self._model_recognizes_photo
+    def get_model_generate_pthoto(self):
+        return self._model_generate_pthoto
+    def get_text_to_audio(self):
+        return self._text_to_audio
+    def get_audio_to_text(self):
+        return self._audio_to_text
+    
     
 
     def get_count_mess(self):
