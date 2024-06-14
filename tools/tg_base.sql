@@ -32,6 +32,11 @@ CREATE TABLE users_in_groups (
     id                  BIGSERIAL PRIMARY KEY
 );
 
+CREATE TABLE default_data (
+    user_id             TEXT UNIQUE,
+    chats_id            TEXT
+);
+
 -- TODO: add column data , тип записи сообщения
 CREATE TABLE context (
     user_id             BIGINT,
@@ -40,6 +45,12 @@ CREATE TABLE context (
     message_id          BIGINT,
     message             TEXT,
     isPhoto             BOOLEAN,
+    id                  BIGSERIAL PRIMARY KEY
+);
+
+CREATE TABLE prompt (
+    user_id             BIGINT,
+    prompt              TEXT,
     id                  BIGSERIAL PRIMARY KEY
 );
 
@@ -89,17 +100,17 @@ CREATE TABLE languages (
     _isView             BOOLEAN
 );
 
-CREATE TABLE user_statistic (
-    user_id             BIGINT UNIQUE,
-    login               TEXT UNIQUE,
-    buy_prem            INT,
-    text_request        BIGINT,
-    photo_request       BIGINT,
-    photo_generation    BIGINT,
-    voice_request       BIGINT,
-    voice_generation    BIGINT,
-    id                  BIGSERIAL PRIMARY KEY
-);
+-- CREATE TABLE user_statistic (
+--     user_id             BIGINT UNIQUE,
+--     login               TEXT UNIQUE,
+--     buy_prem            INT,
+--     text_request        BIGINT,
+--     photo_request       BIGINT,
+--     photo_generation    BIGINT,
+--     voice_request       BIGINT,
+--     voice_generation    BIGINT,
+--     id                  BIGSERIAL PRIMARY KEY
+-- );
 
 -- CREATE TABLE user_settings(
 --     user_id BIGINT,
@@ -188,6 +199,44 @@ $$ LANGUAGE plpgsql;
 
 
 
+CREATE OR REPLACE FUNCTION add_user(
+    p_user_id BIGINT, 
+    p_username TEXT, 
+    p_type TEXT, 
+    p_language_code TEXT
+)
+RETURNS VOID AS $$
+DECLARE
+    v_company_ai      TEXT;
+    v_permission      TEXT;
+    v_assistant_model TEXT;
+    v_rec_model       TEXT;
+    v_gen_model       TEXT;
+    v_tts_model       TEXT;
+    v_stt_model       TEXT;
+    v_speaker_name    TEXT;
+BEGIN
+    -- Получим значения по умолчанию из таблицы default_data
+    SELECT chats_id INTO v_company_ai FROM default_data WHERE user_id = 'company_ai';
+    SELECT chats_id INTO v_permission FROM default_data WHERE user_id = 'permission';
+    SELECT chats_id INTO v_assistant_model FROM default_data WHERE user_id = 'assistant_model';
+    SELECT chats_id INTO v_rec_model FROM default_data WHERE user_id = 'recognizes_photo_model';
+    SELECT chats_id INTO v_gen_model FROM default_data WHERE user_id = 'generate_pthoto_model';
+    SELECT chats_id INTO v_tts_model FROM default_data WHERE user_id = 'text_to_audio';
+    SELECT chats_id INTO v_stt_model FROM default_data WHERE user_id = 'audio_to_text';
+    SELECT chats_id INTO v_speaker_name FROM default_data WHERE user_id = 'speakerName';
+
+    -- Вставляем нового пользователя с полученными значениями и переданными параметрами
+    INSERT INTO users (user_id, login, type, language_code, company_ai, status_user, model, model_rec_photo, 
+                       model_gen_pthoto, text_to_audio, audio_to_text, speaker_name)
+    VALUES (p_user_id, p_username, p_type, p_language_code, v_company_ai, CAST(v_permission AS BIGINT), 
+            v_assistant_model, v_rec_model, v_gen_model, v_tts_model, v_stt_model, v_speaker_name);
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
 
 
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades
@@ -225,3 +274,41 @@ insert into languages values ('Espanol',    'es', True);
 insert into languages values ('English',    'en', True);
 insert into languages values ('Russian',    'ru', True);
 insert into languages values ('France',     'fr', True);
+
+
+
+insert into default_data values ('language',                        'en_EN');
+insert into default_data values ('company_ai',                      'OpenAi');          -- deprecated
+insert into default_data values ('permission',                      '1');               -- 0-lock, 1-default user, 2-donater
+insert into default_data values ('assistant_model',                 'gpt-3.5-turbo');
+insert into default_data values ('recognizes_photo_model',          'gpt-4o');          
+insert into default_data values ('generate_pthoto_model',           'dall-e-3');        -- not used yet
+insert into default_data values ('text_to_audio',                   'yandex');
+insert into default_data values ('audio_to_text',                   'yandex');
+insert into default_data values ('speakerName',                     'alena');
+insert into default_data values ('count_char_for_gen_audio',        '1000');            -- We need to get rid of this
+insert into default_data values ('prompt',                          "###INSTRUCTIONS###
+You MUST follow the instructions for answering:
+- ALWAYS answer in the language of my message.
+- Read the entire convo history line by line before answering.
+- I have no fingers and the placeholders trauma. Return the entire code template for an answer when needed. NEVER use placeholders.
+- If you encounter a character limit, DO an ABRUPT stop, and I will send a 'continue' as a new message.
+- You ALWAYS will be PENALIZED for wrong and low-effort answers. 
+- ALWAYS follow 'Answering rules.'
+
+###Answering Rules###
+Follow in the strict order:
+1. USE the language of my message.
+2. **ONCE PER CHAT** assign a real-world expert role to yourself before answering, e.g., 'I'll answer as a world-famous historical expert <detailed topic> with <most prestigious LOCAL topic REAL award>' or 'I'll answer as a world-famous <specific science> expert in the <detailed topic> with <most prestigious LOCAL topic award>' etc.
+3. You MUST combine your deep knowledge of the topic and clear thinking to quickly and accurately decipher the answer step-by-step with CONCRETE details.
+4. I'm going to tip $1,000,000 for the best reply.
+5. Your answer is critical for my career.
+6. Answer the question in a natural, human-like manner.
+7. ALWAYS use an answering example for a first message structure.
+
+##Answering in English example##
+I'll answer as the world-famous <specific field> scientists with <most prestigious LOCAL award>
+<Deep knowledge step-by-step answer, with CONCRETE details>"
+);
+
+-- insert into default_data values ('',     '');

@@ -53,10 +53,8 @@ class dbApi:
         for i in data:
             user = User()
 #   0      1       2        3        4         5           6          7                  8                        9                10             11           12          13  
-# 
 # 0         1      2        5        6         7           8         3                  9                        10                11             12           13          14                  
 #userId, login, status, companyAi, model, speakerName, language, wait_action, model_recognizes_photo, model_generate_pthoto, text_to_audio, audio_to_text, last_login, reg_date
-            # user.set_base_info(i[0],i[1],i[2],i[3],i[5],i[6],i[7],i[8],i[9],i[10],i[11],i[12],i[13],i[14])
             user.set_base_info(i[0],i[1],i[2],i[5],i[6],i[7],i[8],i[3],i[9],i[10],i[11],i[12],i[13],i[14])
             return user
         
