@@ -16,6 +16,7 @@ class User:
         self._audio_to_text =      "yandex"
         self._registration_date =   ""
         self._last_login =          ""
+        self._prompt = ""
 
         #statistics
         # self.gender = ''
@@ -34,7 +35,7 @@ class User:
         else:
             return False
 
-    def set_base_info(self, userId, login, status, companyAi, model, speakerName, language, wait_action, model_recognizes_photo, model_generate_pthoto, text_to_audio, audio_to_text, last_login, reg_date):
+    def set_base_info(self, userId, login, status, companyAi, model, speakerName, language, wait_action, model_recognizes_photo, model_generate_pthoto, text_to_audio, audio_to_text, last_login, reg_date, prompt):
         self._user_id = userId
         self._login = login
         self._status = status  
@@ -49,6 +50,7 @@ class User:
         self._audio_to_text = audio_to_text
         self._last_login = last_login
         self._registration_date = reg_date
+        self._prompt = prompt
 
     def set_statistics(self,c_message, c_image, c_audio, c_dropContext, createTime, lastQueryTime, donate):
         self._send_mess = c_message
@@ -85,6 +87,8 @@ class User:
         return self._text_to_audio
     def get_audio_to_text(self):
         return self._audio_to_text
+    def get_prompt(self):
+        return self._prompt
     
 
     def get_count_mess(self):
@@ -133,3 +137,5 @@ class User:
         self._last_login = value
     def set_registration_date(self, value):
         self._registration_date = value
+    def set_prompt(self, value):
+        self._prompt = value

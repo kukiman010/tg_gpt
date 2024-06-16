@@ -31,6 +31,9 @@ class Settings:
         if self.folder_exist(self.base_way + 'locale/') == False:
             self.folder_create(self.base_way + 'locale')
 
+        if self.folder_exist(self.base_way + 'files/') == False:
+            self.folder_create(self.base_way + 'files')
+
         if self.file_exist(self.base_way + 'conf/tg_token.txt') == False:
             self.file_create(self.base_way + 'conf/tg_token.txt')
 

@@ -24,7 +24,6 @@ from data_models    import assistent_api
 from data_models    import languages_api
 
 
-MAX_CHAR = 1000
 
 _setting = Settings()
 sys.stdout.reconfigure(encoding='utf-8')
@@ -216,6 +215,7 @@ def help(message):
 @bot.message_handler(content_types=['voice'])
 def voice_processing(message):
     user = user_verification(message)
+    MAX_CHAR = _db.get_count_char_for_gen_audio()
 
     t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
     send_mess = bot.send_message(message.chat.id, t_mes)
@@ -259,6 +259,7 @@ def voice_processing(message):
 @bot.message_handler(func=lambda message: True)
 def handle_user_message(message):
     user = user_verification(message)
+    MAX_CHAR = _db.get_count_char_for_gen_audio()
 
     t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
     send_mess = bot.send_message(message.chat.id, t_mes)
@@ -346,6 +347,39 @@ def handle_callback_query(call):
     
 
 
+@bot.message_handler(content_types=['document'])
+def handle_docs(message):
+    user = user_verification(message)
+    file_size = message.document.file_size
+
+    MAX_FILE_SIZE = _db.get_max_file_size()
+
+    if file_size > MAX_FILE_SIZE:
+        bot.reply_to(message, "Размер файла превышает допустимый лимит в 1MB.")
+    else:
+        try:
+            file_info = bot.get_file(message.document.file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+
+            # Обработка содержимого файла
+            file_content = downloaded_file  # содержимое файла в байтах
+            
+            # Пример: чтение и вывод содержимого файла, если это текстовый файл
+            # (предполагается, что файл в кодировке UTF-8)
+            try:
+                text_content = file_content.decode('utf-8')
+                print("Содержимое файла:\n", text_content)
+                bot.reply_to(message, "Ваш файл {} успешно обработан.".format(message.document.file_name) )
+            except UnicodeDecodeError:
+                bot.reply_to(message, "Не удалось декодировать содержимое файла как текст.")
+            
+            # Если у вас другая логика обработки, вы можете заменить этот блок
+            # Например, анализировать, передавать дальше или выполнять другие действия
+
+        except Exception as e:
+            bot.reply_to(message, f'Произошла ошибка при обработке файла: {e}')
+
+
 @bot.message_handler(content_types=['photo'])
 def handle_message(message):
     user = user_verification(message)
@@ -427,7 +461,8 @@ def user_verification(message):
     user = User()
 
     if _db.find_user(message.from_user.id) == False:
-        _db.create_user(message.from_user.id, message.chat.username, 1, user.get_wait_action(), message.chat.type, user.get_companyAi(), user.get_model(), user.get_speaker(), message.from_user.language_code, user.get_model_recognizes_photo(), user.get_model_generate_pthoto(), user.get_text_to_audio(), user.get_audio_to_text())
+        #_db.create_user(message.from_user.id, message.chat.username, 1, user.get_wait_action(), message.chat.type, user.get_companyAi(), user.get_model(), user.get_speaker(), message.from_user.language_code, user.get_model_recognizes_photo(), user.get_model_generate_pthoto(), user.get_text_to_audio(), user.get_audio_to_text())
+        _db.add_user(message.from_user.id, message.chat.username, message.chat.type, message.from_user.language_code )
         _logger.add_info('создан новый пользователь {}'.format(message.chat.username))
     else:
         _db.add_users_in_groups(message.from_user.id, message.chat.id)
@@ -443,7 +478,8 @@ def user_verification(message):
 def user_verification_custom(userId, chatId, chat_username, chatType, lang_code):
     user = User()
     if _db.find_user(userId) == False:
-        _db.create_user(userId, chat_username, False, 1, chatType, user.get_companyAi(), user.get_model(), user.get_speaker(), user.get_contextSize(), lang_code)
+        # _db.create_user(userId, chat_username, False, 1, chatType, user.get_companyAi(), user.get_model(), user.get_speaker(), user.get_contextSize(), lang_code)
+        _db.add_user(userId, chat_username, chatType, lang_code )
         _logger.add_info('создан новый пользователь {}'.format(chat_username))
     else:
         _db.add_users_in_groups(userId, chatId)
@@ -517,8 +553,20 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
 def send_text(chat_id, text, reply_markup=None):
     max_message_length = 4096
     while len(text) > 0:
-        message_chunk = text[:max_message_length]  # Вырезаем часть текста
-        text = text[max_message_length:]  # Уменьшаем текст на размер отправленной части
+        if len(text) <= max_message_length:
+            bot.send_message(chat_id, text, reply_markup=reply_markup)
+            break
+        
+        breakpoint = text[:max_message_length].rfind(' ')       # Ищем последний пробел или перенос строки в пределах допустимой длины
+        if breakpoint == -1:
+            breakpoint = text[:max_message_length].rfind('\n')
+
+        if breakpoint == -1:                                    # В пределах max_message_length нет пробелов
+            message_chunk = text[:max_message_length]
+            text = text[max_message_length:]
+        else:                                                   # Разделяем по найденному пробелу/переносу строки
+            message_chunk = text[:breakpoint]
+            text = text[breakpoint:].lstrip()
 
         bot.send_message(chat_id, message_chunk, reply_markup=reply_markup)
 
@@ -537,4 +585,5 @@ try:
 except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
     _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
+
 

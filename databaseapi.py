@@ -14,7 +14,7 @@ class dbApi:
 
 #   USER
     def find_user(self, userId):
-        query = "SELECT * FROM users WHERE user_id='{}';".format(userId)
+        query = "SELECT * FROM users WHERE user_id={};".format(userId)
         self.db.execute_query(query)
         data = self.db.fetch_all()
         self.db.commit()
@@ -25,17 +25,10 @@ class dbApi:
                 return True
 
         return False    
-    
 
-    def create_user(self, user_id, username, status_user, wait_action, type, company_ai, model, speaker_name, language_code, model_recognizes_photo, model_generate_pthoto, text_to_audio, audio_to_text):
-        query = """
-        INSERT INTO users (
-            user_id, login, status_user, wait_action, type, company_ai, model, speaker_name, language_code,
-            model_rec_photo, model_gen_pthoto, text_to_audio, audio_to_text,
-            last_login, registration_date
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW());
-        """
-        values = (user_id, username, status_user, wait_action, type, company_ai, model, speaker_name, language_code, model_recognizes_photo, model_generate_pthoto, text_to_audio, audio_to_text)
+    def add_user(self, user_id, username, type, language_code):
+        query = 'SELECT add_user(%s, %s, %s, %s);'
+        values = ( user_id, username, type, language_code )
         self.db.execute_query(query, values)
         self.db.commit()
 
@@ -43,28 +36,55 @@ class dbApi:
         query = "UPDATE users SET company_ai='{}',model='{}' WHERE user_id={};".format(company,model,userId)
         self.db.execute_query(query)
         self.db.commit()
-
+        
     def get_user_def(self, userId):
         query = "select * from users WHERE user_id={};".format(userId)
         self.db.execute_query(query)
         data = self.db.fetch_all()
         self.db.commit()
 
-        for i in data:
-            user = User()
-#   0      1       2        3        4         5           6          7                  8                        9                10             11           12          13  
-# 0         1      2        5        6         7           8         3                  9                        10                11             12           13          14                  
-#userId, login, status, companyAi, model, speakerName, language, wait_action, model_recognizes_photo, model_generate_pthoto, text_to_audio, audio_to_text, last_login, reg_date
-            user.set_base_info(i[0],i[1],i[2],i[5],i[6],i[7],i[8],i[3],i[9],i[10],i[11],i[12],i[13],i[14])
-            return user
+        columns = [
+        'user_id', 'login', 'status_user', 'wait_action', 'type', 'company_ai', 
+        'model', 'language_code', 'model_rec_photo', 'model_gen_pthoto', 
+        'text_to_audio', 'audio_to_text', 'speaker_name', 'last_login', 'registration_date', 'id'
+        ]
+
+        self.db.execute_query("select * from user_prompts where user_id={};".format(userId))
+        prompts = self.db.fetch_all()
+        self.db.commit()
+
+        user = User()
+
+        for i in prompts:
+            user.set_prompt(i[2])
+
+        for row in data:
+            user_data = dict(zip(columns, row))
+
+            user.set_user_id(user_data['user_id'])
+            user.set_login(user_data['login'])
+            user.set_status(user_data['status_user'])
+            user.set_wait_action(user_data['wait_action'])
+            user.set_status(user_data['type'])
+            user.set_companyAi(user_data['company_ai'])
+            user.set_model(user_data['model'])
+            user.set_speaker(user_data['speaker_name'])
+            user.set_language(user_data['language_code'])
+            user.set_recognizes_photo(user_data['model_rec_photo'])
+            user.set_generate_pthoto(user_data['model_gen_pthoto'])
+            user.set_text_to_audio(user_data['text_to_audio'])
+            user.set_audio_to_text(user_data['audio_to_text'])
+            user.set_last_login(user_data['last_login'])
+            user.set_registration_date(user_data['registration_date'])
+
+        return user
         
+
     def update_user_lang_code(self, userId, code): 
         query = "UPDATE users SET language_code='{}' WHERE user_id={};".format(code,userId)
         self.db.execute_query(query)
         self.db.commit()
         
-
-
 
 
     def add_context(self, userId, chatId, role, messageId, message, isPhoto):
@@ -103,7 +123,7 @@ class dbApi:
         self.db.commit()
         return data
     
-    def isAdmin(self, userId, username):
+    def isAdmin(self, userId, username) -> bool:
         query = "SELECT * FROM admins WHERE user_id={};".format(userId)
         self.db.execute_query(query)
         data = self.db.fetch_all()
@@ -113,6 +133,7 @@ class dbApi:
                 return True
         return False
     
+
     def get_assistant_ai(self):
         query = "select * from assistant_ai;"
         self.db.execute_query(query)
@@ -141,6 +162,29 @@ class dbApi:
         return array
     
 
+    def get_max_file_size(self) -> int:
+        query = "select * from default_data where key='sum_max_file_size';"
+        self.db.execute_query(query)
+        data = self.db.fetch_all()
+        self.db.commit()
+
+        for i in data:
+            return int( i[1] )
+                
+        return 0
+
+
+    def get_count_char_for_gen_audio(self) -> int:
+        query =  "select * from default_data where key='count_char_for_gen_audio';"
+        self.db.execute_query(query)
+        data = self.db.fetch_all()
+        self.db.commit()
+
+        for i in data:
+            return int( i[1] )
+                
+        return 0
+
 
     # def get_user(self)
 
@@ -150,6 +194,3 @@ class dbApi:
     def __del__(self):
         self.db.close()
 #     print(1)
-
-
-# dbApi

@@ -1,12 +1,6 @@
 import logging
 import re
 
-
-# base_way = os.path.abspath(os.curdir)
-# base_way += "/"
-# LOGFILE = base_way + 'log.log'
-
-
 class LoggerSingleton(object):
     instance = None
     

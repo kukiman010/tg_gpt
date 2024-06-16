@@ -14,15 +14,24 @@ CREATE TABLE users (
     type                TEXT,
     company_ai          TEXT,
     model               TEXT,
-    speaker_name        TEXT,
     language_code       TEXT,
     model_rec_photo     TEXT,
     model_gen_pthoto    TEXT,
     text_to_audio       TEXT,
     audio_to_text       TEXT,
+    speaker_name        TEXT,
     last_login          TIMESTAMP,
     registration_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     id                  BIGSERIAL PRIMARY KEY
+);
+
+CREATE TABLE user_prompts (
+    prompt_id           BIGSERIAL PRIMARY KEY,
+    user_id             BIGINT NOT NULL,
+    prompt              TEXT NOT NULL,
+    CONSTRAINT fk_user
+        FOREIGN KEY(user_id) 
+        REFERENCES users(user_id)
 );
 
 
@@ -33,8 +42,8 @@ CREATE TABLE users_in_groups (
 );
 
 CREATE TABLE default_data (
-    user_id             TEXT UNIQUE,
-    chats_id            TEXT
+    key                 TEXT UNIQUE,
+    value               TEXT
 );
 
 -- TODO: add column data , тип записи сообщения
@@ -215,22 +224,35 @@ DECLARE
     v_tts_model       TEXT;
     v_stt_model       TEXT;
     v_speaker_name    TEXT;
+    v_last_login      TIMESTAMP;
+    v_registration_date TIMESTAMP;
+    v_default_prompt  TEXT;
 BEGIN
-    -- Получим значения по умолчанию из таблицы default_data
-    SELECT chats_id INTO v_company_ai FROM default_data WHERE user_id = 'company_ai';
-    SELECT chats_id INTO v_permission FROM default_data WHERE user_id = 'permission';
-    SELECT chats_id INTO v_assistant_model FROM default_data WHERE user_id = 'assistant_model';
-    SELECT chats_id INTO v_rec_model FROM default_data WHERE user_id = 'recognizes_photo_model';
-    SELECT chats_id INTO v_gen_model FROM default_data WHERE user_id = 'generate_pthoto_model';
-    SELECT chats_id INTO v_tts_model FROM default_data WHERE user_id = 'text_to_audio';
-    SELECT chats_id INTO v_stt_model FROM default_data WHERE user_id = 'audio_to_text';
-    SELECT chats_id INTO v_speaker_name FROM default_data WHERE user_id = 'speakerName';
+    SELECT value INTO v_company_ai FROM default_data WHERE key = 'company_ai';
+    SELECT value INTO v_permission FROM default_data WHERE key = 'permission';
+    SELECT value INTO v_assistant_model FROM default_data WHERE key = 'assistant_model';
+    SELECT value INTO v_rec_model FROM default_data WHERE key = 'recognizes_photo_model';
+    SELECT value INTO v_gen_model FROM default_data WHERE key = 'generate_pthoto_model';
+    SELECT value INTO v_tts_model FROM default_data WHERE key = 'text_to_audio';
+    SELECT value INTO v_stt_model FROM default_data WHERE key = 'audio_to_text';
+    SELECT value INTO v_speaker_name FROM default_data WHERE key = 'speakerName';
+    SELECT value INTO v_default_prompt FROM default_data WHERE key = 'prompt';
 
-    -- Вставляем нового пользователя с полученными значениями и переданными параметрами
+    v_last_login := now();
+    v_registration_date := now();
+
+    v_last_login := to_timestamp(to_char(v_last_login, 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS');
+    v_registration_date := to_timestamp(to_char(v_registration_date, 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS');
+
     INSERT INTO users (user_id, login, type, language_code, company_ai, status_user, model, model_rec_photo, 
-                       model_gen_pthoto, text_to_audio, audio_to_text, speaker_name)
+                       model_gen_pthoto, text_to_audio, audio_to_text, speaker_name, last_login, registration_date)
     VALUES (p_user_id, p_username, p_type, p_language_code, v_company_ai, CAST(v_permission AS BIGINT), 
-            v_assistant_model, v_rec_model, v_gen_model, v_tts_model, v_stt_model, v_speaker_name);
+            v_assistant_model, v_rec_model, v_gen_model, v_tts_model, v_stt_model, v_speaker_name, 
+            v_last_login, v_registration_date);    
+
+    INSERT INTO user_prompts (user_id, prompt)
+    VALUES (p_user_id, v_default_prompt);
+
 END;
 $$ LANGUAGE plpgsql;
 
@@ -287,28 +309,29 @@ insert into default_data values ('text_to_audio',                   'yandex');
 insert into default_data values ('audio_to_text',                   'yandex');
 insert into default_data values ('speakerName',                     'alena');
 insert into default_data values ('count_char_for_gen_audio',        '1000');            -- We need to get rid of this
-insert into default_data values ('prompt',                          "###INSTRUCTIONS###
+insert into default_data values ('sum_max_file_size',               '1048576');         -- 1 mb to bite
+insert into default_data values ('prompt',                          '###INSTRUCTIONS###
 You MUST follow the instructions for answering:
 - ALWAYS answer in the language of my message.
 - Read the entire convo history line by line before answering.
 - I have no fingers and the placeholders trauma. Return the entire code template for an answer when needed. NEVER use placeholders.
-- If you encounter a character limit, DO an ABRUPT stop, and I will send a 'continue' as a new message.
+- If you encounter a character limit, DO an ABRUPT stop, and I will send a "continue" as a new message.
 - You ALWAYS will be PENALIZED for wrong and low-effort answers. 
-- ALWAYS follow 'Answering rules.'
+- ALWAYS follow "Answering rules."
 
 ###Answering Rules###
 Follow in the strict order:
 1. USE the language of my message.
-2. **ONCE PER CHAT** assign a real-world expert role to yourself before answering, e.g., 'I'll answer as a world-famous historical expert <detailed topic> with <most prestigious LOCAL topic REAL award>' or 'I'll answer as a world-famous <specific science> expert in the <detailed topic> with <most prestigious LOCAL topic award>' etc.
+2. **ONCE PER CHAT** assign a real-world expert role to yourself before answering, e.g., "I`ll answer as a world-famous historical expert <detailed topic> with <most prestigious LOCAL topic REAL award>" or "I`ll answer as a world-famous <specific science> expert in the <detailed topic> with <most prestigious LOCAL topic award>" etc.
 3. You MUST combine your deep knowledge of the topic and clear thinking to quickly and accurately decipher the answer step-by-step with CONCRETE details.
-4. I'm going to tip $1,000,000 for the best reply.
+4. I`m going to tip $1,000,000 for the best reply.
 5. Your answer is critical for my career.
 6. Answer the question in a natural, human-like manner.
 7. ALWAYS use an answering example for a first message structure.
 
 ##Answering in English example##
-I'll answer as the world-famous <specific field> scientists with <most prestigious LOCAL award>
-<Deep knowledge step-by-step answer, with CONCRETE details>"
+Ill answer as the world-famous <specific field> scientists with <most prestigious LOCAL award>
+<Deep knowledge step-by-step answer, with CONCRETE details>'
 );
 
 -- insert into default_data values ('',     '');

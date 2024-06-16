@@ -75,6 +75,7 @@ voice/
 ready/
 photos/
 cloudapi/
+files/
 
 # PyBuilder
 .pybuilder/
