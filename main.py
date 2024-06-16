@@ -22,13 +22,14 @@ from Control.user   import User
 from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
 from data_models    import languages_api
-
+from file_worker    import FileWorker
 
 
 _setting = Settings()
 sys.stdout.reconfigure(encoding='utf-8')
 _logger = LoggerSingleton.new_instance('log_gpt.log')
 locale = Locale('locale/LC_MESSAGES/')
+_worker = FileWorker.new_instance()
 
 _db = dbApi(
     dbname =    _setting.get_db_dbname(),
@@ -368,7 +369,9 @@ def handle_docs(message):
             # (предполагается, что файл в кодировке UTF-8)
             try:
                 text_content = file_content.decode('utf-8')
-                print("Содержимое файла:\n", text_content)
+                # text_content
+                # print("Содержимое файла:\n", text_content)
+                _worker.add_file(user.get_userId,message.document.file_name, text_content)
                 bot.reply_to(message, "Ваш файл {} успешно обработан.".format(message.document.file_name) )
             except UnicodeDecodeError:
                 bot.reply_to(message, "Не удалось декодировать содержимое файла как текст.")

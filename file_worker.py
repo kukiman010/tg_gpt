@@ -174,7 +174,7 @@ class MethodClass:
         print(f"MethodClass: Signal received with message='{message}' and counter={counter}")
 
 # Пример использования:
-timer = TimerClass(interval=2)  # Таймер с интервалом 2 секунды
-method = MethodClass()
+# timer = TimerClass(interval=2)  # Таймер с интервалом 2 секунды
+# method = MethodClass()
 
-timer.start_timer()  # Запуск таймера
+# timer.start_timer()  # Запуск таймера
