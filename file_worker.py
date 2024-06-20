@@ -142,14 +142,88 @@ class FileWorker(object):
 #  pip install blinker
 
 
-from blinker import signal
-from threading import Timer
+# from blinker import signal
+# from threading import Timer
 
-# Сигнал, который будет использоваться для связи между классами
-tick_signal = signal('tick')
+# # Сигнал, который будет использоваться для связи между классами
+# tick_signal = signal('tick')
+
+# class TimerClass:
+#     def __init__(self, interval):
+#         self.interval = interval
+
+#     def start_timer(self):
+#         # Метод, который будет запускать таймер и посылать сигнал
+#         t = Timer(self.interval, self._send_signal)
+#         t.start()
+
+#     def _send_signal(self):
+#         print("Timer expired, sending signal with arguments...")
+#         # Отправка сигнала с аргументами
+#         tick_signal.send(self, message="Hello, World!", counter=10)
+
+# class MethodClass:
+#     def __init__(self):
+#         # Подписка на сигнал
+#         tick_signal.connect(self.my_method)
+
+#     def my_method(self, sender, **kwargs):
+#         # Обработка принятых аргументов
+#         message = kwargs.get('message', '')
+#         counter = kwargs.get('counter', 0)
+#         print(f"MethodClass: Signal received with message='{message}' and counter={counter}")
+
+# # Пример использования:
+# timer = TimerClass(interval=2)  # Таймер с интервалом 2 секунды
+# method = MethodClass()
+
+# timer.start_timer()  # Запуск таймера
+
+
+
+# from blinker import signal
+# from threading import Timer
+
+# # Сигнал, который будет использоваться для связи между классами
+# tick_signal = signal('tick')
+
+# class TimerClass:
+#     def __init__(self, interval):  # Исправлено инициализацию класса
+#         self.interval = interval
+
+#     def start_timer(self):
+#         # Метод, который будет запускать таймер и посылать сигнал
+#         t = Timer(self.interval, self._send_signal)
+#         t.start()
+
+#     def _send_signal(self):
+#         print("Timer expired, sending signal with arguments...")
+#         # Отправка сигнала с аргументами
+#         tick_signal.send(self, message="Hello, World!", counter=10)
+
+# class MethodClass:
+#     def __init__(self):  # Исправлено инициализацию класса
+#         # Подписка на сигнал
+#         tick_signal.connect(self.my_method)
+
+#     def my_method(self, sender, **kwargs):
+#         # Обработка принятых аргументов
+#         message = kwargs.get('message', '')
+#         counter = kwargs.get('counter', 0)
+#         print(f"MethodClass: Signal received with message='{message}' and counter={counter}")
+
+# # Пример использования:
+# timer = TimerClass(interval=2)  # Таймер с интервалом 2 секунды
+# method = MethodClass()
+
+# timer.start_timer()
+
+
+from threading import Timer
+from signals import file_signal  # Импортируем сигнал из signals.py
 
 class TimerClass:
-    def __init__(self, interval):
+    def __init__(self, interval):  # Исправлено: __init__
         self.interval = interval
 
     def start_timer(self):
@@ -160,12 +234,16 @@ class TimerClass:
     def _send_signal(self):
         print("Timer expired, sending signal with arguments...")
         # Отправка сигнала с аргументами
-        tick_signal.send(self, message="Hello, World!", counter=10)
+        file_signal.send(self, message="Hello, World!", counter=10)
+
+
+
+
 
 class MethodClass:
-    def __init__(self):
+    def __init__(self):  # Исправлено: __init__
         # Подписка на сигнал
-        tick_signal.connect(self.my_method)
+        file_signal.connect(self.my_method)
 
     def my_method(self, sender, **kwargs):
         # Обработка принятых аргументов
@@ -173,8 +251,8 @@ class MethodClass:
         counter = kwargs.get('counter', 0)
         print(f"MethodClass: Signal received with message='{message}' and counter={counter}")
 
-# Пример использования:
-# timer = TimerClass(interval=2)  # Таймер с интервалом 2 секунды
-# method = MethodClass()
 
-# timer.start_timer()  # Запуск таймера
+timer = TimerClass(interval=2)  # Таймер с интервалом 2 секунды
+method = MethodClass()
+
+timer.start_timer()
