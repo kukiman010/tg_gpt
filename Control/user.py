@@ -20,13 +20,14 @@ class User:
 
         #statistics
         # self.gender = ''
-        self._send_mess = 0
-        self._send_image = 0
-        self._send_audio = 0
-        self._dropContext = 0
-        self._start_time = None
-        self._lastActivity = None
-        self._donate = 0
+
+        # self._send_mess = 0
+        # self._send_image = 0
+        # self._send_audio = 0
+        # self._dropContext = 0
+        # self._start_time = None
+        # self._lastActivity = None
+        # self._donate = 0
 
 
     def is_active(self):
@@ -52,14 +53,14 @@ class User:
         self._registration_date = reg_date
         self._prompt = prompt
 
-    def set_statistics(self,c_message, c_image, c_audio, c_dropContext, createTime, lastQueryTime, donate):
-        self._send_mess = c_message
-        self._send_image = c_image
-        self._send_audio = c_audio
-        self._dropContext = c_dropContext
-        self._start_time = createTime
-        self._lastActivity = lastQueryTime
-        self._donate = donate
+    # def set_statistics(self,c_message, c_image, c_audio, c_dropContext, createTime, lastQueryTime, donate):
+    #     self._send_mess = c_message
+    #     self._send_image = c_image
+    #     self._send_audio = c_audio
+    #     self._dropContext = c_dropContext
+    #     self._start_time = createTime
+    #     self._lastActivity = lastQueryTime
+    #     self._donate = donate
 
 
 
@@ -91,20 +92,20 @@ class User:
         return self._prompt
     
 
-    def get_count_mess(self):
-        return self._send_mess 
-    def get_count_image(self):
-        return self._send_image 
-    def get_count_audio(self):
-        return self._send_audio 
-    def get_count_cropcontext(self):
-        return self._dropContext 
-    def get_createTime(self):
-        return self._start_time 
-    def get_lastActivity(self):
-        return self._lastActivity 
-    def get_donate(self):
-        return self._donate
+    # def get_count_mess(self):
+    #     return self._send_mess 
+    # def get_count_image(self):
+    #     return self._send_image 
+    # def get_count_audio(self):
+    #     return self._send_audio 
+    # def get_count_cropcontext(self):
+    #     return self._dropContext 
+    # def get_createTime(self):
+    #     return self._start_time 
+    # def get_lastActivity(self):
+    #     return self._lastActivity 
+    # def get_donate(self):
+    #     return self._donate
 
 
 

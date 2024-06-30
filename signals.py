@@ -1,3 +1,3 @@
 from blinker import signal
 
-file_signal = signal('file_end')
+post_signal = signal('post_media')

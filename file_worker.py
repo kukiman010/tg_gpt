@@ -3,6 +3,10 @@
 # планирую сделать ограничение до 1мб ~= 1.000.000.000 символов, более чем достаточно 
 
 
+import threading
+import time
+from Control.user_media   import UserMedia
+
 # # importing required modules 
 # from pypdf import PdfReader 
   
@@ -49,107 +53,14 @@
 # fileFormat = ['.txt' '.pdf' '.sh' '.cpp' '.h' '.c' '.sql' '.json' '.xml']
 
 
-import threading
-import time
 
+#----------------------------------------------------------------------------------------------------------------
 
-
-class FileWorker(object):
-    instance = None
-    instance_lock = threading.Lock()
-    
-    @classmethod
-    def new_instance(cls, *args, **kwargs):
-        if not cls.instance:
-            with cls.instance_lock:
-                if not cls.instance:
-                    cls.instance = cls(*args, **kwargs)
-        return cls.instance
-
-    def __init__(self, fileFormat=None):
-        self._lock = threading.Lock()
-        self.data = {}
-        self.locks = {}
-        self.timers = {}
-        self.fileFormat = fileFormat
-        self.start_time = time.time()
-    
-    def add_file(self, userId, fileName, fileText):
-        if self.fileFormat and not fileName.endswith(self.fileFormat):
-            print(f"File {fileName} does not match the required format {self.fileFormat}")
-            return
-
-        message = f"{fileName}: {fileText}"
-        
-        if userId not in self.data:
-            with self._lock:
-                if userId not in self.data:
-                    self.data[userId] = []
-                    self.locks[userId] = threading.Lock()
-                    self._notify_start(userId)
-        
-        with self.locks[userId]:
-            self.data[userId].append(message)
-            if userId in self.timers:
-                self.timers[userId].cancel()
-        
-            timer = threading.Timer(2.0, self._process_files, args=(userId,))
-            self.timers[userId] = timer
-            timer.start()
-    
-    def _notify_start(self, userId):
-        print(f"Started receiving data from user {userId}")
-    
-    def _process_files(self, userId):
-        with self.locks[userId]:
-            message = "\n".join(self.data[userId])
-            self._post_gpt(userId, message)
-            del self.data[userId]
-            del self.locks[userId]
-            del self.timers[userId]
-    
-    def _post_gpt(self, userId, message):
-        print(f"\nSending data for user \n {userId}: {message}")
-        self.end_time = time.time()
-        execution_time = self.end_time - self.start_time
-        print(f"Время выполнения функции: {execution_time} секунд")
-        # global.end_time = time.time()
-        # Здесь можно добавить код для отправки данных в GPT, например:
-        # _gpt.post_gpt(userId, message)
-
-# Пример использования:
-# worker = FileWorker.new_instance()
-
-
-
-
-# worker.add_file(1, "C:/Users/kukim/OneDrive/Рабочий\ стол/f1.txt", "Content of file 1")
-# time.sleep(1)
-# worker.add_file(1, "C:/Users/kukim/OneDrive/Рабочий\ стол/f.txt", "Content of file 2")
-# time.sleep(1)
-# worker.add_file(1, "C:/Users/kukim/OneDrive/Рабочий\ стол/f.txt", "Content of file 3")
-# # Если в течении 10 секунд новых файлов не будет, данные отправятся в GPT
-
-
-
-
-
-
-
-
-
-
-#  pip install blinker
-
-
-# from blinker import signal
 # from threading import Timer
-
-# # Сигнал, который будет использоваться для связи между классами
-# tick_signal = signal('tick')
+# from signals import file_signal  # Импортируем сигнал из signals.py
 
 # class TimerClass:
-#     def __init__(self, interval):
+#     def __init__(self, interval):  # Исправлено: __init__
 #         self.interval = interval
 
 #     def start_timer(self):
@@ -160,12 +71,16 @@ class FileWorker(object):
 #     def _send_signal(self):
 #         print("Timer expired, sending signal with arguments...")
 #         # Отправка сигнала с аргументами
-#         tick_signal.send(self, message="Hello, World!", counter=10)
+#         file_signal.send(self, message="Hello, World!", counter=10)
+
+
+
+
 
 # class MethodClass:
-#     def __init__(self):
+#     def __init__(self):  # Исправлено: __init__
 #         # Подписка на сигнал
-#         tick_signal.connect(self.my_method)
+#         file_signal.connect(self.my_method)
 
 #     def my_method(self, sender, **kwargs):
 #         # Обработка принятых аргументов
@@ -173,48 +88,149 @@ class FileWorker(object):
 #         counter = kwargs.get('counter', 0)
 #         print(f"MethodClass: Signal received with message='{message}' and counter={counter}")
 
-# # Пример использования:
-# timer = TimerClass(interval=2)  # Таймер с интервалом 2 секунды
-# method = MethodClass()
-
-# timer.start_timer()  # Запуск таймера
-
-
-
-from threading import Timer
-from signals import file_signal  # Импортируем сигнал из signals.py
-
-class TimerClass:
-    def __init__(self, interval):  # Исправлено: __init__
-        self.interval = interval
-
-    def start_timer(self):
-        # Метод, который будет запускать таймер и посылать сигнал
-        t = Timer(self.interval, self._send_signal)
-        t.start()
-
-    def _send_signal(self):
-        print("Timer expired, sending signal with arguments...")
-        # Отправка сигнала с аргументами
-        file_signal.send(self, message="Hello, World!", counter=10)
-
-
-
-
-
-class MethodClass:
-    def __init__(self):  # Исправлено: __init__
-        # Подписка на сигнал
-        file_signal.connect(self.my_method)
-
-    def my_method(self, sender, **kwargs):
-        # Обработка принятых аргументов
-        message = kwargs.get('message', '')
-        counter = kwargs.get('counter', 0)
-        print(f"MethodClass: Signal received with message='{message}' and counter={counter}")
-
 
 # timer = TimerClass(interval=2)  # Таймер с интервалом 2 секунды
 # method = MethodClass()
 
 # timer.start_timer()
+
+#----------------------------------------------------------------------------------------------------------------
+
+# Сигналы blinker
+from blinker import signal
+post_signal = signal('post_media')
+
+class MediaWorker(object):
+    instance = None
+    instance_lock = threading.Lock()
+
+    @classmethod
+    def new_instance(cls, *args, **kwargs):
+        if not cls.instance:
+            with cls.instance_lock:
+                if not cls.instance:
+                    cls.instance = cls(*args, **kwargs)
+                    cls.instance._initialize()
+        return cls.instance
+
+    def _initialize(self):
+        self._lock = threading.Lock()
+        self.data = {}
+        self.locks = {}
+        self.timers = {}
+        self.start_time = time.time()
+
+    def add_file(self, userMedia):
+        userId = userMedia._userId
+        if userId not in self.data:
+            with self._lock:
+                if userId not in self.data:
+                    self.data[userId] = []
+                    self.locks[userId] = threading.Lock()
+                    # self._notify_start(userId)
+
+        with self.locks[userId]:
+            self.data[userId].append(userMedia)
+            if userId in self.timers:
+                self.timers[userId].cancel()
+
+            timer = threading.Timer(2.0, self._process_files, args=(userId,))
+            self.timers[userId] = timer
+            timer.start()
+
+    # def _notify_start(self, userId):
+        # print(f"Started receiving data from user {userId}")
+
+    def _process_files(self, userId):
+        with self.locks[userId]:
+            messages = "\n".join([media._name for media in self.data[userId]])
+            self._post_media(userId, self.data[userId])
+            del self.data[userId]
+            del self.locks[userId]
+            del self.timers[userId]
+
+    def _post_media(self, userId, userMediaList):
+        end_time = time.time()
+        
+        # Отправка сигнала с информацией о пользователе и списке медиа
+        post_signal.send('MediaWorker', userId=userId, mediaList=userMediaList)
+        
+        # print(f"Sending data for user {userId}:")
+        # for media in userMediaList:
+            # print(media._name)
+
+
+# Пример использования
+# worker = MediaWorker.new_instance()
+# user_media = UserMedia(userId=1, chatId=112, messageId=123, name='example.txt')
+# worker.add_file(user_media)
+# time.sleep(1)
+
+# user_media1 = UserMedia(userId=1, chatId=112, messageId=123, name='ttttt.txt')
+# worker.add_file(user_media1)
+
+
+
+
+
+# pip install pymupdf
+# pip install chardet
+import os
+import fitz  # PyMuPDF
+import chardet
+
+
+class FileConverter:
+    def __init__(self, file_formats=None):
+        if file_formats is None:
+            file_formats = ['.txt', '.pdf', '.sh', '.cpp', '.h', '.c', '.sql', '.json', '.xml']
+        self.file_formats = file_formats
+
+    def detect_encoding(self, file_path):
+        with open(file_path, 'rb') as f:
+            result = chardet.detect(f.read())
+            return result['encoding']
+
+    def read_file(self, file_path, orig_extension):
+        if orig_extension not in self.file_formats:
+            raise ValueError(f"Unsupported file format: {orig_extension}")
+        
+        if orig_extension == '.pdf':
+            return self.read_pdf(file_path)
+        else:
+            encoding = self.detect_encoding(file_path)
+            try:
+                with open(file_path, 'r', encoding=encoding) as file:
+                    return file.read()
+            except Exception as e:
+                raise ValueError(f"Error reading file {file_path}: {str(e)}")
+
+    def read_pdf(self, file_path):
+        try:
+            document = fitz.open(file_path)
+            text = ''
+            for page_num in range(document.page_count):
+                page = document.load_page(page_num)
+                text += page.get_text()
+            return text
+        except Exception as e:
+            raise ValueError(f"Error reading PDF file {file_path}: {str(e)}")
+
+    def convert_files_to_text(self, file_path, original_name):
+        output = ''
+        try:
+            orig_extension = os.path.splitext(original_name)[1]
+            file_text = self.read_file(file_path, orig_extension)
+            output += f'```{original_name}\n {file_text}\n```\n'
+        except Exception as e:
+            output += f'Error processing {file_path}: {str(e)}\n\n'
+        return output
+
+# Пример использования
+# file_list = ["D:/main.cpp"]
+# file_list = ["D:/test.pdf"]
+# converter = FileConverter()
+# converted_text = converter.convert_files_to_text(file_list)
+# print(converted_text)
+
+

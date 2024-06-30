@@ -22,14 +22,21 @@ from Control.user   import User
 from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
 from data_models    import languages_api
-from file_worker    import FileWorker
+
+
+from blinker            import signal
+from file_worker        import MediaWorker
+from file_worker        import FileConverter
+from Control.user_media import UserMedia
 
 
 _setting = Settings()
 sys.stdout.reconfigure(encoding='utf-8')
 _logger = LoggerSingleton.new_instance('log_gpt.log')
 locale = Locale('locale/LC_MESSAGES/')
-_worker = FileWorker.new_instance()
+_mediaWorker = MediaWorker.new_instance()
+post_signal = signal('post_media')
+_converterFile = FileConverter()
 
 _db = dbApi(
     dbname =    _setting.get_db_dbname(),
@@ -362,22 +369,33 @@ def handle_docs(message):
             file_info = bot.get_file(message.document.file_id)
             downloaded_file = bot.download_file(file_info.file_path)
 
+            name = 'file_{}_{}.date'.format(message.from_user.id, _speak.get_time_string())
+            with open(os.path.join('files/', f'{name}'), 'wb') as new_file:
+                new_file.write(downloaded_file)
+
+
+            media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
+            media.add_document(name, message.document.file_name, file_size)
+            _mediaWorker.add_file(media)
+            
             # Обработка содержимого файла
-            file_content = downloaded_file  # содержимое файла в байтах
+            # file_content = downloaded_file  # содержимое файла в байтах
             
-            # Пример: чтение и вывод содержимого файла, если это текстовый файл
-            # (предполагается, что файл в кодировке UTF-8)
-            try:
-                text_content = file_content.decode('utf-8')
-                # text_content
-                # print("Содержимое файла:\n", text_content)
-                _worker.add_file(user.get_userId,message.document.file_name, text_content)
-                bot.reply_to(message, "Ваш файл {} успешно обработан.".format(message.document.file_name) )
-            except UnicodeDecodeError:
-                bot.reply_to(message, "Не удалось декодировать содержимое файла как текст.")
+            # # Пример: чтение и вывод содержимого файла, если это текстовый файл
+            # # (предполагается, что файл в кодировке UTF-8)
+            # try:
+            #     text_content = file_content.decode('utf-8')
+
+                
+            #     # text_content
+            #     # print("Содержимое файла:\n", text_content)
+            #     # _worker.add_file(user.get_userId,message.document.file_name, text_content)
+            #     bot.reply_to(message, "Ваш файл {} успешно обработан.".format(message.document.file_name) )
+            # except UnicodeDecodeError:
+            #     bot.reply_to(message, "Не удалось декодировать содержимое файла как текст.")
             
-            # Если у вас другая логика обработки, вы можете заменить этот блок
-            # Например, анализировать, передавать дальше или выполнять другие действия
+            # # Если у вас другая логика обработки, вы можете заменить этот блок
+            # # Например, анализировать, передавать дальше или выполнять другие действия
 
         except Exception as e:
             bot.reply_to(message, f'Произошла ошибка при обработке файла: {e}')
@@ -580,9 +598,25 @@ def send_text(chat_id, text, reply_markup=None):
 def encode_image(image_path):
   with open(image_path, "rb") as image_file:
     return base64.b64encode(image_file.read()).decode('utf-8')
+  
+
+def on_post_media(sender, userId, mediaList):
+    # print(f"Received media for user {userId} in the signal handler.")
+    message = ''
+    for media in mediaList:
+        if media._type == "document":
+            message += _converterFile.convert_files_to_text('files/{}'.format(media._fileWay), media._fileName)
+            # print(converted_text)
+    
+    send_text(media._chatId, message)
+
+
+
+
 
 
 try:
+    post_signal.connect(on_post_media, sender='MediaWorker')
     bot.infinity_polling()
     # bot.polling()
 except requests.exceptions.ConnectionError as e:
