@@ -35,7 +35,9 @@ class speaker:
     def get_time_string(self):
         current_time = time.time()
         time_struct = time.localtime(current_time)
-        return time.strftime("%Y%m%d_%H%M%S", time_struct)
+        # return time.strftime("%Y%m%d_%H%M%S", time_struct)
+        milliseconds = int((current_time - int(current_time)) * 1000)
+        return time.strftime("%Y%m%d_%H%M%S", time_struct) + f"_{milliseconds:03d}"
     
     
     def create_iam(self):

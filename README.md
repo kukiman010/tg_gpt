@@ -17,6 +17,8 @@ pip install babel
 pip install polib
 pip install tiktoken
 pip install groq
+pip install pymupdf
+pip install chardet
 ```
 
 ## Yandex API

@@ -65,7 +65,7 @@ class dbApi:
             user.set_login(user_data['login'])
             user.set_status(user_data['status_user'])
             user.set_wait_action(user_data['wait_action'])
-            user.set_status(user_data['type'])
+            # user.set_status(user_data['type'])
             user.set_companyAi(user_data['company_ai'])
             user.set_model(user_data['model'])
             user.set_speaker(user_data['speaker_name'])

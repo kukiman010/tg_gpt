@@ -263,12 +263,13 @@ $$ LANGUAGE plpgsql;
 
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades
 
-insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          'default',  4097,   'Up to Sep 2021',   1, True);
+insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          '',         4097,   'Up to Sep 2021',   1, False);
 insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         8192,   'Up to Sep 2021',   1, False);
 insert into assistant_ai values('OpenAi', 'gpt-4-1106-preview',     '',         128000, 'Up to Apr 2023',   2, False);
 insert into assistant_ai values('OpenAi', 'gpt-4-vision-preview',   '',         128000, 'Up to Apr 2023',   2, False);
 insert into assistant_ai values('OpenAi', 'gpt-4-turbo',            '',         128000, 'Up to Dec 2023',   2, False);
 insert into assistant_ai values('OpenAi', 'gpt-4o',                 '',         128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi', 'gpt-4o-mini',            'default',  128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('Yandex', 'yandexgpt',              'yandex',   8000,   '06.12.2023',       2, True);
 insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   8000,   '06.12.2023',       2, False);
 insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, True);
@@ -277,7 +278,7 @@ insert into assistant_ai values('Meta',   'llama3-70b-8192',        'llama3',   
 
 insert into assistant_ai_photo values('OpenAi', 'gpt-4o',           '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai_photo values('Meta',   'llama3-70b-8192',  'llama3',   8192,   '-',                1, False);
-
+insert into assistant_ai_photo values('OpenAi', 'gpt-4o-mini',      '',         128000, 'Up to Oct 2023',   2, True);
 
 -- -- https://cloud.yandex.com/en-ru/docs/speechkit/tts/voices
 -- insert into voices values('dasha',  'Russian',  'F','ru-RU');
@@ -302,8 +303,8 @@ insert into languages values ('France',     'fr', True);
 insert into default_data values ('language',                        'en_EN');
 insert into default_data values ('company_ai',                      'OpenAi');          -- deprecated
 insert into default_data values ('permission',                      '1');               -- 0-lock, 1-default user, 2-donater
-insert into default_data values ('assistant_model',                 'gpt-3.5-turbo');
-insert into default_data values ('recognizes_photo_model',          'gpt-4o');          
+insert into default_data values ('assistant_model',                 'gpt-4o-mini');
+insert into default_data values ('recognizes_photo_model',          'gpt-4o-mini');          
 insert into default_data values ('generate_pthoto_model',           'dall-e-3');        -- not used yet
 insert into default_data values ('text_to_audio',                   'yandex');
 insert into default_data values ('audio_to_text',                   'yandex');

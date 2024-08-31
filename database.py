@@ -83,6 +83,8 @@ class Database:
     def fetch_all(self):
         with self._lock:
             try:
+                if self.cursor.rowcount == 0:
+                    return []
                 return self.cursor.fetchall()
             except (Exception, psycopg2.DatabaseError) as error:
                 print("Ошибка при получении данных:", error)

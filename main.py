@@ -272,23 +272,30 @@ def handle_user_message(message):
     t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
     send_mess = bot.send_message(message.chat.id, t_mes)
 
-    content = post_gpt(message, user, message.text, user.get_model())
-    # content.get_result()
+    media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
+    # media.add_document(name, message.document.file_name, file_size)
+    media.add_mes(message.text)
+    _mediaWorker.add_file(media)
+
+    # content = post_gpt(message, user, message.text, user.get_model())
+    # # content.get_result()
 
     bot.delete_message(send_mess.chat.id, send_mess.message_id)
 
-    if not content.get_result():
-        # t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT')
-        # bot.send_message(message.chat.id, t_mes)
-        _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content")
+    # if not content.get_result():
+    #     # t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT')
+    #     # bot.send_message(message.chat.id, t_mes)
+    #     _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content")
 
-    if len(content.get_result()) <= MAX_CHAR:
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
+    # if len(content.get_result()) <= MAX_CHAR:
+    #     markup = types.InlineKeyboardMarkup()
+    #     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
 
-        send_text(message.chat.id, content.get_result(), reply_markup=markup)
-    else:    
-        send_text(message.chat.id, content.get_result())
+    #     send_text(message.chat.id, content.get_result(), reply_markup=markup)
+    # else:    
+    #     send_text(message.chat.id, content.get_result())
+
+
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -372,7 +379,6 @@ def handle_docs(message):
             name = 'file_{}_{}.date'.format(message.from_user.id, _speak.get_time_string())
             with open(os.path.join('files/', f'{name}'), 'wb') as new_file:
                 new_file.write(downloaded_file)
-
 
             media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
             media.add_document(name, message.document.file_name, file_size)
@@ -495,7 +501,6 @@ def user_verification(message):
 
     return user
 
-
 def user_verification_custom(userId, chatId, chat_username, chatType, lang_code):
     user = User()
     if _db.find_user(userId) == False:
@@ -511,6 +516,15 @@ def user_verification_custom(userId, chatId, chat_username, chatType, lang_code)
         return None
 
     return user
+
+def user_verification_easy(userId):
+    user = User()
+    if _db.find_user(userId) == False:
+        return None
+    else:
+        user = _db.get_user_def(userId)
+        return user
+
 
 def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAssistent :
     mes = Control.context_model.Context_model()
@@ -571,6 +585,64 @@ def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAss
 
 
 
+def post_gpt_new(chatId, user:User, text, model) -> Control.context_model.AnswerAssistent :
+    mes = Control.context_model.Context_model()
+    mes.set_data(user.get_userId(), chatId,"user", chatId,text,False )
+
+    dict = _db.get_context(user.get_userId(), chatId)
+    # dict = Control.context_model.rm_photos_in_dict(dict)
+    dict.append(mes)
+    json = Control.context_model.convert(user.get_companyAi(), dict)
+
+    # content = NULL
+    tokenSizeNow = 0
+
+    if str(user.get_companyAi()).upper() == str("OpenAi").upper():
+        tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
+    elif str(user.get_companyAi()).upper() == str("Yandex").upper():
+        tokenSizeNow = _yag.count_tokens(json, model)
+    elif str(user.get_companyAi()).upper() == str("Sber").upper():
+        tokenSizeNow = _sber.count_tokens(json, model)
+    elif str(user.get_companyAi()).upper() == str("Meta").upper():
+        tokenSizeNow = _metaG.count_tokens(json, model)
+    
+
+    maxToken = _assistent_api.getToken(model)
+
+    if tokenSizeNow > maxToken:
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost') )
+        # text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
+        bot.reply_to(chatId, locale.find_translation(user.get_language(), 'TR_HAVE_NOT_TOKENS'), reply_markup=markup)
+        return ""
+
+    try:
+        if str(user.get_companyAi()).upper() == str("OpenAi").upper():
+            content = _gpt.post_gpt(json, model)
+        elif str(user.get_companyAi()).upper() == str("Yandex").upper():
+            _yag.set_token( _speak.get_IAM() )
+            content = _yag.post_gpt(json, model)
+        elif str(user.get_companyAi()).upper() == str("Sber").upper():
+            content = _sber.post_gpt(json, model)
+        elif str(user.get_companyAi()).upper() == str("Meta").upper():
+            content = _metaG.post_gpt(json, model)
+
+
+        if content.get_code() == 200:
+            _db.add_context(user.get_userId(), chatId, "user",          chatId, text,       False)
+            _db.add_context(user.get_userId(), chatId, "assistant",     chatId, content.get_result(),    False)
+    
+    except OpenAIError as err: 
+        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_OPENAI')
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost ') )
+        # bot.send_message(message.chat.id, content, reply_markup=markup)
+        bot.reply_to(chatId, t_mes.format(err),reply_markup=markup)
+        _logger.add_critical("OpenAI: {}".format(err))
+
+    return content
+
+
 def send_text(chat_id, text, reply_markup=None):
     max_message_length = 4096
     while len(text) > 0:
@@ -603,12 +675,27 @@ def encode_image(image_path):
 def on_post_media(sender, userId, mediaList):
     # print(f"Received media for user {userId} in the signal handler.")
     message = ''
+    chatId = ''
     for media in mediaList:
+        if chatId == '':
+            chatId = media._chatId
+        
         if media._type == "document":
             message += _converterFile.convert_files_to_text('files/{}'.format(media._fileWay), media._fileName)
+            os.remove('files/{}'.format(media._fileWay))
+            # print( '\n4. удалили {}\n'.format(media._fileWay) )
             # print(converted_text)
+        if media._type == "message":
+            message = media._mediaData + '\n' + message
     
     send_text(media._chatId, message)
+
+    user = user_verification_easy(userId)
+
+    content = post_gpt_new(chatId, user, message, user.get_model())
+
+    send_text(chatId, content.get_result())
+
 
 
 
