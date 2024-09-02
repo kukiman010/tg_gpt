@@ -12,6 +12,7 @@ class UserMedia:
         self._type = ""
         self._mediaData = None
         self._sizeByte = 0
+        self._titleId = 0
         
     
     def add_mes(self, text):
@@ -40,3 +41,7 @@ class UserMedia:
         self._fileName = name
         self._sizeByte = fileSize
         self._mediaData = data
+
+    def add_del_mess_id(self, messId):
+        self._type = "titleId"
+        self._titleId = messId

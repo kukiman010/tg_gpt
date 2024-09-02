@@ -223,10 +223,6 @@ def help(message):
 @bot.message_handler(content_types=['voice'])
 def voice_processing(message):
     user = user_verification(message)
-    MAX_CHAR = _db.get_count_char_for_gen_audio()
-
-    t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
-    send_mess = bot.send_message(message.chat.id, t_mes)
     
     file_id = message.voice.file_id
     file_info = bot.get_file(file_id)
@@ -239,61 +235,38 @@ def voice_processing(message):
 
     text = _speak.voice_text_v1(downloaded_file, message.from_user.id)
     # text = _speak.voice_text_v3(downloaded_file, message.from_user.id)
-
-    if text != '':
-        content = post_gpt(message, user, text, user.get_model())
-
-        if not content.get_result():
-            t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT')
-            bot.send_message(message.chat.id, t_mes)
-            _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content. Сообщение для {}".format(message.chat.username))
-
-        bot.delete_message(send_mess.chat.id, send_mess.message_id)
-
-        if len(content.get_result()) <= MAX_CHAR and content.get_code() == 200:
-            markup = types.InlineKeyboardMarkup()
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
-            send_text(message.chat.id, content.get_result(), reply_markup=markup)
-        else:    
-            send_text(message.chat.id, content.get_result())
-    else:
-        bot.delete_message(send_mess.chat.id, send_mess.message_id)
-        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_DECODE_VOICE')
-        bot.send_message(message.chat.id, t_mes)
     
+    hasUser = _mediaWorker.find_userId(user.get_userId())
+    media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
+
+    if hasUser == False:
+        t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
+        send_mess = bot.send_message(message.chat.id, t_mes)
+        del_mes = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
+        del_mes.add_del_mess_id(send_mess.message_id)
+        _mediaWorker.add_data(del_mes)
+
+    media.add_mes(text)
+    _mediaWorker.add_data(media)
     # TODO: добавить возможность записи длинных голосовых сообщений(v3)
+
 
 
 @bot.message_handler(func=lambda message: True)
 def handle_user_message(message):
     user = user_verification(message)
-    MAX_CHAR = _db.get_count_char_for_gen_audio()
-
-    t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
-    send_mess = bot.send_message(message.chat.id, t_mes)
-
+    hasUser = _mediaWorker.find_userId(user.get_userId())
     media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
-    # media.add_document(name, message.document.file_name, file_size)
+
+    if hasUser == False:
+        t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
+        send_mess = bot.send_message(message.chat.id, t_mes)
+        del_mes = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
+        del_mes.add_del_mess_id(send_mess.message_id)
+        _mediaWorker.add_data(del_mes)
+
     media.add_mes(message.text)
-    _mediaWorker.add_file(media)
-
-    # content = post_gpt(message, user, message.text, user.get_model())
-    # # content.get_result()
-
-    bot.delete_message(send_mess.chat.id, send_mess.message_id)
-
-    # if not content.get_result():
-    #     # t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT')
-    #     # bot.send_message(message.chat.id, t_mes)
-    #     _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content")
-
-    # if len(content.get_result()) <= MAX_CHAR:
-    #     markup = types.InlineKeyboardMarkup()
-    #     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
-
-    #     send_text(message.chat.id, content.get_result(), reply_markup=markup)
-    # else:    
-    #     send_text(message.chat.id, content.get_result())
+    _mediaWorker.add_data(media)
 
 
 
@@ -326,8 +299,18 @@ def handle_callback_query(call):
     elif key == 'errorPost':
         text = call.message.text
         bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
-        content = post_gpt(call.message, user, text, user.get_model())
-        send_text(call.message.chat.id, content.get_result())
+        hasUser = _mediaWorker.find_userId(user.get_userId())
+        media = UserMedia(user.get_userId(), call.message.chat.id, user.get_login() )
+
+        if hasUser == False:
+            t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
+            send_mess = bot.send_message(call.message.chat.id, t_mes)
+            del_mes = UserMedia(user.get_userId(), call.message.chat.id, user.get_login() )
+            del_mes.add_del_mess_id(send_mess.message_id)
+            _mediaWorker.add_data(del_mes)
+
+        media.add_mes(call.message)
+        _mediaWorker.add_data(media)
 
     elif assistent_match:
         id = int(assistent_match.group(1))
@@ -380,28 +363,24 @@ def handle_docs(message):
             with open(os.path.join('files/', f'{name}'), 'wb') as new_file:
                 new_file.write(downloaded_file)
 
-            media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
-            media.add_document(name, message.document.file_name, file_size)
-            _mediaWorker.add_file(media)
-            
-            # Обработка содержимого файла
-            # file_content = downloaded_file  # содержимое файла в байтах
-            
-            # # Пример: чтение и вывод содержимого файла, если это текстовый файл
-            # # (предполагается, что файл в кодировке UTF-8)
-            # try:
-            #     text_content = file_content.decode('utf-8')
 
-                
-            #     # text_content
-            #     # print("Содержимое файла:\n", text_content)
-            #     # _worker.add_file(user.get_userId,message.document.file_name, text_content)
-            #     bot.reply_to(message, "Ваш файл {} успешно обработан.".format(message.document.file_name) )
-            # except UnicodeDecodeError:
-            #     bot.reply_to(message, "Не удалось декодировать содержимое файла как текст.")
-            
-            # # Если у вас другая логика обработки, вы можете заменить этот блок
-            # # Например, анализировать, передавать дальше или выполнять другие действия
+            hasUser = _mediaWorker.find_userId(user.get_userId())
+            media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
+
+            if hasUser == False:
+                t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
+                send_mess = bot.send_message(message.chat.id, t_mes)
+                del_mes = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
+                del_mes.add_del_mess_id(send_mess.message_id)
+                _mediaWorker.add_data(del_mes)
+
+            if message.caption != None:
+                media_text = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
+                media_text.add_mes(message.caption)
+                _mediaWorker.add_data(media_text)
+
+            media.add_document(name, message.document.file_name, file_size)
+            _mediaWorker.add_data(media)
 
         except Exception as e:
             bot.reply_to(message, f'Произошла ошибка при обработке файла: {e}')
@@ -526,66 +505,8 @@ def user_verification_easy(userId):
         return user
 
 
-def post_gpt(message, user:User, text, model) -> Control.context_model.AnswerAssistent :
-    mes = Control.context_model.Context_model()
-    mes.set_data(message.from_user.id, message.chat.id,"user",message.message_id,text,False )
 
-    dict = _db.get_context(user.get_userId(), message.chat.id)
-    # dict = Control.context_model.rm_photos_in_dict(dict)
-    dict.append(mes)
-    json = Control.context_model.convert(user.get_companyAi(), dict)
-
-    # content = NULL
-    tokenSizeNow = 0
-
-    if str(user.get_companyAi()).upper() == str("OpenAi").upper():
-        tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
-    elif str(user.get_companyAi()).upper() == str("Yandex").upper():
-        tokenSizeNow = _yag.count_tokens(json, model)
-    elif str(user.get_companyAi()).upper() == str("Sber").upper():
-        tokenSizeNow = _sber.count_tokens(json, model)
-    elif str(user.get_companyAi()).upper() == str("Meta").upper():
-        tokenSizeNow = _metaG.count_tokens(json, model)
-    
-
-    maxToken = _assistent_api.getToken(model)
-
-    if tokenSizeNow > maxToken:
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost') )
-        # text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
-        bot.reply_to(message, locale.find_translation(user.get_language(), 'TR_HAVE_NOT_TOKENS'), reply_markup=markup)
-        return ""
-
-    try:
-        if str(user.get_companyAi()).upper() == str("OpenAi").upper():
-            content = _gpt.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("Yandex").upper():
-            _yag.set_token( _speak.get_IAM() )
-            content = _yag.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("Sber").upper():
-            content = _sber.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("Meta").upper():
-            content = _metaG.post_gpt(json, model)
-
-
-        if content.get_code() == 200:
-            _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id, text,       False)
-            _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id, content.get_result(),    False)
-    
-    except OpenAIError as err: 
-        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_OPENAI')
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost ') )
-        # bot.send_message(message.chat.id, content, reply_markup=markup)
-        bot.reply_to(message, t_mes.format(err),reply_markup=markup)
-        _logger.add_critical("OpenAI: {}".format(err))
-
-    return content
-
-
-
-def post_gpt_new(chatId, user:User, text, model) -> Control.context_model.AnswerAssistent :
+def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssistent :
     mes = Control.context_model.Context_model()
     mes.set_data(user.get_userId(), chatId,"user", chatId,text,False )
 
@@ -673,9 +594,9 @@ def encode_image(image_path):
   
 
 def on_post_media(sender, userId, mediaList):
-    # print(f"Received media for user {userId} in the signal handler.")
     message = ''
     chatId = ''
+    titleMessId = []
     for media in mediaList:
         if chatId == '':
             chatId = media._chatId
@@ -683,18 +604,38 @@ def on_post_media(sender, userId, mediaList):
         if media._type == "document":
             message += _converterFile.convert_files_to_text('files/{}'.format(media._fileWay), media._fileName)
             os.remove('files/{}'.format(media._fileWay))
-            # print( '\n4. удалили {}\n'.format(media._fileWay) )
-            # print(converted_text)
         if media._type == "message":
             message = media._mediaData + '\n' + message
+        if media._type == "titleId":
+            titleMessId.append( media._titleId)
+        
+    if chatId == '':
+        chatId = userId
     
-    send_text(media._chatId, message)
+    # print( "\n\n" + message)
 
     user = user_verification_easy(userId)
+    content = post_gpt(chatId, user, message, user.get_model())
+    MAX_CHAR = _db.get_count_char_for_gen_audio()
 
-    content = post_gpt_new(chatId, user, message, user.get_model())
 
-    send_text(chatId, content.get_result())
+    if len(titleMessId) != 0:
+        for medId in titleMessId:
+            bot.delete_message(chatId, medId)
+
+
+    if not content.get_result():
+        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT')
+        bot.send_message(chatId, t_mes)
+        # _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content")
+
+    if len(content.get_result()) <= MAX_CHAR:
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
+
+        send_text(chatId, content.get_result(), reply_markup=markup)
+    else:    
+        send_text(chatId, content.get_result())
 
 
 

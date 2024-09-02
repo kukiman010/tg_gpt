@@ -75,9 +75,9 @@ class MediaWorker(object):
         self.data = {}
         self.locks = {}
         self.timers = {}
-        self.start_time = time.time()
+        # self.start_time = time.time()
 
-    def add_file(self, userMedia):
+    def add_data(self, userMedia):
         userId = userMedia._userId
         if userId not in self.data:
             with self._lock:
@@ -100,14 +100,14 @@ class MediaWorker(object):
 
     def _process_files(self, userId):
         with self.locks[userId]:
-            messages = "\n".join([media._name for media in self.data[userId]])
+            messages = "\n".join([media._fileName for media in self.data[userId]])
             self._post_media(userId, self.data[userId])
             del self.data[userId]
             del self.locks[userId]
             del self.timers[userId]
 
     def _post_media(self, userId, userMediaList):
-        end_time = time.time()
+        # end_time = time.time()
         
         # Отправка сигнала с информацией о пользователе и списке медиа
         post_signal.send('MediaWorker', userId=userId, mediaList=userMediaList)
@@ -115,6 +115,11 @@ class MediaWorker(object):
         # print(f"Sending data for user {userId}:")
         # for media in userMediaList:
             # print(media._name)
+
+
+    def find_userId(self, user_id: int) -> bool:
+        return user_id in self.data
+
 
 
 # Пример использования

@@ -163,15 +163,22 @@ class dbApi:
     
 
     def get_max_file_size(self) -> int:
-        query = "select * from default_data where key='sum_max_file_size';"
-        self.db.execute_query(query)
-        data = self.db.fetch_all()
-        self.db.commit()
+        try:
+            query = "SELECT value FROM default_data WHERE key = %s;"
+            self.db.execute_query(query, ('sum_max_file_size',))
+            data = self.db.fetch_all()  # Вызываем fetch_all для получения результатов
+            self.db.commit()
+            
+            if not data:
+                print("No data found for the given key.")
+                return 0
 
-        for i in data:
-            return int( i[1] )
-                
-        return 0
+            return int(data[0][0])
+            
+        except Exception as e:
+            self.db.rollback()
+            print(f"An error occurred: {e}")
+            return 0
 
 
     def get_count_char_for_gen_audio(self) -> int:
