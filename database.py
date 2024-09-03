@@ -1,40 +1,6 @@
 import psycopg2
 import threading
 
-
-# from psycopg2.pool import ThreadedConnectionPool
-
-
-# class DatabasePool:
-#     def __init__(self, dbname, user, password, host, port, minconn=1, maxconn=10):
-#         self.pool = ThreadedConnectionPool(minconn, maxconn,
-#                                            dbname=dbname,
-#                                            user=user,
-#                                            password=password,
-#                                            host=host,
-#                                            port=port)
-#         self.lock = threading.Lock()
-
-#     def execute_query(self, query, params=None):
-#         conn = self.pool.getconn()
-#         try:
-#             with conn.cursor() as cursor:
-#                 cursor.execute(query, params)
-#                 result = cursor.fetchall()
-#                 conn.commit()
-#                 return result
-#         except Exception as error:
-#             conn.rollback()
-#             print('Error executing query:', error)
-#             return None
-#         finally:
-#             self.pool.putconn(conn)
-
-#     def close(self):
-#         self.pool.closeall()
-
-
-
 class Database:
     def __init__(self, dbname, user, password, host, port):
         self.dbname = dbname

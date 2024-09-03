@@ -618,11 +618,9 @@ def on_post_media(sender, userId, mediaList):
     content = post_gpt(chatId, user, message, user.get_model())
     MAX_CHAR = _db.get_count_char_for_gen_audio()
 
-
     if len(titleMessId) != 0:
         for medId in titleMessId:
             bot.delete_message(chatId, medId)
-
 
     if not content.get_result():
         t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT')

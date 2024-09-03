@@ -45,7 +45,7 @@ class dbApi:
 
         columns = [
         'user_id', 'login', 'status_user', 'wait_action', 'type', 'company_ai', 
-        'model', 'language_code', 'model_rec_photo', 'model_gen_pthoto', 
+        'model', 'language_code', 'model_rec_photo', 'model_gen_photo', 
         'text_to_audio', 'audio_to_text', 'speaker_name', 'last_login', 'registration_date', 'id'
         ]
 
@@ -71,7 +71,7 @@ class dbApi:
             user.set_speaker(user_data['speaker_name'])
             user.set_language(user_data['language_code'])
             user.set_recognizes_photo(user_data['model_rec_photo'])
-            user.set_generate_pthoto(user_data['model_gen_pthoto'])
+            user.set_generate_pthoto(user_data['model_gen_photo'])
             user.set_text_to_audio(user_data['text_to_audio'])
             user.set_audio_to_text(user_data['audio_to_text'])
             user.set_last_login(user_data['last_login'])
