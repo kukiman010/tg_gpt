@@ -79,6 +79,7 @@ class MediaWorker(object):
 
     def add_data(self, userMedia):
         userId = userMedia._userId
+
         if userId not in self.data:
             with self._lock:
                 if userId not in self.data:
@@ -100,7 +101,7 @@ class MediaWorker(object):
 
     def _process_files(self, userId):
         with self.locks[userId]:
-            messages = "\n".join([media._fileName for media in self.data[userId]])
+            # messages = "\n".join([media._fileName for media in self.data[userId]])
             self._post_media(userId, self.data[userId])
             del self.data[userId]
             del self.locks[userId]

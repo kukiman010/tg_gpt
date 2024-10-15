@@ -595,6 +595,7 @@ def encode_image(image_path):
 
 def on_post_media(sender, userId, mediaList):
     message = ''
+    textMes = ''
     chatId = ''
     titleMessId = []
     for media in mediaList:
@@ -605,9 +606,11 @@ def on_post_media(sender, userId, mediaList):
             message += _converterFile.convert_files_to_text('files/{}'.format(media._fileWay), media._fileName)
             os.remove('files/{}'.format(media._fileWay))
         if media._type == "message":
-            message = media._mediaData + '\n' + message
+            textMes += media._mediaData
         if media._type == "titleId":
             titleMessId.append( media._titleId)
+
+        message = textMes + '\n' + message
         
     if chatId == '':
         chatId = userId

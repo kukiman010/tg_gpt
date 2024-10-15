@@ -16,7 +16,7 @@ CREATE TABLE users (
     model               TEXT,
     language_code       TEXT,
     model_rec_photo     TEXT,
-    model_gen_photo    TEXT,
+    model_gen_photo     TEXT,
     text_to_audio       TEXT,
     audio_to_text       TEXT,
     speaker_name        TEXT,
@@ -230,7 +230,8 @@ DECLARE
 BEGIN
     -- Проверка на существование user_id или login в таблице users
     IF EXISTS (SELECT 1 FROM users WHERE user_id = p_user_id OR login = p_username) THEN
-        RAISE EXCEPTION 'User with this user_id or login already exists';
+        --RAISE EXCEPTION 'User with this user_id or login already exists';
+        RETURN; -- Прерыв функции, если пользователь уже существует
     END IF;
 
     SELECT value INTO v_company_ai FROM default_data WHERE key = 'company_ai';
@@ -262,6 +263,20 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION user_find(
+    p_user_id BIGINT
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+    v_exists BOOLEAN;
+BEGIN
+    -- Проверка на существование пользователя с заданным user_id
+    SELECT EXISTS (SELECT 1 FROM users WHERE user_id = p_user_id) INTO v_exists;
+    RETURN v_exists;
+END;
+$$ LANGUAGE plpgsql;
+
+
 
 
 
@@ -270,8 +285,6 @@ $$ LANGUAGE plpgsql;
 
 insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          '',         4097,   'Up to Sep 2021',   1, False);
 insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         8192,   'Up to Sep 2021',   1, False);
-insert into assistant_ai values('OpenAi', 'gpt-4-1106-preview',     '',         128000, 'Up to Apr 2023',   2, False);
-insert into assistant_ai values('OpenAi', 'gpt-4-vision-preview',   '',         128000, 'Up to Apr 2023',   2, False);
 insert into assistant_ai values('OpenAi', 'gpt-4-turbo',            '',         128000, 'Up to Dec 2023',   2, False);
 insert into assistant_ai values('OpenAi', 'gpt-4o',                 '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'gpt-4o-mini',            'default',  128000, 'Up to Oct 2023',   2, True);
@@ -283,7 +296,7 @@ insert into assistant_ai values('Meta',   'llama3-70b-8192',        'llama3',   
 
 insert into assistant_ai_photo values('OpenAi', 'gpt-4o',           '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai_photo values('Meta',   'llama3-70b-8192',  'llama3',   8192,   '-',                1, False);
-insert into assistant_ai_photo values('OpenAi', 'gpt-4o-mini',      '',         128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai_photo values('OpenAi', 'gpt-4o-mini',      '',         128000, 'Up to Oct 2023',   1, True);
 
 -- -- https://cloud.yandex.com/en-ru/docs/speechkit/tts/voices
 -- insert into voices values('dasha',  'Russian',  'F','ru-RU');
@@ -309,7 +322,7 @@ insert into default_data values ('language',                        'en_EN');
 insert into default_data values ('company_ai',                      'OpenAi');          -- deprecated
 insert into default_data values ('permission',                      '1');               -- 0-lock, 1-default user, 2-donater
 insert into default_data values ('assistant_model',                 'gpt-4o-mini');
-insert into default_data values ('recognizes_photo_model',          'gpt-4o-mini');          
+insert into default_data values ('recognizes_photo_model',          'gpt-4o-mini');
 insert into default_data values ('generate_pthoto_model',           'dall-e-3');        -- not used yet
 insert into default_data values ('text_to_audio',                   'yandex');
 insert into default_data values ('audio_to_text',                   'yandex');

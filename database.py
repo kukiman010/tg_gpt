@@ -1,77 +1,65 @@
 import psycopg2
-import threading
+from psycopg2 import OperationalError, pool
 
 class Database:
-    def __init__(self, dbname, user, password, host, port):
-        self.dbname = dbname
-        self.user = user
-        self.password = password
-        self.host = host
-        self.port = port
-        self.is_work = False
-        self._lock = threading.Lock()
-        self.connect()
+    def __init__(self, database, user, password, host='localhost', port=5432, minconn=1, maxconn=100):
+        self.db_config = {
+            'database': database,
+            'user': user,
+            'password': password,
+            'host': host,
+            'port': port
+        }
+        self.minconn = minconn
+        self.maxconn = maxconn
+        self.connection_pool = None
+        self.initialize_pool()
 
-    def connect(self):
-        with self._lock:
-            try:
-                self.connection = psycopg2.connect(
-                    dbname=self.dbname,
-                    user=self.user,
-                    password=self.password,
-                    host=self.host,
-                    port=self.port,
-                    client_encoding="utf8"
-                )
-                self.cursor = self.connection.cursor()
-                self.is_work = True
-                return True
-            except (Exception, psycopg2.DatabaseError) as error:
-                self.is_work = False
-                print('Error while connecting to the database:', error)
-                return False
+    def initialize_pool(self):
+        try:
+            # Инициализация пула соединений
+            self.connection_pool = psycopg2.pool.ThreadedConnectionPool(
+                self.minconn,
+                self.maxconn,
+                **self.db_config
+            )
+            print("Connection pool created successfully")
+        except (Exception, OperationalError) as e:
+            print(f"Error initializing connection pool: {e}")
+
+    def get_connection(self):
+        if not self.connection_pool:
+            raise Exception("Connection pool is not initialized")
+        return self.connection_pool.getconn()
+
+    def release_connection(self, connection):
+        if connection:
+            self.connection_pool.putconn(connection)
+
+    def reconnect(self):
+        if self.connection_pool:
+            self.connection_pool.closeall()
+        self.initialize_pool()
 
     def execute_query(self, query, params=None):
-        with self._lock:
-            try:
-                if params:
-                    self.cursor.execute(query, params)
-                else:
-                    self.cursor.execute(query)
-                return True
-            except (Exception, psycopg2.DatabaseError) as error:
-                print('Error executing query:', error)
-                return False
+        try:
+            connection = self.get_connection()
+            with connection.cursor() as cursor:
+                cursor.execute(query, params)
+                result = cursor.fetchall() if cursor.description else None
+            connection.commit()
+            return result
+        except (Exception, OperationalError) as e:
+            print(f"Error executing query: {e}")
+            if isinstance(e, OperationalError):
+                print("Attempting to reconnect to the database...")
+                self.reconnect()
+            connection.rollback()  # Откат только в случае реального исключения
+            return None
+        finally:
+            if 'connection' in locals():
+                self.release_connection(connection)
 
-    def custom_execute_query(self, query, args):
-        return self.execute_query(query, args)
-
-    def fetch_all(self):
-        with self._lock:
-            try:
-                if self.cursor.rowcount == 0:
-                    return []
-                return self.cursor.fetchall()
-            except (Exception, psycopg2.DatabaseError) as error:
-                print("Ошибка при получении данных:", error)
-                raise
-
-    def commit(self):
-        with self._lock:
-            try:
-                self.connection.commit()
-            except (Exception, psycopg2.DatabaseError) as error:
-                print("Ошибка при выполнении коммита:", error)
-                self.connection.rollback()
-
-    def close(self):
-        with self._lock:
-            self.cursor.close()
-            self.connection.close()
-            self.is_work = False
-
-    def status(self):
-        return self.is_work
-
-    def delete(self):
-        self.close()
+    def close_pool(self):
+        if self.connection_pool:
+            self.connection_pool.closeall()

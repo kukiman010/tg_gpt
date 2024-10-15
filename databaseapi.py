@@ -9,39 +9,28 @@ import Control.context_model
 class dbApi:
     def __init__(self, dbname, user, password, host, port):
         self.db = Database(dbname,user, password, host, port)
-        self.db.connect()
 
-
-#   USER
-    def find_user(self, userId):
-        query = "SELECT * FROM users WHERE user_id={};".format(userId)
-        self.db.execute_query(query)
-        data = self.db.fetch_all()
-        self.db.commit()
-        # print(data)
+    def find_user(self, userId:int):
+        query = "SELECT user_find({});".format(userId)
+        data = self.db.execute_query(query)
 
         if len(data) == 1:
-            if data[0][0] == userId:
+            if data[0][0] == True:
                 return True
-
-        return False    
+        return False  
 
     def add_user(self, user_id, username, type, language_code):
         query = 'SELECT add_user(%s, %s, %s, %s);'
         values = ( user_id, username, type, language_code )
         self.db.execute_query(query, values)
-        self.db.commit()
 
     def update_user_assistent(self, userId, company, model): 
         query = "UPDATE users SET company_ai='{}',model='{}' WHERE user_id={};".format(company,model,userId)
         self.db.execute_query(query)
-        self.db.commit()
         
     def get_user_def(self, userId):
         query = "select * from users WHERE user_id={};".format(userId)
-        self.db.execute_query(query)
-        data = self.db.fetch_all()
-        self.db.commit()
+        data = self.db.execute_query(query)
 
         columns = [
         'user_id', 'login', 'status_user', 'wait_action', 'type', 'company_ai', 
@@ -49,10 +38,7 @@ class dbApi:
         'text_to_audio', 'audio_to_text', 'speaker_name', 'last_login', 'registration_date', 'id'
         ]
 
-        self.db.execute_query("select * from user_prompts where user_id={};".format(userId))
-        prompts = self.db.fetch_all()
-        self.db.commit()
-
+        prompts = self.db.execute_query("select * from user_prompts where user_id={};".format(userId))
         user = User()
 
         for i in prompts:
@@ -83,20 +69,15 @@ class dbApi:
     def update_user_lang_code(self, userId, code): 
         query = "UPDATE users SET language_code='{}' WHERE user_id={};".format(code,userId)
         self.db.execute_query(query)
-        self.db.commit()
-        
-
 
     def add_context(self, userId, chatId, role, messageId, message, isPhoto):
         query = "INSERT INTO context VALUES (%s,%s,%s,%s,%s,%s);"
-        self.db.custom_execute_query(query, (userId, chatId, role, messageId, str(message), isPhoto) )
-        self.db.commit()
+        # self.db.custom_execute_query(query, (userId, chatId, role, messageId, str(message), isPhoto) )
+        self.db.execute_query(query, (userId, chatId, role, messageId, str(message), isPhoto) )
 
     def get_context(self, userId, chatId) -> List[Control.context_model.Context_model]:
         query = "SELECT * FROM context WHERE user_id='{}' AND chat_id='{}';".format(userId, chatId)
-        self.db.execute_query(query)
-        data = self.db.fetch_all()
-        self.db.commit()
+        data = self.db.execute_query(query)
         result = []
 
         for i in data:
@@ -109,36 +90,28 @@ class dbApi:
     def delete_user_context(self, userId, chatId):
         query = "DELETE FROM context WHERE user_id='{}' AND chat_id='{}';".format(userId, chatId)
         self.db.execute_query(query)
-        self.db.commit()
     
     def add_users_in_groups(self, userId, chatId):
         query = "SELECT add_chats_id("+str(userId)+", '{"+str(chatId) +"}');"
         self.db.execute_query(query)
-        self.db.commit()
 
     def get_all_chat(self, userId):
         query = "SELECT * FROM get_chats_id({});".format(userId)
-        self.db.execute_query(query)
-        data = self.db.fetch_all()
-        self.db.commit()
+        data = self.db.execute_query(query)
         return data
     
     def isAdmin(self, userId, username) -> bool:
         query = "SELECT * FROM admins WHERE user_id={};".format(userId)
-        self.db.execute_query(query)
-        data = self.db.fetch_all()
-        self.db.commit()
+        data = self.db.execute_query(query)
+        
         if len(data) == 1:
             if data[0][0] == userId and data[0][1] == username and data[0][2] != 0:
                 return True
         return False
     
-
     def get_assistant_ai(self):
         query = "select * from assistant_ai;"
-        self.db.execute_query(query)
-        data = self.db.fetch_all()
-        self.db.commit()
+        data = self.db.execute_query(query)
         array = []
 
         for i in data:
@@ -147,12 +120,9 @@ class dbApi:
             array.append( am )
         return array
         
-
     def get_languages(self):
         query = "select * from languages;"
-        self.db.execute_query(query)
-        data = self.db.fetch_all()
-        self.db.commit()
+        data = self.db.execute_query(query)
         array = []
 
         for i in data:
@@ -161,13 +131,10 @@ class dbApi:
             array.append( lm )
         return array
     
-
     def get_max_file_size(self) -> int:
         try:
             query = "SELECT value FROM default_data WHERE key = %s;"
-            self.db.execute_query(query, ('sum_max_file_size',))
-            data = self.db.fetch_all()  # Вызываем fetch_all для получения результатов
-            self.db.commit()
+            data = self.db.execute_query(query, ('sum_max_file_size',))
             
             if not data:
                 print("No data found for the given key.")
@@ -180,12 +147,9 @@ class dbApi:
             print(f"An error occurred: {e}")
             return 0
 
-
     def get_count_char_for_gen_audio(self) -> int:
         query =  "select * from default_data where key='count_char_for_gen_audio';"
-        self.db.execute_query(query)
-        data = self.db.fetch_all()
-        self.db.commit()
+        data = self.db.execute_query(query)
 
         for i in data:
             return int( i[1] )
@@ -193,11 +157,8 @@ class dbApi:
         return 0
 
 
-    # def get_user(self)
 
-    # def (self):
-    #     print('')
 
     def __del__(self):
-        self.db.close()
+        self.db.close_pool()
 #     print(1)
