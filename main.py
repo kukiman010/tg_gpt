@@ -390,7 +390,7 @@ def handle_docs(message):
 def handle_message(message):
     user = user_verification(message)
 
-    if user.get_status() != 2:
+    if user.get_status() >= 2:
         bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION_UPLOAD_PHOTO'))
         return
 
@@ -586,8 +586,6 @@ def send_text(chat_id, text, reply_markup=None):
 
 
 
-# def __del__():
-#     print(1)
 def encode_image(image_path):
   with open(image_path, "rb") as image_file:
     return base64.b64encode(image_file.read()).decode('utf-8')

@@ -72,7 +72,6 @@ class dbApi:
 
     def add_context(self, userId, chatId, role, messageId, message, isPhoto):
         query = "INSERT INTO context VALUES (%s,%s,%s,%s,%s,%s);"
-        # self.db.custom_execute_query(query, (userId, chatId, role, messageId, str(message), isPhoto) )
         self.db.execute_query(query, (userId, chatId, role, messageId, str(message), isPhoto) )
 
     def get_context(self, userId, chatId) -> List[Control.context_model.Context_model]:
