@@ -277,6 +277,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION update_last_login(p_user_id BIGINT) RETURNS VOID AS $$
+BEGIN
+    UPDATE users
+    SET last_login = CURRENT_TIMESTAMP
+    WHERE user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
 
 
 
@@ -288,15 +296,20 @@ insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         
 insert into assistant_ai values('OpenAi', 'gpt-4-turbo',            '',         128000, 'Up to Dec 2023',   2, False);
 insert into assistant_ai values('OpenAi', 'gpt-4o',                 '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'gpt-4o-mini',            'default',  128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi', 'o1-preview',             '',         128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi', 'o1-mini',                '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('Yandex', 'yandexgpt',              'yandex',   8000,   '06.12.2023',       2, True);
 insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   8000,   '06.12.2023',       2, False);
+insert into assistant_ai values('Yandex', 'yandexgpt-32k',          'yandex',   32000,  '06.12.2023',       2, True);
 insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, True);
 insert into assistant_ai values('Meta',   'llama3-70b-8192',        'llama3',   8192,   '-',                1, True);
+insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072,  '-',                2, True);
 
 
 insert into assistant_ai_photo values('OpenAi', 'gpt-4o',           '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai_photo values('Meta',   'llama3-70b-8192',  'llama3',   8192,   '-',                1, False);
 insert into assistant_ai_photo values('OpenAi', 'gpt-4o-mini',      '',         128000, 'Up to Oct 2023',   1, True);
+insert into assistant_ai_photo values('X ai',   'grok-vision-beta', '',         8192,   '-',                1, True);
 
 -- -- https://cloud.yandex.com/en-ru/docs/speechkit/tts/voices
 -- insert into voices values('dasha',  'Russian',  'F','ru-RU');

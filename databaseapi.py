@@ -147,7 +147,7 @@ class dbApi:
             return 0
 
     def get_count_char_for_gen_audio(self) -> int:
-        query =  "select * from default_data where key='count_char_for_gen_audio';"
+        query = "select * from default_data where key='count_char_for_gen_audio';"
         data = self.db.execute_query(query)
 
         for i in data:
@@ -155,7 +155,9 @@ class dbApi:
                 
         return 0
 
-
+    def update_last_login(self, userId) -> None:
+        query = "select from update_last_login({});".format(userId)
+        self.db.execute_query(query)
 
 
     def __del__(self):

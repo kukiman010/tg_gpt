@@ -49,6 +49,9 @@ class Settings:
         if self.file_exist(self.base_way + 'conf/meta_config.ini') == False:
             self.file_create(self.base_way + 'conf/meta_config.ini')
 
+        if self.file_exist(self.base_way + 'conf/xai_config.ini') == False:
+            self.file_create(self.base_way + 'conf/xai_config.ini')
+
         if self.file_exist(self.base_way + 'conf/db_config.ini') :
             self.isInitDB = self.db_conf_read()
         else:
@@ -111,6 +114,18 @@ class Settings:
             file.close()
         else:
             file = open(self.base_way + "conf/meta_config.ini", 'r')
+            TOKEN_FOLDER = file.read()
+            file.close()
+        return TOKEN_FOLDER
+    
+
+    def get_xai_gpt(self):
+        TOKEN_FOLDER = ""
+        if not( os.path.exists(self.base_way + "conf/xai_config.ini") ):
+            file = open(self.base_way + "conf/xai_config.ini", 'w')
+            file.close()
+        else:
+            file = open(self.base_way + "conf/xai_config.ini", 'r')
             TOKEN_FOLDER = file.read()
             file.close()
         return TOKEN_FOLDER

@@ -1,5 +1,4 @@
 from typing import List
-import Control.context_model
 
 class Context_model():
     def __init__(self) -> None:
@@ -76,6 +75,10 @@ def convert(company:str, context:List[Context_model], isPhoto:bool = False) -> L
             dict.append( {"role": i.get_role(),"content": i.get_message()} )
 
     elif str(company).upper() == str("Meta").upper():
+        for i in context:
+            dict.append( {"role": i.get_role(),"content": i.get_message()} )
+
+    elif str(company).upper() == str("X ai").upper():
         for i in context:
             dict.append( {"role": i.get_role(),"content": i.get_message()} )
 

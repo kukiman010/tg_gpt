@@ -9,6 +9,7 @@ import re
 import Gpt_models.yandexgpt
 import Gpt_models.sbergpt
 import Gpt_models.metagpt
+import Gpt_models.x_ai
 # import Gpt_models.googlegpt
 import Control.context_model
 
@@ -51,6 +52,7 @@ TOKEN_TG = _setting.get_tgToken()
 TOKEN_GPT = _setting.get_cGptToken()
 TOKEN_FOLDER_ID = _setting.get_yandex_folder()
 TOKEN_META_GPT = _setting.get_meta_gpt()
+TOKEN_XAI = _setting.get_xai_gpt()
 
 
 if TOKEN_TG == '':
@@ -90,9 +92,10 @@ except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
     _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
 
-_gpt = chatgpt(TOKEN_GPT, TOKEN_FOLDER_ID)
+_gpt = chatgpt(TOKEN_GPT)
 _yag = Gpt_models.yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
 _metaG = Gpt_models.metagpt.MetaGpt(TOKEN_META_GPT)
+_xai = Gpt_models.x_ai.Xai(TOKEN_XAI)
 _sber = Gpt_models.sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), _setting.get_sber_certificate())
 _sber.start_key_generation()
 
@@ -516,26 +519,27 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
     json = Control.context_model.convert(user.get_companyAi(), dict)
 
     # content = NULL
-    tokenSizeNow = 0
+    # tokenSizeNow = 0
 
-    if str(user.get_companyAi()).upper() == str("OpenAi").upper():
-        tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
-    elif str(user.get_companyAi()).upper() == str("Yandex").upper():
-        tokenSizeNow = _yag.count_tokens(json, model)
-    elif str(user.get_companyAi()).upper() == str("Sber").upper():
-        tokenSizeNow = _sber.count_tokens(json, model)
-    elif str(user.get_companyAi()).upper() == str("Meta").upper():
-        tokenSizeNow = _metaG.count_tokens(json, model)
+    # if str(user.get_companyAi()).upper() == str("OpenAi").upper():
+    #     # tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
+    #     tokenSizeNow = _gpt.count_tokens(json, model)
+    # elif str(user.get_companyAi()).upper() == str("Yandex").upper():
+    #     tokenSizeNow = _yag.count_tokens(json, model)
+    # elif str(user.get_companyAi()).upper() == str("Sber").upper():
+    #     tokenSizeNow = _sber.count_tokens(json, model)
+    # elif str(user.get_companyAi()).upper() == str("Meta").upper():
+    #     tokenSizeNow = _metaG.count_tokens(json, model)
     
 
-    maxToken = _assistent_api.getToken(model)
+    # maxToken = _assistent_api.getToken(model)
 
-    if tokenSizeNow > maxToken:
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost') )
-        # text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
-        bot.reply_to(chatId, locale.find_translation(user.get_language(), 'TR_HAVE_NOT_TOKENS'), reply_markup=markup)
-        return ""
+    # if tokenSizeNow > maxToken:
+    #     markup = types.InlineKeyboardMarkup()
+    #     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost') )
+    #     # text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
+    #     bot.reply_to(chatId, locale.find_translation(user.get_language(), 'TR_HAVE_NOT_TOKENS'), reply_markup=markup)
+    #     return ""
 
     try:
         if str(user.get_companyAi()).upper() == str("OpenAi").upper():
@@ -547,6 +551,9 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
             content = _sber.post_gpt(json, model)
         elif str(user.get_companyAi()).upper() == str("Meta").upper():
             content = _metaG.post_gpt(json, model)
+        elif str(user.get_companyAi()).upper() == str("X ai").upper():  
+            content = _xai.post_gpt(model, json)
+            
 
 
         if content.get_code() == 200:
@@ -616,6 +623,12 @@ def on_post_media(sender, userId, mediaList):
     # print( "\n\n" + message)
 
     user = user_verification_easy(userId)
+
+    if user == None:
+        return
+
+    _db.update_last_login(userId)
+
     content = post_gpt(chatId, user, message, user.get_model())
     MAX_CHAR = _db.get_count_char_for_gen_audio()
 
