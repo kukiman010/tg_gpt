@@ -303,7 +303,7 @@ insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   
 insert into assistant_ai values('Yandex', 'yandexgpt-32k',          'yandex',   32000,  '06.12.2023',       2, True);
 insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, True);
 insert into assistant_ai values('Meta',   'llama3-70b-8192',        'llama3',   8192,   '-',                1, True);
-insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072,  '-',                2, True);
+insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072, '-',                2, True);
 
 
 insert into assistant_ai_photo values('OpenAi', 'gpt-4o',           '',         128000, 'Up to Oct 2023',   2, True);
