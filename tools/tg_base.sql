@@ -231,14 +231,14 @@ BEGIN
     -- Проверка на существование user_id или login в таблице users
     IF EXISTS (SELECT 1 FROM users WHERE user_id = p_user_id OR login = p_username) THEN
         --RAISE EXCEPTION 'User with this user_id or login already exists';
-        RETURN; -- Прерыв функции, если пользователь уже существует
+        RETURN; 
     END IF;
 
     SELECT value INTO v_company_ai FROM default_data WHERE key = 'company_ai';
     SELECT value INTO v_permission FROM default_data WHERE key = 'permission';
     SELECT value INTO v_assistant_model FROM default_data WHERE key = 'assistant_model';
     SELECT value INTO v_rec_model FROM default_data WHERE key = 'recognizes_photo_model';
-    SELECT value INTO v_gen_model FROM default_data WHERE key = 'generate_photo_model'; -- исправленное имя столбца
+    SELECT value INTO v_gen_model FROM default_data WHERE key = 'generate_photo_model'; 
     SELECT value INTO v_tts_model FROM default_data WHERE key = 'text_to_audio';
     SELECT value INTO v_stt_model FROM default_data WHERE key = 'audio_to_text';
     SELECT value INTO v_speaker_name FROM default_data WHERE key = 'speakerName';

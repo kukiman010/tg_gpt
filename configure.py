@@ -34,8 +34,8 @@ class Settings:
         if self.folder_exist(self.base_way + 'files/') == False:
             self.folder_create(self.base_way + 'files')
 
-        if self.folder_exist(self.base_way + 'static/') == False:
-            self.folder_create(self.base_way + 'static')
+        # if self.folder_exist(self.base_way + 'static/') == False:
+            # self.folder_create(self.base_way + 'static')
 
         if self.file_exist(self.base_way + 'conf/tg_token.txt') == False:
             self.file_create(self.base_way + 'conf/tg_token.txt')

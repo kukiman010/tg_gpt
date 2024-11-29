@@ -2,59 +2,14 @@
 # расширения с которыми планирую работать: .txt .pdf .sh .cpp .h .c .sql .json .xml .
 # планирую сделать ограничение до 1мб ~= 1.000.000.000 символов, более чем достаточно 
 
-
+import os
+import fitz  
+import chardet
 import threading
-import time
-from Control.user_media   import UserMedia
-
-# # importing required modules 
-# from pypdf import PdfReader 
-  
-# # creating a pdf reader object 
-# reader = PdfReader('example.pdf') 
-  
-# # printing number of pages in pdf file 
-# print(len(reader.pages)) 
-  
-# # getting a specific page from the pdf file 
-# page = reader.pages[0] 
-  
-# # extracting text from page 
-# text = page.extract_text() 
-# print(text) 
-
-
-# import threading
-
-
-# class FileWorker(object):
-#     instance = None
-    
-#     @classmethod
-#     def new_instance(cls, *args, **kwargs):
-#         if not cls.instance:
-#             cls.instance = cls(*args, **kwargs)
-#         return cls.instance
-    
-#     def __init__(self, fileFormat):
-#         self._lock = threading.Lock()
-        
-
-
-#     def add_file(self, userId, file):
-#         with self._lock:
-#             try:
-#                 print()
-#             except (Exception) as error:
-#                 print("Ошибка при получении данных:", error)
-#                 # raise
-
-
+from blinker import signal
 # fileFormat = ['.txt' '.pdf' '.sh' '.cpp' '.h' '.c' '.sql' '.json' '.xml']
 
 
-
-from blinker import signal
 post_signal = signal('post_media')
 
 class MediaWorker(object):
@@ -75,7 +30,6 @@ class MediaWorker(object):
         self.data = {}
         self.locks = {}
         self.timers = {}
-        # self.start_time = time.time()
 
     def add_data(self, userMedia):
         userId = userMedia._userId
@@ -85,7 +39,6 @@ class MediaWorker(object):
                 if userId not in self.data:
                     self.data[userId] = []
                     self.locks[userId] = threading.Lock()
-                    # self._notify_start(userId)
 
         with self.locks[userId]:
             self.data[userId].append(userMedia)
@@ -96,57 +49,27 @@ class MediaWorker(object):
             self.timers[userId] = timer
             timer.start()
 
-    # def _notify_start(self, userId):
-        # print(f"Started receiving data from user {userId}")
-
     def _process_files(self, userId):
         with self.locks[userId]:
-            # messages = "\n".join([media._fileName for media in self.data[userId]])
             self._post_media(userId, self.data[userId])
             del self.data[userId]
             del self.locks[userId]
             del self.timers[userId]
 
     def _post_media(self, userId, userMediaList):
-        # end_time = time.time()
-        
-        # Отправка сигнала с информацией о пользователе и списке медиа
         post_signal.send('MediaWorker', userId=userId, mediaList=userMediaList)
-        
-        # print(f"Sending data for user {userId}:")
-        # for media in userMediaList:
-            # print(media._name)
-
 
     def find_userId(self, user_id: int) -> bool:
         return user_id in self.data
 
 
 
-# Пример использования
-# worker = MediaWorker.new_instance()
-# user_media = UserMedia(userId=1, chatId=112, messageId=123, name='example.txt')
-# worker.add_file(user_media)
-# time.sleep(1)
-
-# user_media1 = UserMedia(userId=1, chatId=112, messageId=123, name='ttttt.txt')
-# worker.add_file(user_media1)
-
-
-
-
-
-# pip install pymupdf
-# pip install chardet
-import os
-import fitz  # PyMuPDF
-import chardet
 
 
 class FileConverter:
     def __init__(self, file_formats=None):
         if file_formats is None:
-            file_formats = ['.txt', '.pdf', '.sh', '.cpp', '.h', '.c', '.sql', '.json', '.xml']
+            file_formats = ['.txt', '.pdf', '.sh', '.cpp', '.h', '.c', '.sql', '.json', '.xml', ".*"]
         self.file_formats = file_formats
 
     def detect_encoding(self, file_path):
@@ -188,12 +111,4 @@ class FileConverter:
         except Exception as e:
             output += f'Error processing {file_path}: {str(e)}\n\n'
         return output
-
-# Пример использования
-# file_list = ["D:/main.cpp"]
-# file_list = ["D:/test.pdf"]
-# converter = FileConverter()
-# converted_text = converter.convert_files_to_text(file_list)
-# print(converted_text)
-
 
