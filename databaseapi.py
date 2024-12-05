@@ -159,6 +159,12 @@ class dbApi:
         query = "select from update_last_login({});".format(userId)
         self.db.execute_query(query)
 
+    def get_environment(self):
+        query = "select * from default_data;"
+        data = self.db.execute_query(query)
+        data_dict = {row[0]: row[1] for row in data}
+        return data_dict
+
 
     def __del__(self):
         self.db.close_pool()

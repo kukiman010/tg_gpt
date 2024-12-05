@@ -3,7 +3,7 @@
 # планирую сделать ограничение до 1мб ~= 1.000.000.000 символов, более чем достаточно 
 
 import os
-import fitz  
+import fitz
 import chardet
 import threading
 from blinker import signal

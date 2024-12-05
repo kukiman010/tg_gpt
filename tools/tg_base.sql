@@ -336,7 +336,7 @@ insert into default_data values ('company_ai',                      'OpenAi');  
 insert into default_data values ('permission',                      '1');               -- 0-lock, 1-default user, 2-donater
 insert into default_data values ('assistant_model',                 'gpt-4o-mini');
 insert into default_data values ('recognizes_photo_model',          'gpt-4o-mini');
-insert into default_data values ('generate_pthoto_model',           'dall-e-3');        -- not used yet
+insert into default_data values ('generate_photo_model',            'dall-e-3');        -- not used yet
 insert into default_data values ('text_to_audio',                   'yandex');
 insert into default_data values ('audio_to_text',                   'yandex');
 insert into default_data values ('speakerName',                     'alena');

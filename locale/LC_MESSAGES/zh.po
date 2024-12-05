@@ -98,5 +98,11 @@ msgstr "重复请求"
 msgid "TR_HAVE_NOT_TOKENS"
 msgstr "很抱歉，您的请求超过了最大上下文长度。\n您的请求: {}\n最大长度: {}\n要继续，请使用/dropcontext命令清除上下文，或选择其他模型，或购买高级服务：/premium"
 
+msgid "TR_NO_PERMITION"
+msgstr "此命令仅适用于管理员"
+
+msgid "TR_ANSWER_SET_SETTINGS"
+msgstr "您确定要应用设置吗？"
+
 msgid "TR_"
 msgstr ""
