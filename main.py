@@ -12,6 +12,7 @@ import Gpt_models.metagpt
 import Gpt_models.x_ai
 # import Gpt_models.googlegpt
 import Control.context_model
+import Control.environment
 
 from logger         import LoggerSingleton
 from openai         import OpenAIError
@@ -29,6 +30,7 @@ from blinker            import signal
 from file_worker        import MediaWorker
 from file_worker        import FileConverter
 from Control.user_media import UserMedia
+from Control.environment import Environment
 
 
 _setting = Settings()
@@ -38,6 +40,7 @@ locale = Locale('locale/LC_MESSAGES/')
 _mediaWorker = MediaWorker.new_instance()
 post_signal = signal('post_media')
 _converterFile = FileConverter()
+_env = Environment()
 
 _db = dbApi(
     dbname =    _setting.get_db_dbname(),
@@ -81,6 +84,11 @@ if _speak.get_IAM() == '':
     _logger.add_critical('no yandex iam token!')
     sys.exit()
 
+
+_env.update( _db.get_environment() )
+if not _env.is_valid():
+    print("Environment is not corrected")
+    exit 
 
 _speak.start_key_generation()
 _assistent_api = assistent_api( _db.get_assistant_ai() )
@@ -166,6 +174,18 @@ def notify_all(message):
             for k in j:  # итерация по вложенному списку
                 # print (k, result)
                 bot.send_message(k, result)
+
+
+# @bot.message_handler(commands=['update_env'])
+# def update_environment (message):
+#     user = user_verification(message)
+#     if _db.isAdmin(message.from_user.id, message.chat.username) == False:
+#         return
+    
+#     t_mes = locale.find_translation(user.get_language(), 'TR_NO_PERMITION')
+#     send_mess = bot.send_message(message.chat.id, t_mes)
+
+#     data_dict = _db.get_environment()
 
 
 @bot.message_handler(commands=['help'])

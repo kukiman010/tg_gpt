@@ -98,5 +98,11 @@ msgstr "Repetir solicitud"
 msgid "TR_HAVE_NOT_TOKENS"
 msgstr "Lo siento, tu solicitud supera la longitud máxima del contexto.\nTu solicitud: {}\nLongitud máxima: {}\nPara continuar, usa el comando /dropcontext para limpiar el contexto, elige otro modelo o adquiere premium en /premium"
 
+msgid "TR_NO_PERMITION"
+msgstr "Este comando está disponible solo para administradores"
+
+msgid "TR_ANSWER_SET_SETTINGS"
+msgstr "¿Está seguro de que desea aplicar la configuración?"
+
 msgid "TR_"
 msgstr ""

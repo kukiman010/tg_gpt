@@ -98,5 +98,11 @@ msgstr "Repeat request"
 msgid "TR_HAVE_NOT_TOKENS"
 msgstr "Sorry, but your request exceeds the maximum context length.\nYour request: {}\nMaximum length: {}\nTo continue, please simplify the context with the /dropcontext command, use another model, or purchase Premium at /premium."
 
+msgid "TR_NO_PERMITION"
+msgstr "This command is available to admins only"
+
+msgid "TR_ANSWER_SET_SETTINGS"
+msgstr "Are you sure you want to apply the settings?"
+
 msgid "TR_"
 msgstr ""
