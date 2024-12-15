@@ -91,7 +91,6 @@ _languages_api = languages_api( _db.get_languages() )
 
 try:
     bot = telebot.TeleBot( TOKEN_TG )
-    # bot.polling(timeout=20)
 except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
     _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
@@ -201,7 +200,7 @@ def help(message):
     text = "Коротко о софте:\nОтветы генерируются при помощи GPT. По умолчанию используется модель gpt-3.5-turbo.\nРаспознавание и генерация голосовых сообщений осуществляется при помощи Yandex SpeechKit v1 (позже перейдем на v3).\n\nКоманды:\n/dropcontext - удаляет весь контекст переписки."
 
     if _db.isAdmin(message.from_user.id, message.chat.username) == True:
-        text_admin = "\n\nДоступно только для админа! будь аккуратнее с командами\n/notify_all <текст> - Эта команда отправит во все чаты твой текст, прошу, будь аккуратнее\nТут будут еще команды ..."
+        text_admin = "\n\nДоступно только для админа! будь аккуратнее с командами\n/notify_all <текст> - Эта команда отправит во все чаты твой текст, прошу, будь аккуратнее\n/update_env - Эта команда обновляет переменные бота\nТут будут еще команды ..."
         text += text_admin
 
     send_text(message.chat.id, text)
@@ -401,7 +400,7 @@ def handle_docs(message):
     user = user_verification(message)
     file_size = message.document.file_size
 
-    if file_size > _env.get_sum_max_file_size():
+    if file_size > int(_env.get_sum_max_file_size()):
         bot.reply_to(message, "Размер файла превышает допустимый лимит в 1MB.")
     else:
         try:
@@ -676,7 +675,8 @@ def on_post_media(sender, userId, mediaList):
     _db.update_last_login(userId)
 
     content = post_gpt(chatId, user, message, user.get_model())
-    MAX_CHAR = _db.get_count_char_for_gen_audio()
+
+    MAX_CHAR = int(_env.get_count_char_for_gen_audio())
 
     if len(titleMessId) != 0:
         for medId in titleMessId:
