@@ -104,5 +104,20 @@ msgstr "This command is available to admins only"
 msgid "TR_ANSWER_SET_SETTINGS"
 msgstr "Are you sure you want to apply the settings?"
 
+msgid "TR_NEW_OLD_CHANGES"
+msgstr "{}: old: {} -> new: {}"
+
+msgid "TR_DATA_IS_UP_TO_DATE"
+msgstr "Data is up to date"
+
+msgid "DATA_IS_NOT_RELEVANT"
+msgstr "Data is not relevant:\n{}\nApply changes?"
+
+msgid "TR_TR_CHANGES_NOT_APPLICED"
+msgstr "Changes will not be applied."
+
+msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
+msgstr "The following changes have been applied:\n{}"
+
 msgid "TR_"
 msgstr ""

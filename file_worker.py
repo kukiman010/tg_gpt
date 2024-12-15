@@ -78,8 +78,8 @@ class FileConverter:
             return result['encoding']
 
     def read_file(self, file_path, orig_extension):
-        if orig_extension not in self.file_formats:
-            raise ValueError(f"Unsupported file format: {orig_extension}")
+        # if orig_extension not in self.file_formats:
+            # raise ValueError(f"Unsupported file format: {orig_extension}")
         
         if orig_extension == '.pdf':
             return self.read_pdf(file_path)

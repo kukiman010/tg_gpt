@@ -104,5 +104,20 @@ msgstr "Эта команда доступна только админам"
 msgid "TR_ANSWER_SET_SETTINGS"
 msgstr "Вы уверены, что хотите применить настройки?"
 
+msgid "TR_NEW_OLD_CHANGES"
+msgstr "{}: old: {} -> new: {}"
+
+msgid "TR_DATA_IS_UP_TO_DATE"
+msgstr "Данные актуальны"
+
+msgid "DATA_IS_NOT_RELEVANT"
+msgstr "Данные не актуальны:\n{}\nПрименить изменения?"
+
+msgid "TR_TR_CHANGES_NOT_APPLICED"
+msgstr "Изменения не будут применены."
+
+msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
+msgstr "Применены следующие изменения:\n{}"
+
 msgid "TR_"
 msgstr ""

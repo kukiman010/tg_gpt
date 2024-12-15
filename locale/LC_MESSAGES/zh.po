@@ -104,5 +104,20 @@ msgstr "此命令仅适用于管理员"
 msgid "TR_ANSWER_SET_SETTINGS"
 msgstr "您确定要应用设置吗？"
 
+msgid "TR_NEW_OLD_CHANGES"
+msgstr "{}: 旧: {} -> 新: {}"
+
+msgid "TR_DATA_IS_UP_TO_DATE"
+msgstr "数据是最新的"
+
+msgid "DATA_IS_NOT_RELEVANT"
+msgstr "数据不相关:\n{}\n应用更改？"
+
+msgid "TR_TR_CHANGES_NOT_APPLICED"
+msgstr "更改将不会被应用。"
+
+msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
+msgstr "已应用以下更改:\n{}"
+
 msgid "TR_"
 msgstr ""
