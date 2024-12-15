@@ -59,35 +59,30 @@ TOKEN_XAI = _setting.get_xai_gpt()
 
 
 if TOKEN_TG == '':
-    print ('no tg token!')
-    _logger.add_critical('no tg token!')
+    _logger.add_critical('No tg token!')
     sys.exit()
 
 if TOKEN_GPT == '':
-    print ('no gpts token!')
-    _logger.add_critical('no gpts token!')
+    _logger.add_critical('No gpts token!')
     sys.exit()
 
 if TOKEN_FOLDER_ID == '':
-    print ('no yandex folder id!')
-    _logger.add_critical('no yandex folder id!')
+    _logger.add_critical('No yandex folder id!')
     sys.exit()
 
 if TOKEN_META_GPT == '':
-    print ('no meta gpt token!')
-    _logger.add_critical('no meta gpt toke!')
+    _logger.add_critical('No meta gpt toke!')
     sys.exit()
 
 _speak = speech.speaker(TOKEN_FOLDER_ID)
 if _speak.get_IAM() == '':
-    print ('no yandex iam token!')
-    _logger.add_critical('no yandex iam token!')
+    _logger.add_critical('No yandex iam token!')
     sys.exit()
 
 
 _env.update( _db.get_environment() )
 if not _env.is_valid():
-    print("Environment is not corrected")
+    _logger.add_critical('Environment is not corrected!')
     exit 
 
 _speak.start_key_generation()
@@ -96,6 +91,7 @@ _languages_api = languages_api( _db.get_languages() )
 
 try:
     bot = telebot.TeleBot( TOKEN_TG )
+    # bot.polling(timeout=20)
 except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
     _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
@@ -176,16 +172,26 @@ def notify_all(message):
                 bot.send_message(k, result)
 
 
-# @bot.message_handler(commands=['update_env'])
-# def update_environment (message):
-#     user = user_verification(message)
-#     if _db.isAdmin(message.from_user.id, message.chat.username) == False:
-#         return
-    
-#     t_mes = locale.find_translation(user.get_language(), 'TR_NO_PERMITION')
-#     send_mess = bot.send_message(message.chat.id, t_mes)
+@bot.message_handler(commands=['update_env'])
+def update_environment (message):
+    user = user_verification(message)
+    chatId = message.chat.id
+    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
+        bot.send_message(chatId, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
+        return
 
-#     data_dict = _db.get_environment()
+    mes = _env.show_differences(_db.get_environment(), locale.find_translation(user.get_language(), 'TR_NEW_OLD_CHANGES'))
+
+    if mes:
+        answer = locale.find_translation(user.get_language(), 'DATA_IS_NOT_RELEVANT').format(mes)
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_YES'), callback_data='update_env') )
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_NO'), callback_data='no_update_env') )
+
+        send_text(chatId, answer, reply_markup=markup)
+    else:
+        send_text(chatId, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
+        
 
 
 @bot.message_handler(commands=['help'])
@@ -198,13 +204,13 @@ def help(message):
         text_admin = "\n\nДоступно только для админа! будь аккуратнее с командами\n/notify_all <текст> - Эта команда отправит во все чаты твой текст, прошу, будь аккуратнее\nТут будут еще команды ..."
         text += text_admin
 
-    bot.send_message(message.chat.id, text)
+    send_text(message.chat.id, text)
 
 
 @bot.message_handler(commands=['premium'])
 def premium(message):
     user = user_verification(message)
-    bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC'))
+    send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC'))
 
 @bot.message_handler(commands=['settings'])
 def settings(message):
@@ -212,7 +218,7 @@ def settings(message):
     t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
 
     if user == None or _languages_api.size() == 0:
-        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_CHANGE_LANGUAGE'))
+        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_CHANGE_LANGUAGE'))
         return
     
     buttons = _languages_api.available_by_status()
@@ -221,7 +227,7 @@ def settings(message):
         but = types.InlineKeyboardButton(value, callback_data=key)
         markup.add(but)
 
-    bot.send_message(message.chat.id, t_mes, reply_markup=markup)
+    send_text(message.chat.id, t_mes, reply_markup=markup)
     
 
 @bot.message_handler(commands=['assistantmode'])
@@ -229,7 +235,7 @@ def help(message):
     user = user_verification(message)
 
     if user == None or _assistent_api.size() == 0:
-        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_FIND_MODELS'))
+        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_FIND_MODELS'))
         return
     
     buttons = _assistent_api.available_by_status()
@@ -240,7 +246,7 @@ def help(message):
         markup.add(but)
 
     text = locale.find_translation(user.get_language(), 'TR_DESCRIPTION_MODELS').format(user.get_model(), user.get_companyAi())
-    bot.send_message(message.chat.id, text, reply_markup=markup)
+    send_text(message.chat.id, text, reply_markup=markup)
 
 
 @bot.message_handler(content_types=['voice'])
@@ -319,6 +325,28 @@ def handle_callback_query(call):
 
         os.remove(file)
 
+    elif key == "update_env":
+        data_dict = _db.get_environment()
+        mes = _env.show_differences(data_dict, locale.find_translation(user.get_language(), 'TR_NEW_OLD_CHANGES'))
+
+        if mes:
+            answer = locale.find_translation(user.get_language(), 'TR_CHANGES_HAVE_BEEN_APPLICED').format(mes)
+
+            _env.update(data_dict)
+            send_text(call.message.chat.id, answer)
+            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
+        else:
+            send_text(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
+            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
+            
+        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+
+    elif key == "no_update_env":
+        send_text(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_TR_CHANGES_NOT_APPLICED'))
+        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+        bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
+
+
     elif key == 'errorPost':
         text = call.message.text
         bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
@@ -373,9 +401,7 @@ def handle_docs(message):
     user = user_verification(message)
     file_size = message.document.file_size
 
-    MAX_FILE_SIZE = _db.get_max_file_size()
-
-    if file_size > MAX_FILE_SIZE:
+    if file_size > _env.get_sum_max_file_size():
         bot.reply_to(message, "Размер файла превышает допустимый лимит в 1MB.")
     else:
         try:
@@ -414,7 +440,7 @@ def handle_message(message):
     user = user_verification(message)
 
     if user.get_status() >= 2:
-        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION_UPLOAD_PHOTO'))
+        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION_UPLOAD_PHOTO'))
         return
 
     t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
@@ -657,9 +683,7 @@ def on_post_media(sender, userId, mediaList):
             bot.delete_message(chatId, medId)
 
     if not content.get_result():
-        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT')
-        bot.send_message(chatId, t_mes)
-        # _logger.add_critical("Ошибка получения результата в handle_user_message: пустой content")
+        send_text(chatId, locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT')) # handle_user_message: пустой content
 
     if len(content.get_result()) <= MAX_CHAR:
         markup = types.InlineKeyboardMarkup()

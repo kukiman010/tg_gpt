@@ -104,5 +104,20 @@ msgstr "Este comando está disponible solo para administradores"
 msgid "TR_ANSWER_SET_SETTINGS"
 msgstr "¿Está seguro de que desea aplicar la configuración?"
 
+msgid "TR_NEW_OLD_CHANGES"
+msgstr "{}: antiguo: {} -> nuevo: {}"
+
+msgid "TR_DATA_IS_UP_TO_DATE"
+msgstr "Los datos están actualizados"
+
+msgid "DATA_IS_NOT_RELEVANT"
+msgstr "Los datos no son relevantes:\n{}\n¿Aplicar cambios?"
+
+msgid "TR_TR_CHANGES_NOT_APPLICED"
+msgstr "Los cambios no se aplicarán."
+
+msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
+msgstr "Se han aplicado los siguientes cambios:\n{}"
+
 msgid "TR_"
 msgstr ""

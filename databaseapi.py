@@ -129,22 +129,6 @@ class dbApi:
             lm.set_model(i[0],i[1],i[2])
             array.append( lm )
         return array
-    
-    def get_max_file_size(self) -> int:
-        try:
-            query = "SELECT value FROM default_data WHERE key = %s;"
-            data = self.db.execute_query(query, ('sum_max_file_size',))
-            
-            if not data:
-                print("No data found for the given key.")
-                return 0
-
-            return int(data[0][0])
-            
-        except Exception as e:
-            self.db.rollback()
-            print(f"An error occurred: {e}")
-            return 0
 
     def get_count_char_for_gen_audio(self) -> int:
         query = "select * from default_data where key='count_char_for_gen_audio';"

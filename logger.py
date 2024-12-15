@@ -1,6 +1,11 @@
 import logging
 import re
 
+GREEN = '\033[92m'
+RED = '\033[91m'
+YELLOW = '\033[93m'
+RESET = '\033[0m'  # Сброс цвета
+
 class LoggerSingleton(object):
     instance = None
     
@@ -23,24 +28,25 @@ class LoggerSingleton(object):
         
         self.logger.addHandler(file_handler)
     
-    def add_debug(self, str):
-        self.logger.debug(str)
+    def add_debug(self, mes):
+        self.logger.debug(mes)
+        print(GREEN + mes + RESET)
 
+    def add_info(self, mes):
+        self.logger.info(mes)
+        print(mes)
 
+    def add_warning(self, mes):
+        self.logger.warning(mes)
+        print(YELLOW + mes + RESET)
 
-        
+    def add_error(self, mes):
+        self.logger.error(mes)
+        print(RED + mes + RESET)
 
-    def add_info(self, str):
-        self.logger.info(str)
-
-    def add_warning(self, str):
-        self.logger.warning(str)
-
-    def add_error(self, str):
-        self.logger.error(str)
-
-    def add_critical(self, str):
-        self.logger.critical(str)
+    def add_critical(self, mes):
+        self.logger.critical(mes)
+        print(RED + mes + RESET)
 
 
     def read_file_from_end(self, num_lines, tag=None):
