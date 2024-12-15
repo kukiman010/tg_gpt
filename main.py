@@ -91,7 +91,6 @@ _languages_api = languages_api( _db.get_languages() )
 
 try:
     bot = telebot.TeleBot( TOKEN_TG )
-    # bot.polling(timeout=20)
 except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
     _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
@@ -401,7 +400,7 @@ def handle_docs(message):
     user = user_verification(message)
     file_size = message.document.file_size
 
-    if file_size > _env.get_sum_max_file_size():
+    if file_size > int(_env.get_sum_max_file_size()):
         bot.reply_to(message, "Размер файла превышает допустимый лимит в 1MB.")
     else:
         try:
@@ -676,7 +675,8 @@ def on_post_media(sender, userId, mediaList):
     _db.update_last_login(userId)
 
     content = post_gpt(chatId, user, message, user.get_model())
-    MAX_CHAR = _db.get_count_char_for_gen_audio()
+
+    MAX_CHAR = int(_env.get_count_char_for_gen_audio())
 
     if len(titleMessId) != 0:
         for medId in titleMessId:

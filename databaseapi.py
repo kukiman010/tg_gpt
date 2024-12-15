@@ -130,14 +130,14 @@ class dbApi:
             array.append( lm )
         return array
 
-    def get_count_char_for_gen_audio(self) -> int:
-        query = "select * from default_data where key='count_char_for_gen_audio';"
-        data = self.db.execute_query(query)
+    # def get_count_char_for_gen_audio(self) -> int:
+    #     query = "select * from default_data where key='count_char_for_gen_audio';"
+    #     data = self.db.execute_query(query)
 
-        for i in data:
-            return int( i[1] )
+    #     for i in data:
+    #         return int( i[1] )
                 
-        return 0
+    #     return 0
 
     def update_last_login(self, userId) -> None:
         query = "select from update_last_login({});".format(userId)
