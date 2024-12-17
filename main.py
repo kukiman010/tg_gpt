@@ -438,7 +438,7 @@ def handle_docs(message):
 def handle_message(message):
     user = user_verification(message)
 
-    if user.get_status() >= 2:
+    if user.get_status() < 2:
         send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION_UPLOAD_PHOTO'))
         return
 
@@ -515,7 +515,7 @@ def user_verification(message):
     user = User()
 
     if _db.find_user(message.from_user.id) == False:
-        #_db.create_user(message.from_user.id, message.chat.username, 1, user.get_wait_action(), message.chat.type, user.get_companyAi(), user.get_model(), user.get_speaker(), message.from_user.language_code, user.get_model_recognizes_photo(), user.get_model_generate_pthoto(), user.get_text_to_audio(), user.get_audio_to_text())
+        user.set_default_data(_env.get_language(), _env.get_permission(), _env.get_company_ai(), _env.get_assistant_model(), _env.get_recognizes_photo_model(), _env.get_generate_photo_model(), _env.get_text_to_audio(), _env.get_audio_to_text(), _env.get_speakerName(), _env.get_prompt())
         _db.add_user(message.from_user.id, message.chat.username, message.chat.type, message.from_user.language_code )
         _logger.add_info('создан новый пользователь {}'.format(message.chat.username))
     else:
@@ -531,7 +531,7 @@ def user_verification(message):
 def user_verification_custom(userId, chatId, chat_username, chatType, lang_code):
     user = User()
     if _db.find_user(userId) == False:
-        # _db.create_user(userId, chat_username, False, 1, chatType, user.get_companyAi(), user.get_model(), user.get_speaker(), user.get_contextSize(), lang_code)
+        user.set_default_data(_env.get_language(), _env.get_permission(), _env.get_company_ai(), _env.get_assistant_model(), _env.get_recognizes_photo_model(), _env.get_generate_photo_model(), _env.get_text_to_audio(), _env.get_audio_to_text(), _env.get_speakerName(), _env.get_prompt())
         _db.add_user(userId, chat_username, chatType, lang_code )
         _logger.add_info('создан новый пользователь {}'.format(chat_username))
     else:

@@ -1,26 +1,24 @@
 
 class User:
     def __init__(self) -> None:
-        self._user_id = 0
-        self._login = ''
-        self._status = 1  # 0-lock, 1-default user, 2-donater
-        self._companyAi = 'openAi'
-        self._model = "gpt-3.5-turbo"
-        self._speakerName = "alena"
-        self._language = 'en_EN'
+        self._user_id =                 0
+        self._login =                   ''
+        self._status =                  1  # 0-lock, 1-default user, 2-donater
+        self._companyAi =               'openAi'
+        self._model =                   "gpt-3.5-turbo"
+        self._speakerName =             "alena"
+        self._language =                'en_EN'
         
-        self._wait_action =         ""
-        self._model_recognizes_photo = "gpt-4o"
-        self._model_generate_pthoto =  "dall-e3"
-        self._text_to_audio =      "yandex"
-        self._audio_to_text =      "yandex"
-        self._registration_date =   ""
-        self._last_login =          ""
-        self._prompt = ""
+        self._wait_action =             ""
+        self._model_recognizes_photo =  "gpt-4o"
+        self._model_generate_photo =    "dall-e3"
+        self._text_to_audio =           "yandex"
+        self._audio_to_text =           "yandex"
+        self._registration_date =       ""
+        self._last_login =              ""
+        self._prompt =                  ""
 
         #statistics
-        # self.gender = ''
-
         # self._send_mess = 0
         # self._send_image = 0
         # self._send_audio = 0
@@ -35,8 +33,20 @@ class User:
             return True
         else:
             return False
+        
+    def set_default_data(self, language, permission, company_ai, assistant_model, recognizes_photo_model, generate_photo_model, text_to_audio, audio_to_text, speakerName, prompt):
+        self._status = permission  
+        self._companyAi = company_ai
+        self._model = assistant_model
+        self._speakerName = speakerName
+        self._language = language
+        self._model_recognizes_photo = recognizes_photo_model
+        self._model_generate_photo = generate_photo_model
+        self._text_to_audio = text_to_audio
+        self._audio_to_text = audio_to_text
+        self._prompt = prompt
 
-    def set_base_info(self, userId, login, status, companyAi, model, speakerName, language, wait_action, model_recognizes_photo, model_generate_pthoto, text_to_audio, audio_to_text, last_login, reg_date, prompt):
+    def set_base_info(self, userId, login, status, companyAi, model, speakerName, language, wait_action, model_recognizes_photo, model_generate_photo, text_to_audio, audio_to_text, last_login, reg_date, prompt):
         self._user_id = userId
         self._login = login
         self._status = status  
@@ -46,7 +56,7 @@ class User:
         self._language = language
         self._wait_action = wait_action
         self._model_recognizes_photo = model_recognizes_photo
-        self._model_generate_pthoto = model_generate_pthoto
+        self._model_generate_photo = model_generate_photo
         self._text_to_audio = text_to_audio
         self._audio_to_text = audio_to_text
         self._last_login = last_login
@@ -82,8 +92,8 @@ class User:
         return self._wait_action
     def get_model_recognizes_photo(self):
         return self._model_recognizes_photo
-    def get_model_generate_pthoto(self):
-        return self._model_generate_pthoto
+    def get_model_generate_photo(self):
+        return self._model_generate_photo
     def get_text_to_audio(self):
         return self._text_to_audio
     def get_audio_to_text(self):
@@ -129,7 +139,7 @@ class User:
     def set_recognizes_photo(self, value):
         self._model_recognizes_photo = value
     def set_generate_pthoto(self, value):
-        self._model_generate_pthoto = value
+        self._model_generate_photo = value
     def set_text_to_audio(self, value):
         self._text_to_audio = value
     def set_audio_to_text(self, value):
