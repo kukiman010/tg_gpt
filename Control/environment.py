@@ -17,13 +17,13 @@ class Environment():
         self._sum_max_file_size = ''
         self._prompt = ''
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         if self._sum_max_file_size and self._count_char_for_gen_audio and self._language:
             return True
         else:
             return False
 
-    def update(self, data_dict):
+    def update(self, data_dict) -> bool:
         if data_dict is None:
             _logger.add_critical('Нет данных для обновления.')
             return False
@@ -43,7 +43,7 @@ class Environment():
         
         return self.is_valid()
     
-    def show_differences(self, data_dict, template):
+    def show_differences(self, data_dict, template) -> str:
         if data_dict is None:
             _logger.add_error('Нет данных для сверки.')
             return ""
@@ -57,38 +57,38 @@ class Environment():
         return mes
 
 
-    def get_language(self):
+    def get_language(self) -> str:
         return self._language
     
-    def get_company_ai(self):
+    def get_company_ai(self) -> str:
         return self._company_ai
     
-    def get_permission(self):
-        return self._permission
+    def get_permission(self) -> int:
+        return int(self._permission)
     
-    def get_assistant_model(self):
+    def get_assistant_model(self) -> str:
         return self._assistant_model
     
-    def get_recognizes_photo_model(self):
+    def get_recognizes_photo_model(self) -> str:
         return self._recognizes_photo_model
     
-    def get_generate_pthoto_model(self):
-        return self._generate_pthoto_model
+    def get_generate_photo_model(self) -> str:
+        return self._generate_photo_model
     
-    def get_text_to_audio(self):
+    def get_text_to_audio(self) -> str:
         return self._text_to_audio
     
-    def get_audio_to_text(self):
+    def get_audio_to_text(self) -> str:
         return self._audio_to_text
     
-    def get_speakerName(self):
+    def get_speakerName(self) -> str:
         return self._speakerName
     
-    def get_count_char_for_gen_audio(self):
-        return self._count_char_for_gen_audio
+    def get_count_char_for_gen_audio(self) -> int:
+        return int(self._count_char_for_gen_audio)
     
-    def get_sum_max_file_size(self):
-        return self._sum_max_file_size
+    def get_sum_max_file_size(self) -> int:
+        return int(self._sum_max_file_size)
     
-    def get_prompt(self):
+    def get_prompt(self) -> str:
         return self._prompt
