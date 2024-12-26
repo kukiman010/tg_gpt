@@ -119,5 +119,56 @@ msgstr "Los cambios no se aplicarán."
 msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
 msgstr "Se han aplicado los siguientes cambios:\n{}"
 
+msgid "TR_MENU_LANGUAGE"
+msgstr "Configuración de idioma"
+
+msgid "TR_MENU_PROMT"
+msgstr "Configuración de aviso"
+
+msgid "TR_MENU_HELP"
+msgstr "Ayuda"
+
+msgid "TR_MENU_PREMIUM"
+msgstr "Premium"
+
+msgid "TR_MENU_SUPPORT"
+msgstr "Soporte"
+
+msgid "TR_MENU"
+msgstr "Volver al menú"
+
+msgid "TR_BACK"
+msgstr "Regresar"
+
+msgid "TR_SELECT_LANGUAGE"
+msgstr "Seleccione un idioma de las opciones disponibles"
+
+msgid "TR_SELECT_PROMT"
+msgstr "En este menú, puede ver el aviso actual, establecer el suyo propio y volver al aviso predeterminado"
+
+msgid "TR_BUTTOM_PROMT_NOW"
+msgstr "Mostrar aviso actual"
+
+msgid "TR_BUTTOM_SET_PROMT"
+msgstr "Establecer aviso"
+
+msgid "TR_BUTTOM_DEFAULT_PROMT"
+msgstr "Aviso predeterminado"
+
+msgid "TR_SHOW_PROMT_NOW"
+msgstr "Su aviso actual: {}"
+
+msgid "TR_SET_PROMT"
+msgstr "Escribe un aviso que se adjuntará al comienzo de cada conversación"
+
+msgid "TR_DEFAULT_PROMT"
+msgstr "Aviso predeterminado: {}"
+
+msgid "TR_BUTTOM_APPLY"
+msgstr "¿Aplicar?"
+
+msgid "TR_PROMT_APPLY"
+msgstr "Aviso aplicado"
+
 msgid "TR_"
 msgstr ""

@@ -119,9 +119,6 @@ msgstr "Изменения не будут применены."
 msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
 msgstr "Применены следующие изменения:\n{}"
 
-
-
-
 msgid "TR_MENU_LANGUAGE"
 msgstr "Настройки языка"
 

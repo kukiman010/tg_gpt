@@ -119,5 +119,56 @@ msgstr "更改将不会被应用。"
 msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
 msgstr "已应用以下更改:\n{}"
 
+msgid "TR_MENU_LANGUAGE"
+msgstr "语言设置"
+
+msgid "TR_MENU_PROMT"
+msgstr "提示设置"
+
+msgid "TR_MENU_HELP"
+msgstr "帮助"
+
+msgid "TR_MENU_PREMIUM"
+msgstr "高级"
+
+msgid "TR_MENU_SUPPORT"
+msgstr "支持"
+
+msgid "TR_MENU"
+msgstr "返回菜单"
+
+msgid "TR_BACK"
+msgstr "返回"
+
+msgid "TR_SELECT_LANGUAGE"
+msgstr "从可用选项中选择一种语言"
+
+msgid "TR_SELECT_PROMT"
+msgstr "在此菜单中，您可以查看当前提示，设置自己的提示，并返回默认提示"
+
+msgid "TR_BUTTOM_PROMT_NOW"
+msgstr "显示当前提示"
+
+msgid "TR_BUTTOM_SET_PROMT"
+msgstr "设置提示"
+
+msgid "TR_BUTTOM_DEFAULT_PROMT"
+msgstr "默认提示"
+
+msgid "TR_SHOW_PROMT_NOW"
+msgstr "您当前的提示：{}"
+
+msgid "TR_SET_PROMT"
+msgstr "写下将在每次对话的开头附加的提示"
+
+msgid "TR_DEFAULT_PROMT"
+msgstr "默认提示：{}"
+
+msgid "TR_BUTTOM_APPLY"
+msgstr "应用？"
+
+msgid "TR_PROMT_APPLY"
+msgstr "提示已应用"
+
 msgid "TR_"
 msgstr ""

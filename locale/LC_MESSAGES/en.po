@@ -119,5 +119,56 @@ msgstr "Changes will not be applied."
 msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
 msgstr "The following changes have been applied:\n{}"
 
+msgid "TR_MENU_LANGUAGE"
+msgstr "Language Settings"
+
+msgid "TR_MENU_PROMT"
+msgstr "Prompt Settings"
+
+msgid "TR_MENU_HELP"
+msgstr "Help"
+
+msgid "TR_MENU_PREMIUM"
+msgstr "Premium"
+
+msgid "TR_MENU_SUPPORT"
+msgstr "Support"
+
+msgid "TR_MENU"
+msgstr "Back to Menu"
+
+msgid "TR_BACK"
+msgstr "Go Back"
+
+msgid "TR_SELECT_LANGUAGE"
+msgstr "Select a language from the available options"
+
+msgid "TR_SELECT_PROMT"
+msgstr "In this menu, you can view the current prompt, set your own, and return to the default prompt"
+
+msgid "TR_BUTTOM_PROMT_NOW"
+msgstr "Show Current Prompt"
+
+msgid "TR_BUTTOM_SET_PROMT"
+msgstr "Set Prompt"
+
+msgid "TR_BUTTOM_DEFAULT_PROMT"
+msgstr "Default Prompt"
+
+msgid "TR_SHOW_PROMT_NOW"
+msgstr "Your current prompt: {}"
+
+msgid "TR_SET_PROMT"
+msgstr "Write a prompt that will be attached at the beginning of each conversation"
+
+msgid "TR_DEFAULT_PROMT"
+msgstr "Default prompt: {}"
+
+msgid "TR_BUTTOM_APPLY"
+msgstr "Apply?"
+
+msgid "TR_PROMT_APPLY"
+msgstr "Prompt applied"
+
 msgid "TR_"
 msgstr ""
