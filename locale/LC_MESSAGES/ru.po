@@ -30,7 +30,7 @@ msgid "TR_WAIT_POST"
 msgstr "Пожалуйста, подождите, запрос обрабатывается..."
 
 msgid "TR_ERROR_GET_RESULT"
-msgstr "Ошибка получения результата"
+msgstr "Ошибка получения результата: {}"
 
 msgid "TR_ERROR_DECODE_VOICE"
 msgstr "Извините, запрос не выполнен.\nСкорее всего у вас не включен микрофон"
@@ -118,6 +118,63 @@ msgstr "Изменения не будут применены."
 
 msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
 msgstr "Применены следующие изменения:\n{}"
+
+
+
+
+msgid "TR_MENU_LANGUAGE"
+msgstr "Настройки языка"
+
+msgid "TR_MENU_PROMT"
+msgstr "Настройки промта"
+
+msgid "TR_MENU_HELP"
+msgstr "Справка"
+
+msgid "TR_MENU_PREMIUM"
+msgstr "Премиум"
+
+msgid "TR_MENU_SUPPORT"
+msgstr "Поддержка"
+
+msgid "TR_MENU"
+msgstr "Назад в меню"
+
+msgid "TR_BACK"
+msgstr "Вернуться назад"
+
+msgid "TR_SELECT_LANGUAGE"
+msgstr "Выберите язык из доступных"
+
+msgid "TR_SELECT_PROMT"
+msgstr "В этом меню можете посмотреть текущий промт, задать свой и вернуктся к промту по умолчанию"
+
+msgid "TR_BUTTOM_PROMT_NOW"
+msgstr "Показать текущий промт"
+
+msgid "TR_BUTTOM_SET_PROMT"
+msgstr "Задать промт"
+
+msgid "TR_BUTTOM_DEFAULT_PROMT"
+msgstr "Промт по умолчанию "
+
+msgid "TR_SHOW_PROMT_NOW"
+msgstr "Ваш текущий промт: {}"
+
+msgid "TR_SET_PROMT"
+msgstr "Напишите промт который будет прикреплятся в начале каждой переписки"
+
+msgid "TR_DEFAULT_PROMT"
+msgstr "Промт по умолчанию: {}"
+
+msgid "TR_BUTTOM_APPLY"
+msgstr "Применить ?"
+
+msgid "TR_PROMT_APPLY"
+msgstr "Промт принят"
+
+msgid "TR_"
+msgstr ""
 
 msgid "TR_"
 msgstr ""

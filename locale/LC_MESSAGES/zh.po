@@ -30,7 +30,7 @@ msgid "TR_WAIT_POST"
 msgstr "请稍等，请求正在处理中..."
 
 msgid "TR_ERROR_GET_RESULT"
-msgstr "获取结果时出错"
+msgstr "获取结果时出错: {}"
 
 msgid "TR_ERROR_DECODE_VOICE"
 msgstr "很抱歉，请求无法执行。\n您的麦克风很可能没有打开"

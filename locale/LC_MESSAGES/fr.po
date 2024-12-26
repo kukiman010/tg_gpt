@@ -30,7 +30,7 @@ msgid "TR_WAIT_POST"
 msgstr "Veuillez patienter, la requête est en cours de traitement..."
 
 msgid "TR_ERROR_GET_RESULT"
-msgstr "Erreur lors de la récupération du résultat"
+msgstr "Erreur lors de la récupération du résultat: {}"
 
 msgid "TR_ERROR_DECODE_VOICE"
 msgstr "Désolé, la requête n'a pas été exécutée.\nIl est probable que votre microphone soit désactivé"

@@ -30,6 +30,11 @@ class Context_model():
     def get_isPhoto(self):
         return self.isPhoto
     
+    def set_role(self, role):
+        self.role = role
+    def set_message(self, message):
+        self.message = message
+    
 
 class AnswerAssistent():
     def __init__(self) -> None:

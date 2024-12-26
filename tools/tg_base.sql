@@ -26,14 +26,12 @@ CREATE TABLE users (
 );
 
 CREATE TABLE user_prompts (
-    prompt_id           BIGSERIAL PRIMARY KEY,
-    user_id             BIGINT NOT NULL,
+    user_id             BIGINT UNIQUE NOT NULL,
     prompt              TEXT NOT NULL,
     CONSTRAINT fk_user
         FOREIGN KEY(user_id) 
         REFERENCES users(user_id)
 );
-
 
 CREATE TABLE users_in_groups (
     user_id             BIGINT UNIQUE,
@@ -57,20 +55,12 @@ CREATE TABLE context (
     id                  BIGSERIAL PRIMARY KEY
 );
 
-CREATE TABLE prompt (
-    user_id             BIGINT,
-    prompt              TEXT,
-    id                  BIGSERIAL PRIMARY KEY
-);
-
-
 CREATE TABLE admins (
     user_id             BIGINT UNIQUE,
     login               TEXT UNIQUE,
     status              BIGINT,
     id                  BIGSERIAL PRIMARY KEY
 );
-
 
 CREATE TABLE assistant_ai (
     company_ai          TEXT,
@@ -286,7 +276,50 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION get_user_and_prompts(p_user_id BIGINT)
+RETURNS TABLE(
+    user_id BIGINT,
+    login TEXT,
+    status_user BIGINT,
+    wait_action TEXT,
+    type TEXT,
+    company_ai TEXT,
+    model TEXT,
+    language_code TEXT,
+    model_rec_photo TEXT,
+    model_gen_photo TEXT,
+    text_to_audio TEXT,
+    audio_to_text TEXT,
+    speaker_name TEXT,
+    last_login TIMESTAMP,
+    registration_date TIMESTAMP,
+    prompt TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        u.user_id, u.login, u.status_user, u.wait_action, u.type, u.company_ai, u.model, u.language_code, u.model_rec_photo, 
+        u.model_gen_photo, u.text_to_audio, u.audio_to_text, u.speaker_name, u.last_login, u.registration_date, up.prompt
+    FROM 
+        users u
+    INNER JOIN 
+        user_prompts up
+    ON 
+        u.user_id = up.user_id
+    WHERE 
+        u.user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql;
 
+
+CREATE OR REPLACE FUNCTION set_user_prompt(p_user_id BIGINT, p_prompt TEXT)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE user_prompts SET
+    prompt = p_prompt WHERE
+    user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades

@@ -28,30 +28,31 @@ class dbApi:
         query = "UPDATE users SET company_ai='{}',model='{}' WHERE user_id={};".format(company,model,userId)
         self.db.execute_query(query)
         
-    def get_user_def(self, userId):
-        query = "select * from users WHERE user_id={};".format(userId)
+    def get_user_def(self, user_id):
+        query = "SELECT * FROM get_user_and_prompts({});".format(user_id)
         data = self.db.execute_query(query)
 
+        if not data:
+            return None
+        
         columns = [
-        'user_id', 'login', 'status_user', 'wait_action', 'type', 'company_ai', 
-        'model', 'language_code', 'model_rec_photo', 'model_gen_photo', 
-        'text_to_audio', 'audio_to_text', 'speaker_name', 'last_login', 'registration_date', 'id'
+            'user_id', 'login', 'status_user', 'wait_action', 'type', 'company_ai', 
+            'model', 'language_code', 'model_rec_photo', 'model_gen_photo', 
+            'text_to_audio', 'audio_to_text', 'speaker_name', 'last_login', 
+            'registration_date', 'prompt'
         ]
-
-        prompts = self.db.execute_query("select * from user_prompts where user_id={};".format(userId))
+    
+        
         user = User()
-
-        for i in prompts:
-            user.set_prompt(i[2])
-
+    
         for row in data:
             user_data = dict(zip(columns, row))
-
+            
             user.set_user_id(user_data['user_id'])
             user.set_login(user_data['login'])
             user.set_status(user_data['status_user'])
             user.set_wait_action(user_data['wait_action'])
-            # user.set_status(user_data['type'])
+            # user.set_status(user_data['type'])  
             user.set_companyAi(user_data['company_ai'])
             user.set_model(user_data['model'])
             user.set_speaker(user_data['speaker_name'])
@@ -62,7 +63,8 @@ class dbApi:
             user.set_audio_to_text(user_data['audio_to_text'])
             user.set_last_login(user_data['last_login'])
             user.set_registration_date(user_data['registration_date'])
-
+            user.set_prompt(user_data['prompt']) 
+        
         return user
         
 
@@ -148,6 +150,14 @@ class dbApi:
         data = self.db.execute_query(query)
         data_dict = {row[0]: row[1] for row in data}
         return data_dict
+    
+    def update_user_prompt(self, userId, prompt) -> None:
+        query = "select from set_user_prompt({}, '{}');".format(userId, prompt)
+        self.db.execute_query(query)
+
+    def update_user_action(self, userId, action) -> None:
+        query = "select from update_user_action({}, '{}');".format(userId, action)
+        self.db.execute_query(query)
 
 
     def __del__(self):
