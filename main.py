@@ -194,14 +194,11 @@ def update_environment (message):
         send_text(chatId, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
         
 
-@bot.message_handler(commands=['set_prompt'])
-def update_environment (message):
-    user = user_verification(message)
-
-
 @bot.message_handler(commands=['help'])
 def help(message):
-    command_help(message)
+    user = user_verification(message)
+    text = command_help(user)
+    send_text(message.chat.id, text)
 
 
 @bot.message_handler(commands=['premium'])
@@ -212,29 +209,7 @@ def premium(message):
 @bot.message_handler(commands=['settings'])
 def settings(message):
     user = user_verification(message)
-    # t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
-
-    # markup = types.InlineKeyboardMarkup()
-    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LANGUAGE'),    callback_data='menu_language') )
-    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PROMT'),       callback_data='menu_promt') )
-    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_HELP'),        callback_data='menu_help') )
-    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PREMIUM'),     callback_data='menu_premium') )
-    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_SUPPORT'),     callback_data='menu_support') )
-
-    # send_text(message.chat.id, t_mes, reply_markup=markup)
     main_menu(user, message.chat.id)
-
-    # if user == None or _languages_api.size() == 0:
-    #     send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_CHANGE_LANGUAGE'))
-    #     return
-    
-    # buttons = _languages_api.available_by_status()
-    # markup = types.InlineKeyboardMarkup()
-    # for key, value in buttons.items():
-    #     but = types.InlineKeyboardButton(value, callback_data=key)
-    #     markup.add(but)
-
-    # send_text(message.chat.id, t_mes, reply_markup=markup)
     
 
 @bot.message_handler(commands=['assistantmode'])
@@ -420,10 +395,10 @@ def handle_callback_query(call):
 
     elif key == 'menu_help':
         bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC').format(user.get_prompt())
+        text = command_help(user)
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        send_text(chat_id, text, reply_markup=markup, id_message_for_edit=message_id)
 
     elif key == 'menu_premium':
         bot.answer_callback_query(call.id, text = '')
@@ -835,16 +810,17 @@ def action_handler(chatId, user, action, text):
         _db.update_user_action(user.get_userId(), '')
         _logger.add_critical('There is no processing of such a scenario: {}, the action will be reset').format(action)
 
-def command_help(message):
-    user = user_verification(message)
 
-    text = "Коротко о софте:\nОтветы генерируются при помощи GPT. По умолчанию используется модель gpt-3.5-turbo.\nРаспознавание и генерация голосовых сообщений осуществляется при помощи Yandex SpeechKit v1 (позже перейдем на v3).\n\nКоманды:\n/dropcontext - удаляет весь контекст переписки."
+def command_help(user):
+    if not user.is_active():
+        return locale.find_translation(user.get_language(), 'TR_ERROR')
+
+    text = locale.find_translation(user.get_language(), 'TR_GET_HELP')
 
     if _db.isAdmin(user.get_userId(), user.get_login()) == True:
-        text_admin = "\n\nДоступно только для админа! будь аккуратнее с командами\n/notify_all <текст> - Эта команда отправит во все чаты твой текст, прошу, будь аккуратнее\n/update_env - Эта команда обновляет переменные бота\nТут будут еще команды ..."
-        text += text_admin
+        text += locale.find_translation(user.get_language(), 'TR_GET_HELP_ADMIN')
 
-    send_text(message.chat.id, text)
+    return text
 
 
 
