@@ -30,7 +30,7 @@ msgid "TR_WAIT_POST"
 msgstr "Veuillez patienter, la requête est en cours de traitement..."
 
 msgid "TR_ERROR_GET_RESULT"
-msgstr "Erreur lors de la récupération du résultat"
+msgstr "Erreur lors de la récupération du résultat: {}"
 
 msgid "TR_ERROR_DECODE_VOICE"
 msgstr "Désolé, la requête n'a pas été exécutée.\nIl est probable que votre microphone soit désactivé"
@@ -118,6 +118,66 @@ msgstr "Les modifications ne seront pas appliquées."
 
 msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
 msgstr "Les modifications suivantes ont été appliquées:\n{}"
+
+msgid "TR_MENU_LANGUAGE"
+msgstr "Paramètres de langue"
+
+msgid "TR_MENU_PROMT"
+msgstr "Paramètres d'invite"
+
+msgid "TR_MENU_HELP"
+msgstr "Aide"
+
+msgid "TR_MENU_PREMIUM"
+msgstr "Premium"
+
+msgid "TR_MENU_SUPPORT"
+msgstr "Support"
+
+msgid "TR_MENU"
+msgstr "Retour au menu"
+
+msgid "TR_BACK"
+msgstr "Revenir"
+
+msgid "TR_SELECT_LANGUAGE"
+msgstr "Sélectionnez une langue parmi les options disponibles"
+
+msgid "TR_SELECT_PROMT"
+msgstr "Dans ce menu, vous pouvez voir l'invite actuelle, définir la vôtre et revenir à l'invite par défaut"
+
+msgid "TR_BUTTOM_PROMT_NOW"
+msgstr "Afficher l'invite actuelle"
+
+msgid "TR_BUTTOM_SET_PROMT"
+msgstr "Définir l'invite"
+
+msgid "TR_BUTTOM_DEFAULT_PROMT"
+msgstr "Invite par défaut"
+
+msgid "TR_SHOW_PROMT_NOW"
+msgstr "Votre invite actuelle : {}"
+
+msgid "TR_SET_PROMT"
+msgstr "Écrivez une invite qui sera attachée au début de chaque conversation"
+
+msgid "TR_DEFAULT_PROMT"
+msgstr "Invite par défaut : {}"
+
+msgid "TR_BUTTOM_APPLY"
+msgstr "Appliquer ?"
+
+msgid "TR_PROMT_APPLY"
+msgstr "Invite appliquée"
+
+msgid "TR_GET_HELP"
+msgstr "À propos du logiciel:\nLes réponses sont générées à l'aide de GPT. Par défaut, le modèle gpt-3.5-turbo est utilisé.\nLa reconnaissance et la génération de messages vocaux sont effectuées à l'aide de Yandex SpeechKit v1 (nous passerons à la v3 plus tard).\n\nCommandes:\n/dropcontext - supprime tout le contexte de la conversation."
+
+msgid "TR_GET_HELP_ADMIN"
+msgstr "\n\nDisponible uniquement pour l'admin ! Faites attention avec les commandes\n/notify_all <texte> - Cette commande enverra votre texte à tous les chats, s'il vous plaît, faites attention\n/update_env - Cette commande met à jour les variables du bot\nIl y aura d'autres commandes ici ..."
+
+msgid "TR_MESSAGE_SUPPORT"
+msgstr "Si vous rencontrez des problèmes, écrivez ici @assistant_gpts_help"
 
 msgid "TR_"
 msgstr ""

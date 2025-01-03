@@ -125,9 +125,10 @@ def drop_context(message):
 
 
 @bot.message_handler(commands=['lastlog'])
-def drop_context(message):
+def lastlog(message):
     user = user_verification(message)
     if _db.isAdmin(message.from_user.id, message.chat.username) == False:
+        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
         return
     
     words = message.text.split()
@@ -154,9 +155,10 @@ def drop_context(message):
 
 @bot.message_handler(commands=['notify_all'])
 def notify_all(message):
-    user_verification(message)
+    user = user_verification(message)
 
     if _db.isAdmin(message.from_user.id, message.chat.username) == False:
+        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
         return
 
     data = _db.get_all_chat(message.from_user.id)
@@ -192,17 +194,10 @@ def update_environment (message):
         send_text(chatId, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
         
 
-
 @bot.message_handler(commands=['help'])
 def help(message):
-    user_verification(message)
-
-    text = "Коротко о софте:\nОтветы генерируются при помощи GPT. По умолчанию используется модель gpt-3.5-turbo.\nРаспознавание и генерация голосовых сообщений осуществляется при помощи Yandex SpeechKit v1 (позже перейдем на v3).\n\nКоманды:\n/dropcontext - удаляет весь контекст переписки."
-
-    if _db.isAdmin(message.from_user.id, message.chat.username) == True:
-        text_admin = "\n\nДоступно только для админа! будь аккуратнее с командами\n/notify_all <текст> - Эта команда отправит во все чаты твой текст, прошу, будь аккуратнее\n/update_env - Эта команда обновляет переменные бота\nТут будут еще команды ..."
-        text += text_admin
-
+    user = user_verification(message)
+    text = command_help(user)
     send_text(message.chat.id, text)
 
 
@@ -214,19 +209,7 @@ def premium(message):
 @bot.message_handler(commands=['settings'])
 def settings(message):
     user = user_verification(message)
-    t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
-
-    if user == None or _languages_api.size() == 0:
-        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_CHANGE_LANGUAGE'))
-        return
-    
-    buttons = _languages_api.available_by_status()
-    markup = types.InlineKeyboardMarkup()
-    for key, value in buttons.items():
-        but = types.InlineKeyboardButton(value, callback_data=key)
-        markup.add(but)
-
-    send_text(message.chat.id, t_mes, reply_markup=markup)
+    main_menu(user, message.chat.id)
     
 
 @bot.message_handler(commands=['assistantmode'])
@@ -309,18 +292,24 @@ def handle_callback_query(call):
     language_pattern = r'^set_lang_model_(\d+)$'
     language_match = re.match(language_pattern, key)
 
-    if key == 'sintez':
+    message_id = call.message.message_id
+    chat_id = call.message.chat.id
+
+    if key == 'menu':
+        bot.answer_callback_query(call.id, text = '')
+        main_menu(user, chat_id, message_id)
+    elif key == 'sintez':
         text = call.message.text
 
         t_mes = locale.find_translation(user.get_language(), 'TR_START_DECODE_VOICE')
         bot.answer_callback_query(call.id, text = t_mes)
 
-        # file = _speak.voice_synthesis_v1(text, call.message.chat.id)
-        file = _speak.voice_synthesis_v3(text, call.message.chat.id)
+        # file = _speak.voice_synthesis_v1(text, chat_id)
+        file = _speak.voice_synthesis_v3(text, chat_id)
         # file = _speak.synthesize(text)
         
         with open(file, "rb") as audio:
-            bot.send_audio(call.message.chat.id, audio)
+            bot.send_audio(chat_id, audio)
 
         os.remove(file)
 
@@ -332,30 +321,107 @@ def handle_callback_query(call):
             answer = locale.find_translation(user.get_language(), 'TR_CHANGES_HAVE_BEEN_APPLICED').format(mes)
 
             _env.update(data_dict)
-            send_text(call.message.chat.id, answer)
+            send_text(chat_id, answer, id_message_for_edit=message_id)
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
         else:
-            send_text(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
+            send_text(chat_id, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'), id_message_for_edit=message_id)
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
             
-        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+        # bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=None)
 
     elif key == "no_update_env":
-        send_text(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_TR_CHANGES_NOT_APPLICED'))
-        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+        send_text(chat_id, locale.find_translation(user.get_language(), 'TR_TR_CHANGES_NOT_APPLICED'), id_message_for_edit=message_id)
+        # bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=None)
         bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
+
+    elif key == "menu_language":
+        bot.answer_callback_query(call.id, text = '')
+        if user == None or _languages_api.size() == 0:
+            send_text(chat_id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_CHANGE_LANGUAGE'))
+            return
+        t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_LANGUAGE')
+        
+        buttons = _languages_api.available_by_status()
+        markup = types.InlineKeyboardMarkup()
+        for key, value in buttons.items():
+            markup.add(types.InlineKeyboardButton(value, callback_data=key))
+
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
+        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+
+    elif key == 'menu_promt':
+        bot.answer_callback_query(call.id, text = '')
+        t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_LANGUAGE')
+        markup = types.InlineKeyboardMarkup()
+
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_PROMT_NOW'),    callback_data='show_my_promt') )
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_SET_PROMT'),    callback_data='set_promt') )
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_DEFAULT_PROMT'),callback_data='set_default_promt') )
+
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
+        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+
+    elif key == 'show_my_promt':
+        bot.answer_callback_query(call.id, text = '')
+        t_mes = locale.find_translation(user.get_language(), 'TR_SHOW_PROMT_NOW').format(user.get_prompt())
+        markup = types.InlineKeyboardMarkup()
+
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu_promt') )
+        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+
+    elif key == 'set_promt':
+        bot.answer_callback_query(call.id, text = '')
+        t_mes = locale.find_translation(user.get_language(), 'TR_SET_PROMT')
+        _db.update_user_action(user.get_userId(), "wait_new_prompt")
+        send_text(chat_id, t_mes, id_message_for_edit=message_id)
+
+    elif key == 'set_default_promt':
+        bot.answer_callback_query(call.id, text = '')
+        t_mes = locale.find_translation(user.get_language(), 'TR_DEFAULT_PROMT').format(_env.get_prompt())
+        markup = types.InlineKeyboardMarkup()
+
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_APPLY'),        callback_data='apply_default_promt') )
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu_promt') )
+        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+
+    elif key == 'apply_default_promt': 
+        bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
+        t_mes = locale.find_translation(user.get_language(), 'TR_PROMT_APPLY')
+        _db.update_user_prompt(user.get_userId(), _env.get_prompt())
+        send_text(chat_id, t_mes, id_message_for_edit=message_id)
+
+    elif key == 'menu_help':
+        bot.answer_callback_query(call.id, text = '')
+        text = command_help(user)
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
+        send_text(chat_id, text, reply_markup=markup, id_message_for_edit=message_id)
+
+    elif key == 'menu_premium':
+        bot.answer_callback_query(call.id, text = '')
+        t_mes = locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC').format(user.get_prompt())
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
+        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+
+    elif key == 'menu_support':
+        bot.answer_callback_query(call.id, text = '')
+        t_mes = locale.find_translation(user.get_language(), 'TR_MESSAGE_SUPPORT').format(user.get_prompt())
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
+        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
 
 
     elif key == 'errorPost':
         text = call.message.text
-        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+        bot.edit_message_reply_markup(chat_id, message_id)
         hasUser = _mediaWorker.find_userId(user.get_userId())
-        media = UserMedia(user.get_userId(), call.message.chat.id, user.get_login() )
+        media = UserMedia(user.get_userId(), chat_id, user.get_login() )
 
         if hasUser == False:
             t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
-            send_mess = bot.send_message(call.message.chat.id, t_mes)
-            del_mes = UserMedia(user.get_userId(), call.message.chat.id, user.get_login() )
+            send_mess = bot.send_message(chat_id, t_mes)
+            del_mes = UserMedia(user.get_userId(), chat_id, user.get_login() )
             del_mes.add_del_mess_id(send_mess.message_id)
             _mediaWorker.add_data(del_mes)
 
@@ -367,7 +433,7 @@ def handle_callback_query(call):
         assistent = _assistent_api.find_assistent(id)
 
         if not _assistent_api.isAvailable(id, user.get_status()):
-            bot.send_message(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PREMIUM_ASSISTANT'))
+            bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_NEED_PREMIUM_ASSISTANT'))
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION'))
             return
 
@@ -375,7 +441,7 @@ def handle_callback_query(call):
             _db.update_user_assistent(user.get_userId(),second,first ) 
             break
         
-        bot.send_message(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_USE_NEW_ASSISTANT'))
+        bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_USE_NEW_ASSISTANT'))
         bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
 
     elif language_match:
@@ -383,10 +449,10 @@ def handle_callback_query(call):
         code_lang = _languages_api.find_bottom(id)
         if locale.islanguage( code_lang ):
             _db.update_user_lang_code(user.get_userId(), code_lang)
-            bot.send_message(call.message.chat.id, locale.find_translation(code_lang, 'TR_SYSTEM_LANGUAGE_CHANGE'))
+            bot.send_message(chat_id, locale.find_translation(code_lang, 'TR_SYSTEM_LANGUAGE_CHANGE'))
             bot.answer_callback_query(call.id, locale.find_translation(code_lang, 'TR_SUCCESS'))
         else:
-            bot.send_message(call.message.chat.id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_SUPPORT'))
+            bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_SUPPORT'))
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
 
     else:
@@ -481,7 +547,7 @@ def handle_message(message):
     # if str(user.get_companyAi()).upper() == str("OpenAi").upper():
         # tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
 
-    maxToken = _assistent_api.getToken(model)
+    # maxToken = _assistent_api.getToken(model)
 
     # if tokenSizeNow > maxToken:
     #     markup = types.InlineKeyboardMarkup()
@@ -556,14 +622,19 @@ def user_verification_easy(userId):
 
 def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssistent :
     mes = Control.context_model.Context_model()
-    mes.set_data(user.get_userId(), chatId,"user", chatId,text,False )
+    mes.set_data(user.get_userId(), chatId, "user", chatId, text, False )
 
-    dict = _db.get_context(user.get_userId(), chatId)
-    # dict = Control.context_model.rm_photos_in_dict(dict)
+    context = Control.context_model.Context_model()
+    context.set_data(user.get_userId(), chatId, "system", chatId, user.get_prompt(), False )
+
+    dict = []
+    dict.append( context )
+    dict.extend(_db.get_context(user.get_userId(), chatId))
+    # dict =_db.get_context(user.get_userId(), chatId)
     dict.append(mes)
     json = Control.context_model.convert(user.get_companyAi(), dict)
 
-    # content = NULL
+    content = Control.context_model.AnswerAssistent()
     # tokenSizeNow = 0
 
     # if str(user.get_companyAi()).upper() == str("OpenAi").upper():
@@ -606,22 +677,21 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
             _db.add_context(user.get_userId(), chatId, "assistant",     chatId, content.get_result(),    False)
     
     except OpenAIError as err: 
-        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_OPENAI')
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost ') )
-        # bot.send_message(message.chat.id, content, reply_markup=markup)
-        bot.reply_to(chatId, t_mes.format(err),reply_markup=markup)
         _logger.add_critical("OpenAI: {}".format(err))
+        content.code = 500
+        content.result = str(err)
 
     return content
 
 
-def send_text(chat_id, text, reply_markup=None):
+def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
     max_message_length = 4096
     while len(text) > 0:
         if len(text) <= max_message_length:
-            bot.send_message(chat_id, text, reply_markup=reply_markup)
-            break
+            if id_message_for_edit:
+                return bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=text, reply_markup=reply_markup)
+            else:
+                return bot.send_message(chat_id, text, reply_markup=reply_markup)
         
         breakpoint = text[:max_message_length].rfind(' ')       # Ищем последний пробел или перенос строки в пределах допустимой длины
         if breakpoint == -1:
@@ -634,7 +704,10 @@ def send_text(chat_id, text, reply_markup=None):
             message_chunk = text[:breakpoint]
             text = text[breakpoint:].lstrip()
 
-        bot.send_message(chat_id, message_chunk, reply_markup=reply_markup)
+        if id_message_for_edit:
+            return bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=text, reply_markup=reply_markup)
+        else:
+            return bot.send_message(chat_id, text, reply_markup=reply_markup)
 
 
 
@@ -674,16 +747,28 @@ def on_post_media(sender, userId, mediaList):
 
     _db.update_last_login(userId)
 
-    content = post_gpt(chatId, user, message, user.get_model())
 
+    action = user.get_wait_action()
+    if action != '':
+        if len(titleMessId) != 0:
+            for medId in titleMessId:
+                bot.delete_message(chatId, medId)
+
+        action_handler(chatId, user, action, message)
+        return
+
+    content = post_gpt(chatId, user, message, user.get_model())
     MAX_CHAR = int(_env.get_count_char_for_gen_audio())
 
     if len(titleMessId) != 0:
         for medId in titleMessId:
             bot.delete_message(chatId, medId)
 
-    if not content.get_result():
-        send_text(chatId, locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT')) # handle_user_message: пустой content
+    if not content.get_result() or content.get_code() >= 300:
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost ') )
+        send_text(chatId, locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT').format(content.get_result()), reply_markup=markup ) 
+        return
 
     if len(content.get_result()) <= MAX_CHAR:
         markup = types.InlineKeyboardMarkup()
@@ -694,8 +779,45 @@ def on_post_media(sender, userId, mediaList):
         send_text(chatId, content.get_result())
 
 
+def main_menu(user, charId, id_message = None):
+    t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
+
+    markup = types.InlineKeyboardMarkup()
+    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LANGUAGE'),    callback_data='menu_language') )
+    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PROMT'),       callback_data='menu_promt') )
+    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_HELP'),        callback_data='menu_help') )
+    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PREMIUM'),     callback_data='menu_premium') )
+    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_SUPPORT'),     callback_data='menu_support') )
+
+    send_text(charId, t_mes, reply_markup=markup, id_message_for_edit=id_message)
+    
+
+def action_handler(chatId, user, action, text):
+    if action == 'wait_new_prompt':
+        _db.update_user_action(user.get_userId(), '')
+        _db.update_user_prompt(user.get_userId(), text)
+
+        t_mes = locale.find_translation(user.get_language(), 'TR_PROMT_APPLY')
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_PROMT_NOW'),    callback_data='show_my_promt') )
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
+        send_text(chatId, t_mes, reply_markup=markup)
+
+    else:
+        _db.update_user_action(user.get_userId(), '')
+        _logger.add_critical('There is no processing of such a scenario: {}, the action will be reset').format(action)
 
 
+def command_help(user):
+    if not user.is_active():
+        return locale.find_translation(user.get_language(), 'TR_ERROR')
+
+    text = locale.find_translation(user.get_language(), 'TR_GET_HELP')
+
+    if _db.isAdmin(user.get_userId(), user.get_login()) == True:
+        text += locale.find_translation(user.get_language(), 'TR_GET_HELP_ADMIN')
+
+    return text
 
 
 

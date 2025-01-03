@@ -30,7 +30,7 @@ msgid "TR_WAIT_POST"
 msgstr "请稍等，请求正在处理中..."
 
 msgid "TR_ERROR_GET_RESULT"
-msgstr "获取结果时出错"
+msgstr "获取结果时出错: {}"
 
 msgid "TR_ERROR_DECODE_VOICE"
 msgstr "很抱歉，请求无法执行。\n您的麦克风很可能没有打开"
@@ -118,6 +118,66 @@ msgstr "更改将不会被应用。"
 
 msgid "TR_CHANGES_HAVE_BEEN_APPLICED"
 msgstr "已应用以下更改:\n{}"
+
+msgid "TR_MENU_LANGUAGE"
+msgstr "语言设置"
+
+msgid "TR_MENU_PROMT"
+msgstr "提示设置"
+
+msgid "TR_MENU_HELP"
+msgstr "帮助"
+
+msgid "TR_MENU_PREMIUM"
+msgstr "高级"
+
+msgid "TR_MENU_SUPPORT"
+msgstr "支持"
+
+msgid "TR_MENU"
+msgstr "返回菜单"
+
+msgid "TR_BACK"
+msgstr "返回"
+
+msgid "TR_SELECT_LANGUAGE"
+msgstr "从可用选项中选择一种语言"
+
+msgid "TR_SELECT_PROMT"
+msgstr "在此菜单中，您可以查看当前提示，设置自己的提示，并返回默认提示"
+
+msgid "TR_BUTTOM_PROMT_NOW"
+msgstr "显示当前提示"
+
+msgid "TR_BUTTOM_SET_PROMT"
+msgstr "设置提示"
+
+msgid "TR_BUTTOM_DEFAULT_PROMT"
+msgstr "默认提示"
+
+msgid "TR_SHOW_PROMT_NOW"
+msgstr "您当前的提示：{}"
+
+msgid "TR_SET_PROMT"
+msgstr "写下将在每次对话的开头附加的提示"
+
+msgid "TR_DEFAULT_PROMT"
+msgstr "默认提示：{}"
+
+msgid "TR_BUTTOM_APPLY"
+msgstr "应用？"
+
+msgid "TR_PROMT_APPLY"
+msgstr "提示已应用"
+
+msgid "TR_GET_HELP"
+msgstr "关于软件：\n使用GPT生成响应。默认使用gpt-3.5-turbo模型。\n语音消息的识别和生成是通过Yandex SpeechKit v1进行的（我们将来会切换到v3）。\n\n命令：\n/dropcontext - 删除整个对话上下文。"
+
+msgid "TR_GET_HELP_ADMIN"
+msgstr "\n\n仅限管理员使用！请小心使用命令\n/notify_all <文本> - 此命令将向所有聊天发送您的文本，请小心\n/update_env - 此命令更新机器人的变量\n这里会有更多命令..."
+
+msgid "TR_MESSAGE_SUPPORT"
+msgstr "如果您遇到任何问题，请在此处写信 @assistant_gpts_help"
 
 msgid "TR_"
 msgstr ""
