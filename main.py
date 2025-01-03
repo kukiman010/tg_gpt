@@ -125,7 +125,7 @@ def drop_context(message):
 
 
 @bot.message_handler(commands=['lastlog'])
-def drop_context(message):
+def lastlog(message):
     user = user_verification(message)
     if _db.isAdmin(message.from_user.id, message.chat.username) == False:
         bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
