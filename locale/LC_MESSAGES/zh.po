@@ -179,5 +179,8 @@ msgstr "\n\n仅限管理员使用！请小心使用命令\n/notify_all <文本> 
 msgid "TR_MESSAGE_SUPPORT"
 msgstr "如果您遇到任何问题，请在此处写信 @assistant_gpts_help"
 
+msgid "TR_UNDO"
+msgstr "撤销"
+
 msgid "TR_"
 msgstr ""

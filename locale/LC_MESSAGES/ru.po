@@ -179,5 +179,8 @@ msgstr "\n\nДоступно только для админа! Будь акку
 msgid "TR_MESSAGE_SUPPORT"
 msgstr "При возникновении проблем напишите сюда @assistant_gpts_help"
 
+msgid "TR_UNDO"
+msgstr "Отменить"
+
 msgid "TR_"
 msgstr ""

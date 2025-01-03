@@ -179,5 +179,8 @@ msgstr "\n\nDisponible uniquement pour l'admin ! Faites attention avec les comma
 msgid "TR_MESSAGE_SUPPORT"
 msgstr "Si vous rencontrez des problèmes, écrivez ici @assistant_gpts_help"
 
+msgid "TR_UNDO"
+msgstr "Annuler"
+
 msgid "TR_"
 msgstr ""
