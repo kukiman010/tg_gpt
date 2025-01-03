@@ -179,5 +179,8 @@ msgstr "\n\n¡Disponible solo para el administrador! Ten cuidado con los comando
 msgid "TR_MESSAGE_SUPPORT"
 msgstr "Si encuentras algún problema, escribe aquí @assistant_gpts_help"
 
+msgid "TR_UNDO"
+msgstr "Deshacer"
+
 msgid "TR_"
 msgstr ""

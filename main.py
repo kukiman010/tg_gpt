@@ -371,9 +371,12 @@ def handle_callback_query(call):
 
     elif key == 'set_promt':
         bot.answer_callback_query(call.id, text = '')
+        markup = types.InlineKeyboardMarkup()
+
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_UNDO'),                callback_data='menu') )
         t_mes = locale.find_translation(user.get_language(), 'TR_SET_PROMT')
         _db.update_user_action(user.get_userId(), "wait_new_prompt")
-        send_text(chat_id, t_mes, id_message_for_edit=message_id)
+        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
 
     elif key == 'set_default_promt':
         bot.answer_callback_query(call.id, text = '')
@@ -781,6 +784,9 @@ def on_post_media(sender, userId, mediaList):
 
 def main_menu(user, charId, id_message = None):
     t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
+    
+    if user.get_wait_action() == 'wait_new_prompt':
+        _db.update_user_action(user.get_userId(), '')   
 
     markup = types.InlineKeyboardMarkup()
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LANGUAGE'),    callback_data='menu_language') )

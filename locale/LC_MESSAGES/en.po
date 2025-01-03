@@ -179,5 +179,8 @@ msgstr "\n\nAvailable only for the admin! Be careful with the commands\n/notify_
 msgid "TR_MESSAGE_SUPPORT"
 msgstr "If you encounter any problems, write here @assistant_gpts_help"
 
+msgid "TR_UNDO"
+msgstr "Undo"
+
 msgid "TR_"
 msgstr ""
