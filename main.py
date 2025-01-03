@@ -372,9 +372,6 @@ def handle_callback_query(call):
     elif key == 'set_promt':
         bot.answer_callback_query(call.id, text = '')
         t_mes = locale.find_translation(user.get_language(), 'TR_SET_PROMT')
-        # markup = types.InlineKeyboardMarkup()
-        # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu_promt') )
-        # send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
         _db.update_user_action(user.get_userId(), "wait_new_prompt")
         send_text(chat_id, t_mes, id_message_for_edit=message_id)
 
@@ -409,7 +406,7 @@ def handle_callback_query(call):
 
     elif key == 'menu_support':
         bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC').format(user.get_prompt())
+        t_mes = locale.find_translation(user.get_language(), 'TR_MESSAGE_SUPPORT').format(user.get_prompt())
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
         send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)

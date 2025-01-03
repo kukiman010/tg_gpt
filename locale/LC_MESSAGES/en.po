@@ -170,5 +170,14 @@ msgstr "Apply?"
 msgid "TR_PROMT_APPLY"
 msgstr "Prompt applied"
 
+msgid "TR_GET_HELP"
+msgstr "About the software:\nResponses are generated using GPT. By default, the gpt-3.5-turbo model is used.\nVoice message recognition and generation are performed using Yandex SpeechKit v1 (we will switch to v3 later).\n\nCommands:\n/dropcontext - removes the entire conversation context."
+
+msgid "TR_GET_HELP_ADMIN"
+msgstr "\n\nAvailable only for the admin! Be careful with the commands\n/notify_all <text> - This command will send your text to all chats, please be careful\n/update_env - This command updates the bot variables\nThere will be more commands here ..."
+
+msgid "TR_MESSAGE_SUPPORT"
+msgstr "If you encounter any problems, write here @assistant_gpts_help"
+
 msgid "TR_"
 msgstr ""

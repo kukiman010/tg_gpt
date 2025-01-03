@@ -170,5 +170,14 @@ msgstr "应用？"
 msgid "TR_PROMT_APPLY"
 msgstr "提示已应用"
 
+msgid "TR_GET_HELP"
+msgstr "关于软件：\n使用GPT生成响应。默认使用gpt-3.5-turbo模型。\n语音消息的识别和生成是通过Yandex SpeechKit v1进行的（我们将来会切换到v3）。\n\n命令：\n/dropcontext - 删除整个对话上下文。"
+
+msgid "TR_GET_HELP_ADMIN"
+msgstr "\n\n仅限管理员使用！请小心使用命令\n/notify_all <文本> - 此命令将向所有聊天发送您的文本，请小心\n/update_env - 此命令更新机器人的变量\n这里会有更多命令..."
+
+msgid "TR_MESSAGE_SUPPORT"
+msgstr "如果您遇到任何问题，请在此处写信 @assistant_gpts_help"
+
 msgid "TR_"
 msgstr ""
