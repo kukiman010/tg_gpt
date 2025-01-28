@@ -692,25 +692,31 @@ def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
     while len(text) > 0:
         if len(text) <= max_message_length:
             if id_message_for_edit:
-                return bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=text, reply_markup=reply_markup)
+                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=text, reply_markup=reply_markup)
             else:
-                return bot.send_message(chat_id, text, reply_markup=reply_markup)
+                bot.send_message(chat_id, text, reply_markup=reply_markup)
+            return
         
-        breakpoint = text[:max_message_length].rfind(' ')       # Ищем последний пробел или перенос строки в пределах допустимой длины
+        breakpoint = text[:max_message_length].rfind(' ')
         if breakpoint == -1:
             breakpoint = text[:max_message_length].rfind('\n')
 
-        if breakpoint == -1:                                    # В пределах max_message_length нет пробелов
+        if breakpoint == -1:  
+            # Если внутри первых max_message_length символов нет ни пробелов, ни переносов строк
             message_chunk = text[:max_message_length]
             text = text[max_message_length:]
-        else:                                                   # Разделяем по найденному пробелу/переносу строки
+        else:
+            # Разделяем по найденному пробелу/переносу строки
             message_chunk = text[:breakpoint]
             text = text[breakpoint:].lstrip()
 
         if id_message_for_edit:
-            return bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=text, reply_markup=reply_markup)
+            bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=message_chunk, reply_markup=reply_markup)
         else:
-            return bot.send_message(chat_id, text, reply_markup=reply_markup)
+            bot.send_message(chat_id, message_chunk, reply_markup=reply_markup)
+
+        # Обнулить id_message_for_edit после первой отправки, чтобы последующие сообщения отправлялись, а не редактировались
+        id_message_for_edit = None
 
 
 
