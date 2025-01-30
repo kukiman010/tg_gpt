@@ -692,9 +692,9 @@ def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
     while len(text) > 0:
         if len(text) <= max_message_length:
             if id_message_for_edit:
-                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=text, reply_markup=reply_markup)
+                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=text, reply_markup=reply_markup, parse_mode='Markdown')
             else:
-                bot.send_message(chat_id, text, reply_markup=reply_markup)
+                bot.send_message(chat_id, text, reply_markup=reply_markup, parse_mode='Markdown')
             return
         
         breakpoint = text[:max_message_length].rfind(' ')
@@ -711,9 +711,9 @@ def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
             text = text[breakpoint:].lstrip()
 
         if id_message_for_edit:
-            bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=message_chunk, reply_markup=reply_markup)
+            bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=message_chunk, reply_markup=reply_markup, parse_mode='Markdown')
         else:
-            bot.send_message(chat_id, message_chunk, reply_markup=reply_markup)
+            bot.send_message(chat_id, message_chunk, reply_markup=reply_markup, parse_mode='Markdown')
 
         # Обнулить id_message_for_edit после первой отправки, чтобы последующие сообщения отправлялись, а не редактировались
         id_message_for_edit = None
