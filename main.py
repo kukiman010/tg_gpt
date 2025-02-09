@@ -545,7 +545,7 @@ def handle_message(message):
 
     content = ""
     # tokenSizeNow = 0
-    model = "gpt-4-vision-preview"
+    model = "gpt-4o-mini"
 
     # if str(user.get_companyAi()).upper() == str("OpenAi").upper():
         # tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
