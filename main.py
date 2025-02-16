@@ -687,36 +687,91 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
     return content
 
 
-def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
-    max_message_length = 4096
-    while len(text) > 0:
-        if len(text) <= max_message_length:
-            if id_message_for_edit:
-                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=text, reply_markup=reply_markup, parse_mode='Markdown')
-            else:
-                bot.send_message(chat_id, text, reply_markup=reply_markup, parse_mode='Markdown')
-            return
-        
-        breakpoint = text[:max_message_length].rfind(' ')
-        if breakpoint == -1:
-            breakpoint = text[:max_message_length].rfind('\n')
+def find_substring_occurrences(text, substring):
+    if not substring or not text:
+        # raise ValueError("Подстрока для поиска не должна быть пустой")
+        return -1
 
-        if breakpoint == -1:  
-            # Если внутри первых max_message_length символов нет ни пробелов, ни переносов строк
-            message_chunk = text[:max_message_length]
+    indices = []
+    start = 0
+
+    while start != -1:
+        start = text.find(substring, start)
+        if start != -1:
+            indices.append(start)
+            start += len(substring)
+
+    return indices[-1] if len(indices) % 2 != 0 else -1
+
+
+def fix_markdown_blocks(array):
+    block_code = '```'
+    block_bold = '**'
+    fix_block = ''
+
+    for i, text in enumerate(array):
+        if fix_block:
+            array[i] = fix_block + array[i]
+            fix_block = ''
+
+        find_block_code = find_substring_occurrences(array[i], block_code)
+        find_block_bold = find_substring_occurrences(array[i], block_bold)
+
+        if find_block_code != -1 and find_block_bold != -1:
+            if find_block_code < find_block_bold:
+                fix_block = block_code + block_bold
+                array[i] += block_bold + block_code
+            else:
+                fix_block = block_bold + block_code
+                array[i] += block_code + block_bold
+        elif find_block_code != -1:
+            fix_block = block_code
+            array[i] += block_code
+        elif find_block_bold != -1:
+            fix_block = block_bold
+            array[i] += block_bold
+
+
+def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
+    max_message_length = 4500
+    hard_break_point = 4300
+    soft_break_point = 4000
+    results = []
+
+    while len(text) > max_message_length:
+        offset = text[soft_break_point:hard_break_point].rfind('\n')
+        if offset == -1:
+            offset = text[soft_break_point:max_message_length].rfind(' ')
+        if offset == -1:
+            results.append(text[:max_message_length])
             text = text[max_message_length:]
         else:
-            # Разделяем по найденному пробелу/переносу строки
-            message_chunk = text[:breakpoint]
-            text = text[breakpoint:].lstrip()
+            original_index = offset + soft_break_point
+            results.append(text[:original_index])
+            text = text[original_index:]
 
-        if id_message_for_edit:
-            bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=message_chunk, reply_markup=reply_markup, parse_mode='Markdown')
-        else:
-            bot.send_message(chat_id, message_chunk, reply_markup=reply_markup, parse_mode='Markdown')
+    if text:
+        results.append(text)
 
-        # Обнулить id_message_for_edit после первой отправки, чтобы последующие сообщения отправлялись, а не редактировались
-        id_message_for_edit = None
+    fix_markdown_blocks(results)
+
+    for chunk in results:
+        try:
+            if id_message_for_edit:
+                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=chunk, reply_markup=reply_markup, parse_mode='Markdown')
+                id_message_for_edit = None
+            else:
+                bot.send_message(chat_id, chunk, reply_markup=reply_markup, parse_mode='Markdown')
+
+                
+        except Exception as e:
+            _logger.add_critical(f"Ошибка при отправке сообщения для {chat_id}: {e}\n В этом тексте: \n{text}")
+
+            if id_message_for_edit:
+                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=chunk, reply_markup=reply_markup)
+                id_message_for_edit = None
+            else:
+                bot.send_message(chat_id, chunk, reply_markup=reply_markup)
 
 
 
