@@ -731,6 +731,8 @@ def fix_markdown_blocks(array):
             fix_block = block_bold
             array[i] += block_bold
 
+def replace_stars_with_backticks(text):
+    return re.sub(r'\*\*(.*?)\*\*', r'`\1`', text)
 
 def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
     max_message_length = 4500
@@ -756,22 +758,18 @@ def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
     fix_markdown_blocks(results)
 
     for chunk in results:
+        converted_text = replace_stars_with_backticks(chunk) # The telebot bug has been fixed. do not send markdown text with _ in the block **
         try:
             if id_message_for_edit:
-                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=chunk, reply_markup=reply_markup, parse_mode='Markdown')
+                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=converted_text, reply_markup=reply_markup, parse_mode='Markdown')
                 id_message_for_edit = None
             else:
-                bot.send_message(chat_id, chunk, reply_markup=reply_markup, parse_mode='Markdown')
+                bot.send_message(chat_id, converted_text, reply_markup=reply_markup, parse_mode='Markdown')
 
                 
         except Exception as e:
-            _logger.add_critical(f"Ошибка при отправке сообщения для {chat_id}: {e}\n В этом тексте: \n{text}")
-
-            if id_message_for_edit:
-                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=chunk, reply_markup=reply_markup)
-                id_message_for_edit = None
-            else:
-                bot.send_message(chat_id, chunk, reply_markup=reply_markup)
+            _logger.add_critical(f"Ошибка для chat_id:{chat_id} при отправке сообщения. Ошибка: {e}\n В этом тексте: \n{converted_text}")
+            bot.send_message(chat_id, converted_text, reply_markup=reply_markup)
 
 
 
