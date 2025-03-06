@@ -735,9 +735,9 @@ def replace_stars_with_backticks(text):
     return re.sub(r'\*\*(.*?)\*\*', r'`\1`', text)
 
 def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
-    max_message_length = 4500
-    hard_break_point = 4300
-    soft_break_point = 4000
+    max_message_length = 4050
+    hard_break_point = 3700
+    soft_break_point = 3300
     results = []
 
     while len(text) > max_message_length:
