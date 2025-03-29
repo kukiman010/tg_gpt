@@ -24,27 +24,26 @@ RUN apt-get update && apt-get install -y gcc  \
    && rm -rf /var/lib/apt/lists/*
 
 
-# Сделайте python3 основным интерпретатором
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
 WORKDIR /app
-
-RUN curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -a
-
 COPY conf /app/conf
 COPY . .
 
-RUN bash -c "source ~/.bashrc"
+# установка yc cli
+RUN curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -a
 RUN expect tools/yc_init.expect
+RUN ln -s /root/yandex-cloud/bin/yc /usr/local/bin/yc
+
+# Сделайте python3 основным интерпретатором
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Установите pip для python3.10
 RUN python -m pip install --upgrade pip
-
-COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 
-CMD ["bash"]
-   
+# CMD ["bash"]
+CMD ["python3", "main.py"]
+# CMD bash -c "source ~/.bashrc && python3 main.py"
+
 
 
