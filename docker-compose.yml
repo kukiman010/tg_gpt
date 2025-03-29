@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./conf:/usr/src/app/conf
+    depends_on:
+      - db
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile-db
+    environment:
+      POSTGRES_USER: your_db_username
+      POSTGRES_PASSWORD: your_db_password
+      POSTGRES_DB: your_db_name
+    ports:
+      - "5432:5432"
+
+  runner:
+    image: my-github-actions-runner-image
+    environment:
+      - RUNNER_TOKEN=your_github_runner_token
+      - RUNNER_NAME=custom-runner
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

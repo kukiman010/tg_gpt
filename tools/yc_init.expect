@@ -1,0 +1,31 @@
+#!/usr/bin/expect
+
+# Установить тайм-аут на ожидание (в секундах)
+set timeout -1
+
+# Запуск команды yc init
+spawn /root/yandex-cloud/bin/yc init
+
+# Ожидание первой запроса на ввод и ввод данных из файла /app/config/yc_aim.conf
+expect "Please enter OAuth token:" {
+    set conf_data [read [open "/app/conf/yc_aim.conf" "r"]]
+    send -- "$conf_data\r"
+}
+
+# Ожидание второго запроса и ввод '1'
+expect "Please enter your numeric choice:" {
+    send -- "1\r"
+}
+
+# Ожидание третьего запроса и ввод 'y'
+expect "Do you want to configure a default Compute zone? \\\[Y/n\\\] " {
+    send -- "y\r"
+}
+
+# # Ожидание четвертого запроса и ввод '1'
+expect "Please enter your numeric choice:" {
+    send -- "1\r"
+}
+
+# Завершение скрипта
+expect eof
