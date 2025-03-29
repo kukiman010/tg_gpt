@@ -111,8 +111,8 @@ _gpt = chatgpt(TOKEN_GPT)
 _yag = Gpt_models.yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
 _metaG = Gpt_models.metagpt.MetaGpt(TOKEN_META_GPT)
 _xai = Gpt_models.x_ai.Xai(TOKEN_XAI)
-_sber = Gpt_models.sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), _setting.get_sber_certificate())
-_sber.start_key_generation()
+# _sber = Gpt_models.sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), _setting.get_sber_certificate())
+# _sber.start_key_generation()
 _claude = Gpt_models.claude_api.Claud(TOKEN_CLAUDE)
 _deepseek = Gpt_models.deepseak_api.DeepSeek(TOKEN_DEEPSEEK)
 
@@ -680,8 +680,8 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
         elif str(user.get_companyAi()).upper() == str("Yandex").upper():
             _yag.set_token( _speak.get_IAM() )
             content = _yag.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("Sber").upper():
-            content = _sber.post_gpt(json, model)
+        # elif str(user.get_companyAi()).upper() == str("Sber").upper():
+            # content = _sber.post_gpt(json, model)
         elif str(user.get_companyAi()).upper() == str("Meta").upper():
             content = _metaG.post_gpt(json, model)
         elif str(user.get_companyAi()).upper() == str("X ai").upper():  
