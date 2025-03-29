@@ -323,11 +323,11 @@ $$ LANGUAGE plpgsql;
 
 
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades
-
+-- нужно добавить в эту таблицу больше данных о модели, умеет ли она работать с фото, синтезировать, распознавать делать поиск в интернете, и т.д.
 insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          '',         4097,   'Up to Sep 2021',   1, False);
 insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         8192,   'Up to Sep 2021',   1, False);
 insert into assistant_ai values('OpenAi', 'gpt-4-turbo',            '',         128000, 'Up to Dec 2023',   2, False);
-insert into assistant_ai values('OpenAi', 'gpt-4o',                 '',         128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi', 'gpt-4o',                 '',         128000, 'Oct 01, 2023',     2, True);
 insert into assistant_ai values('OpenAi', 'gpt-4o-mini',            'default',  128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'o1-preview',             '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'o1-mini',                '',         128000, 'Up to Oct 2023',   2, True);
@@ -337,6 +337,8 @@ insert into assistant_ai values('Yandex', 'yandexgpt-32k',          'yandex',   
 insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, True);
 insert into assistant_ai values('Meta',   'llama3-70b-8192',        'llama3',   8192,   '-',                1, True);
 insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072, '-',                2, True);
+insert into assistant_ai values('Claude', 'claude-3-7-sonnet-20250219', 'last', 200000, '2025.02.19',       2, True);
+
 
 
 insert into assistant_ai_photo values('OpenAi', 'gpt-4o',           '',         128000, 'Up to Oct 2023',   2, True);
