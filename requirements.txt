@@ -1,0 +1,15 @@
+requests
+telebot
+groq
+openai
+psycopg2-binary~=2.8.6
+babel
+polib
+blinker
+# fitz  
+PyPDF2
+frontend
+chardet
+grpcio-tools 
+PyAudio
+pydub

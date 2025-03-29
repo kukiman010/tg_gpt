@@ -52,6 +52,13 @@ class Settings:
         if self.file_exist(self.base_way + 'conf/xai_config.ini') == False:
             self.file_create(self.base_way + 'conf/xai_config.ini')
 
+        if self.file_exist(self.base_way + 'conf/claude_config.key') == False:
+            self.file_create(self.base_way + 'conf/claude_config.key')
+
+        if self.file_exist(self.base_way + 'conf/deepseek_config.key') == False:
+            self.file_create(self.base_way + 'conf/deepseek_config.key')
+
+
         if self.file_exist(self.base_way + 'conf/db_config.ini') :
             self.isInitDB = self.db_conf_read()
         else:
@@ -126,6 +133,30 @@ class Settings:
             file.close()
         else:
             file = open(self.base_way + "conf/xai_config.ini", 'r')
+            TOKEN_FOLDER = file.read()
+            file.close()
+        return TOKEN_FOLDER
+    
+
+    def get_claude_gpt(self):
+        TOKEN_FOLDER = ""
+        if not( os.path.exists(self.base_way + "conf/claude_config.key") ):
+            file = open(self.base_way + "conf/claude_config.key", 'w')
+            file.close()
+        else:
+            file = open(self.base_way + "conf/claude_config.key", 'r')
+            TOKEN_FOLDER = file.read()
+            file.close()
+        return TOKEN_FOLDER
+    
+
+    def get_deepseek_gpt(self):
+        TOKEN_FOLDER = ""
+        if not( os.path.exists(self.base_way + "conf/deepseek_config.key") ):
+            file = open(self.base_way + "conf/deepseek_config.key", 'w')
+            file.close()
+        else:
+            file = open(self.base_way + "conf/deepseek_config.key", 'r')
             TOKEN_FOLDER = file.read()
             file.close()
         return TOKEN_FOLDER

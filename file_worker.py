@@ -3,7 +3,8 @@
 # планирую сделать ограничение до 1мб ~= 1.000.000.000 символов, более чем достаточно 
 
 import os
-import fitz
+# import fitz
+from PyPDF2 import PdfReader
 import chardet
 import threading
 from blinker import signal
@@ -93,11 +94,12 @@ class FileConverter:
 
     def read_pdf(self, file_path):
         try:
-            document = fitz.open(file_path)
             text = ''
-            for page_num in range(document.page_count):
-                page = document.load_page(page_num)
-                text += page.get_text()
+            with open(file_path, "rb") as pdf_file:
+                pdf_reader = PdfReader(pdf_file)
+                for page_num in range(len(pdf_reader.pages)):
+                    page = pdf_reader.pages[page_num]
+                    text += page.extract_text()
             return text
         except Exception as e:
             raise ValueError(f"Error reading PDF file {file_path}: {str(e)}")

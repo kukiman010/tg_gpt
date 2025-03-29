@@ -11,6 +11,8 @@ import Gpt_models.sbergpt
 import Gpt_models.metagpt
 import Gpt_models.x_ai
 # import Gpt_models.googlegpt
+import Gpt_models.claude_api
+import Gpt_models.deepseak_api
 import Control.context_model
 import Control.environment
 
@@ -56,6 +58,8 @@ TOKEN_GPT = _setting.get_cGptToken()
 TOKEN_FOLDER_ID = _setting.get_yandex_folder()
 TOKEN_META_GPT = _setting.get_meta_gpt()
 TOKEN_XAI = _setting.get_xai_gpt()
+TOKEN_CLAUDE = _setting.get_claude_gpt()
+TOKEN_DEEPSEEK = _setting.get_deepseek_gpt()
 
 
 if TOKEN_TG == '':
@@ -72,6 +76,14 @@ if TOKEN_FOLDER_ID == '':
 
 if TOKEN_META_GPT == '':
     _logger.add_critical('No meta gpt toke!')
+    sys.exit()
+
+if TOKEN_CLAUDE == '':
+    _logger.add_critical('No claude gpt toke!')
+    sys.exit()
+
+if TOKEN_DEEPSEEK == '':
+    _logger.add_critical('No deepseek gpt toke!')
     sys.exit()
 
 _speak = speech.speaker(TOKEN_FOLDER_ID)
@@ -101,6 +113,8 @@ _metaG = Gpt_models.metagpt.MetaGpt(TOKEN_META_GPT)
 _xai = Gpt_models.x_ai.Xai(TOKEN_XAI)
 _sber = Gpt_models.sbergpt.Sber_gpt(_setting.get_sber_regData(), _setting.get_sber_guid(), _setting.get_sber_certificate())
 _sber.start_key_generation()
+_claude = Gpt_models.claude_api.Claud(TOKEN_CLAUDE)
+_deepseek = Gpt_models.deepseak_api.DeepSeek(TOKEN_DEEPSEEK)
 
 
 
@@ -672,6 +686,11 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
             content = _metaG.post_gpt(json, model)
         elif str(user.get_companyAi()).upper() == str("X ai").upper():  
             content = _xai.post_gpt(model, json)
+        elif str(user.get_companyAi()).upper() == str("Claude").upper():  
+            content = _claude.post_gpt(model, json)
+        elif str(user.get_companyAi()).upper() == str("DeepSeek").upper():  
+            content = _deepseek.post_gpt(model, json)
+        
             
 
 

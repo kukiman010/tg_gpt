@@ -6,11 +6,9 @@ import Control.context_model
 
 class MetaGpt():
     def __init__(self, token) -> None:
-        self._token = token
         self._client = Groq(api_key=token)
 
     def set_token(self, token):
-        self._token = token
         self._client.api_key = token
 
     def post_gpt(self, context, gpt_model) -> Control.context_model.AnswerAssistent :

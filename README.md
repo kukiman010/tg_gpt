@@ -12,15 +12,8 @@ Python >= 3.8.* && <= 3.10.0*
 
 ```shell
 sudo apt-get install libpq-dev python3-dev
-pip install telebot
-pip install openai
-pip install psycopg2
-pip install babel
-pip install polib
-pip install tiktoken
-pip install groq
-pip install pymupdf
-pip install chardet
+
+pip install --no-cache-dir -r requirements.txt
 ```
 
 ## Yandex API
@@ -55,13 +48,6 @@ pip install chardet
 
      ```shell
      sudo apt-get install portaudio19-dev
-     ```
-
-   - Установка дополнительных пакетов для голосовых сообщений:
-
-     ```shell
-     pip install grpcio-tools PyAudio
-     pip install pydub
      ```
 
 ## Sber API
