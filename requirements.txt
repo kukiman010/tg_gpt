@@ -13,3 +13,4 @@ chardet
 grpcio-tools 
 PyAudio
 pydub
+tiktoken
