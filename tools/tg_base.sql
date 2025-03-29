@@ -338,6 +338,9 @@ insert into assistant_ai values('Sber',   'GigaChat',               'sber',     
 insert into assistant_ai values('Meta',   'llama3-70b-8192',        'llama3',   8192,   '-',                1, True);
 insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072, '-',                2, True);
 insert into assistant_ai values('Claude', 'claude-3-7-sonnet-20250219', 'last', 200000, '2025.02.19',       2, True);
+insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',    'DeepSeek-R1',64000,'2025.01.20',       2, True);
+insert into assistant_ai values('DeepSeek', 'deepseek-chat',        'DeepSeek-V3',64000,'2025.03.29',       2, True);
+
 
 
 

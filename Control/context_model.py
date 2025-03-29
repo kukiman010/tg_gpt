@@ -75,19 +75,7 @@ def convert(company:str, context:List[Context_model], isPhoto:bool = False) -> L
         for i in context:
             dict.append( {"role": i.get_role(),"text": i.get_message()} ) 
 
-    elif str(company).upper() == str("Sber").upper():
-        for i in context:
-            dict.append( {"role": i.get_role(),"content": i.get_message()} )
-
-    elif str(company).upper() == str("Meta").upper():
-        for i in context:
-            dict.append( {"role": i.get_role(),"content": i.get_message()} )
-
-    elif str(company).upper() == str("X ai").upper():
-        for i in context:
-            dict.append( {"role": i.get_role(),"content": i.get_message()} )
-
-    elif str(company).upper() == str("Claude").upper():
+    else: # Sber, Meta, X ai, Claude, DeepSeek 
         for i in context:
             dict.append( {"role": i.get_role(),"content": i.get_message()} )
 

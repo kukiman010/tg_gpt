@@ -1,17 +1,7 @@
-# https://docs.anthropic.com/en/api/getting-started
-
-# import anthropic
-
-# client = anthropic.Anthropic(
-#     # defaults to os.environ.get("ANTHROPIC_API_KEY")
-#     api_key="API-KEY",
-# )
-
-# list =  client.models.list(limit=20) 
-# print( list)
+# https://api-docs.deepseek.com/
 
 
-
+# from openai import OpenAI, APIError, AuthenticationError, RateLimitError, APIConnectionError, Timeout
 from openai import (
     OpenAI,
     APIError,
@@ -21,7 +11,7 @@ from openai import (
     APITimeoutError,
     APIStatusError
 )
-import tiktoken  # Для подсчёта токенов
+import tiktoken 
 import sys
 import os
 
@@ -35,7 +25,7 @@ from logger import LoggerSingleton
 _logger = LoggerSingleton.new_instance('log_gpt.log')
 
 
-class Claud:
+class DeepSeek:
     def __init__(self, tokenID: str) -> None:
         if not tokenID:
             raise ValueError("API token must be provided")
