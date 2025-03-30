@@ -3,18 +3,14 @@ import subprocess
 import threading
 import time
 import re
-import io
 
 from speechkit import model_repository, configure_credentials, creds
 from speechkit.stt import AudioProcessingType
-# import soundfile as sf
-
 from logger         import LoggerSingleton
 
 
 class speaker:
     def __init__(self):
-        # self.t_folder_id = TOKEN_FOLDER_ID
         self.stop_event = threading.Event()
         self._logger = LoggerSingleton.new_instance('log_gpt.log')
         self.ready_token = True
@@ -46,7 +42,6 @@ class speaker:
     def get_time_string(self):
         current_time = time.time()
         time_struct = time.localtime(current_time)
-        # return time.strftime("%Y%m%d_%H%M%S", time_struct)
         milliseconds = int((current_time - int(current_time)) * 1000)
         return time.strftime("%Y%m%d_%H%M%S", time_struct) + f"_{milliseconds:03d}"
     
@@ -66,20 +61,17 @@ class speaker:
             
         return ""
     
-    def start_key_generation(self):
-        # Создаем и запускаем отдельный поток для генерации ключа
+    def start_key_generation(self): # Создаем и запускаем отдельный поток для генерации ключа
         thread = threading.Thread(target=self.generate_keys_periodically)
         thread.start()
         self._logger.add_info("Запущен сценарий генерации токена")
 
-    def stop_key_generation(self):
-        # Останавливаем генерацию ключей
+    def stop_key_generation(self): # Останавливаем генерацию ключей
         self.stop_event.set()
         self._logger.add_info("Остановлен сценарий генерации токена")
 
     def generate_keys_periodically(self):
         while not self.stop_event.is_set():
-            # self.generate_key()
             self.t_IAM = self.create_iam()
             if self.t_IAM == '':
                 self.ready_token = False
@@ -88,6 +80,30 @@ class speaker:
             self._logger.add_info("Сработал планировщик задач для get_yandex_iam. раз в {} ч".format(int(self.TIME_GEN/60)/60))
             time.sleep(self.TIME_GEN) 
 
+    
+
+    def split_text(self, text):
+        max_message_length = 4250
+        hard_break_point = 3900
+        soft_break_point = 3500
+        results = []
+
+        while len(text) > max_message_length:
+            offset = text[soft_break_point:hard_break_point].rfind('\n')
+            if offset == -1:
+                offset = text[soft_break_point:max_message_length].rfind(' ')
+            if offset == -1:
+                results.append(text[:max_message_length])
+                text = text[max_message_length:]
+            else:
+                original_index = offset + soft_break_point
+                results.append(text[:original_index])
+                text = text[original_index:]
+
+        if text:
+            results.append(text)
+
+        return results
 
 
     def speach(self, text, user, speaker='alena'):
@@ -97,26 +113,31 @@ class speaker:
         model.model = 'general'
         model.role = 'good'
 
-        # Синтез речи и создание аудио с результатом
-        result = model.synthesize(text, raw_format=False)  # returns audio as pydub.AudioSegment
+        split_text = []
+        if len(text) > 4500:
+            # split_text = self.split_text_sentences(text)
+            split_text = self.split_text(text)
+        else: 
+            split_text.append(text)
 
-        formatted_datetime = self.get_time_string()
-        filename_ogg = f'send_voice_{user}_{formatted_datetime}.ogg'  
-        file_path = f'./users_media/ready/{filename_ogg}'
+        result_paths = []
+
+        for chunk in split_text:
+            result = model.synthesize(chunk, raw_format=False)  # returns audio as pydub.AudioSegment
+
+            formatted_datetime = self.get_time_string()
+            filename_ogg = f'send_voice_{user}_{formatted_datetime}.ogg'  
+            file_path = f'./users_media/ready/{filename_ogg}'
+
+            result.export(file_path, format="ogg")
+            result_paths.append(file_path)
 
 
-        # Получаем байты из AudioSegment в формате OGG
-        buffer = io.BytesIO()
-        result.export(buffer, format="ogg")  # изменили формат на ogg
-
-        with open(file_path, 'wb') as file:
-            file.write(buffer.getvalue())
-
-        return file_path
+        return result_paths
     
 
 
-    def recognize(self, file, user) -> str:
+    def recognize(self, file) -> str:
         model = model_repository.recognition_model()
 
         model.model = 'general:rc'
@@ -129,3 +150,6 @@ class speaker:
             result_text += res.normalized_text
 
         return result_text
+    
+
+

@@ -261,7 +261,7 @@ def voice_processing(message):
     with open('./users_media/voice/' + filename, 'wb') as f:
         f.write(downloaded_file)
 
-    text = _speak.recognize('./users_media/voice/' + filename, message.from_user.id)
+    text = _speak.recognize('./users_media/voice/' + filename)
     
     hasUser = _mediaWorker.find_userId(user.get_userId())
     media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
@@ -319,12 +319,12 @@ def handle_callback_query(call):
         t_mes = locale.find_translation(user.get_language(), 'TR_START_DECODE_VOICE')
         bot.answer_callback_query(call.id, text = t_mes)
 
-        file = _speak.speach(text, chat_id, 'alena')
+        files = _speak.speach(text, chat_id, 'alena')
         
-        with open(file, "rb") as audio:
-            bot.send_audio(chat_id, audio)
-
-        os.remove(file)
+        for file in files:
+            with open(file, "rb") as audio:
+                bot.send_audio(chat_id, audio)
+            os.remove(file)
 
     elif key == "update_env":
         data_dict = _db.get_environment()
