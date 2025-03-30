@@ -13,20 +13,17 @@ class dbApi:
     def find_user(self, userId:int):
         query = "SELECT user_find({});".format(userId)
         data = self.db.execute_query(query)
-
-        if len(data) == 1:
-            if data[0][0] == True:
-                return True
-        return False  
+        return bool(data and data[0][0])
 
     def add_user(self, user_id, username, type, language_code):
         query = 'SELECT add_user(%s, %s, %s, %s);'
-        values = ( user_id, username, type, language_code )
+        values = (user_id, username, type, language_code)
         self.db.execute_query(query, values)
 
     def update_user_assistent(self, userId, company, model): 
-        query = "UPDATE users SET company_ai='{}',model='{}' WHERE user_id={};".format(company,model,userId)
-        self.db.execute_query(query)
+        query = "UPDATE users SET company_ai=%s, model=%s WHERE user_id=%s;"
+        values = (company, model, userId)
+        self.db.execute_query(query, values)
         
     def get_user_def(self, user_id):
         query = "SELECT * FROM get_user_and_prompts({});".format(user_id)
@@ -38,13 +35,12 @@ class dbApi:
         columns = [
             'user_id', 'login', 'status_user', 'wait_action', 'type', 'company_ai', 
             'model', 'language_code', 'model_rec_photo', 'model_gen_photo', 
-            'text_to_audio', 'audio_to_text', 'speaker_name', 'last_login', 
-            'registration_date', 'prompt'
+            'text_to_audio', 'audio_to_text', 'speaker_name', 'is_search',
+            'is_think', 'location', 'last_login', 'registration_date', 'prompt'
         ]
-    
         
         user = User()
-    
+        
         for row in data:
             user_data = dict(zip(columns, row))
             
@@ -52,7 +48,7 @@ class dbApi:
             user.set_login(user_data['login'])
             user.set_status(user_data['status_user'])
             user.set_wait_action(user_data['wait_action'])
-            # user.set_status(user_data['type'])  
+            user.set_type(user_data['type'])  
             user.set_companyAi(user_data['company_ai'])
             user.set_model(user_data['model'])
             user.set_speaker(user_data['speaker_name'])
@@ -61,16 +57,32 @@ class dbApi:
             user.set_generate_pthoto(user_data['model_gen_photo'])
             user.set_text_to_audio(user_data['text_to_audio'])
             user.set_audio_to_text(user_data['audio_to_text'])
+            user.set_is_search(user_data['is_search'])  
+            user.set_is_think(user_data['is_think'])  
+            user.set_location(user_data['location'])  
             user.set_last_login(user_data['last_login'])
             user.set_registration_date(user_data['registration_date'])
             user.set_prompt(user_data['prompt']) 
         
         return user
-        
 
     def update_user_lang_code(self, userId, code): 
-        query = "UPDATE users SET language_code='{}' WHERE user_id={};".format(code,userId)
-        self.db.execute_query(query)
+        query = "UPDATE users SET language_code=%s WHERE user_id=%s;"
+        values = (code, userId)
+        self.db.execute_query(query, values)
+
+    def update_user_search_status(self, userId, status: bool):
+        query = "UPDATE users SET is_search=%s WHERE user_id=%s;"
+        values = (status, userId)
+        self.db.execute_query(query, values)
+
+    def update_user_think_status(self, userId, status: bool):
+        query = "UPDATE users SET is_think=%s WHERE user_id=%s;"
+        values = (status, userId)
+        self.db.execute_query(query, values)
+
+
+    # old
 
     def add_context(self, userId, chatId, role, messageId, message, isPhoto):
         query = "INSERT INTO context VALUES (%s,%s,%s,%s,%s,%s);"

@@ -131,7 +131,7 @@ https://community.openai.com/t/chatgpt-can-now-access-the-live-internet-can-the-
 https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling
 - [ ] Ссылка на источник
 https://community.openai.com/t/how-to-enable-web-search-results-with-chatgpt-api/318118/2
-- [ ] 
+- [ ] добавить выбор голоса для yndex tts
 - [ ] 
 - [ ] 
 

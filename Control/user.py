@@ -1,4 +1,3 @@
-
 class User:
     def __init__(self) -> None:
         self._user_id =                 0
@@ -17,6 +16,10 @@ class User:
         self._registration_date =       ""
         self._last_login =              ""
         self._prompt =                  ""
+        self._is_search =               False
+        self._is_think =                False
+        self._location =                ""
+        self._type =                    ""
 
         #statistics
         # self._send_mess = 0
@@ -27,14 +30,12 @@ class User:
         # self._lastActivity = None
         # self._donate = 0
 
-
     def is_active(self):
-        if self._user_id != 0 and self._login != '':
-            return True
-        else:
-            return False
+        return self._user_id != 0 and self._login != ''
         
-    def set_default_data(self, language, permission, company_ai, assistant_model, recognizes_photo_model, generate_photo_model, text_to_audio, audio_to_text, speakerName, prompt):
+    def set_default_data(self, language, permission, company_ai, assistant_model, 
+                        recognizes_photo_model, generate_photo_model, 
+                        text_to_audio, audio_to_text, speakerName, prompt):
         self._status = permission  
         self._companyAi = company_ai
         self._model = assistant_model
@@ -46,7 +47,11 @@ class User:
         self._audio_to_text = audio_to_text
         self._prompt = prompt
 
-    def set_base_info(self, userId, login, status, companyAi, model, speakerName, language, wait_action, model_recognizes_photo, model_generate_photo, text_to_audio, audio_to_text, last_login, reg_date, prompt):
+    def set_base_info(self, userId, login, status, companyAi, model, speakerName, 
+                     language, wait_action, model_recognizes_photo, 
+                     model_generate_photo, text_to_audio, audio_to_text, 
+                     last_login, reg_date, prompt, is_search=False, 
+                     is_think=False, location="", type=""):
         self._user_id = userId
         self._login = login
         self._status = status  
@@ -62,16 +67,10 @@ class User:
         self._last_login = last_login
         self._registration_date = reg_date
         self._prompt = prompt
-
-    # def set_statistics(self,c_message, c_image, c_audio, c_dropContext, createTime, lastQueryTime, donate):
-    #     self._send_mess = c_message
-    #     self._send_image = c_image
-    #     self._send_audio = c_audio
-    #     self._dropContext = c_dropContext
-    #     self._start_time = createTime
-    #     self._lastActivity = lastQueryTime
-    #     self._donate = donate
-
+        self._is_search = is_search
+        self._is_think = is_think
+        self._location = location
+        self._type = type
 
 
     def get_userId(self):
@@ -100,23 +99,18 @@ class User:
         return self._audio_to_text
     def get_prompt(self):
         return self._prompt
-    
-
-    # def get_count_mess(self):
-    #     return self._send_mess 
-    # def get_count_image(self):
-    #     return self._send_image 
-    # def get_count_audio(self):
-    #     return self._send_audio 
-    # def get_count_cropcontext(self):
-    #     return self._dropContext 
-    # def get_createTime(self):
-    #     return self._start_time 
-    # def get_lastActivity(self):
-    #     return self._lastActivity 
-    # def get_donate(self):
-    #     return self._donate
-
+    def get_last_login(self):
+        return self._last_login
+    def get_registration_date(self):
+        return self._registration_date
+    def get_is_search(self) -> bool:
+        return self._is_search
+    def get_is_think(self) -> bool:
+        return self._is_think
+    def get_location(self) -> str:
+        return self._location
+    def get_type(self) -> str:
+        return self._type
 
 
 
@@ -129,7 +123,7 @@ class User:
     def set_companyAi(self, company):
         self._companyAi = company
     def set_model(self, model):
-        self._model  = model
+        self._model = model
     def set_speaker(self, value):
         self._speakerName = value
     def set_language(self, value):
@@ -150,3 +144,11 @@ class User:
         self._registration_date = value
     def set_prompt(self, value):
         self._prompt = value
+    def set_is_search(self, value: bool):
+        self._is_search = value
+    def set_is_think(self, value: bool):
+        self._is_think = value
+    def set_location(self, value: str):
+        self._location = value
+    def set_type(self, value: str):
+        self._type = value
