@@ -331,6 +331,7 @@ insert into assistant_ai values('OpenAi', 'gpt-4o',                 '',         
 insert into assistant_ai values('OpenAi', 'gpt-4o-mini',            'default',  128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'o1-preview',             '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'o1-mini',                '',         128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi', 'gpt-4.5-preview',        '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('Yandex', 'yandexgpt',              'yandex',   8000,   '06.12.2023',       2, True);
 insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   8000,   '06.12.2023',       2, False);
 insert into assistant_ai values('Yandex', 'yandexgpt-32k',          'yandex',   32000,  '06.12.2023',       2, True);

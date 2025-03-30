@@ -19,7 +19,7 @@ class YandexGpt():
 
         data = {
         # "modelUri": f"gpt://{self._folder}/{gpt_model}/latest",
-        "modelUri": f"gpt://{self._folder}/{gpt_model}",
+        "modelUri": f"gpt://{self._folder}/{gpt_model}/rc",
         "completionOptions": {
             "stream": False,
             "temperature": 0.6,
