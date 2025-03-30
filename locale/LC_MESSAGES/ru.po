@@ -182,5 +182,32 @@ msgstr "При возникновении проблем напишите сюд
 msgid "TR_UNDO"
 msgstr "Отменить"
 
+msgid "TR_MENU_WEBSEARCH"
+msgstr "Настроить web search"
+
+msgid "TR_TITLE_WEBSEARCH_ON"
+msgstr "Web search - позволяет искать информацию в интернете.\nВ данный момент у вас включен поиск."
+
+msgid "TR_TITLE_WEBSEARCH_OFF"
+msgstr "Web search - позволяет искать информацию в интернете.\nВ данный момент у вас выключен поиск."
+
+msgid "TR_ON"
+msgstr "Включить"
+
+msgid "TR_OFF"
+msgstr "Выключить"
+
+msgid "TR_WEBSEARCH_ON"
+msgstr "Web search - включен"
+
+msgid "TR_WEBSEARCH_OFF"
+msgstr "Web search - выключен"
+
+msgid "TR_MENU_THINKS"
+msgstr "Настроить think"
+
+msgid "TR_MENU_LOCATE"
+msgstr "Задать локацию"
+
 msgid "TR_"
 msgstr ""

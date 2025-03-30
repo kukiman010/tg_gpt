@@ -171,6 +171,17 @@ class dbApi:
         query = "select from update_user_action({}, '{}');".format(userId, action)
         self.db.execute_query(query)
 
+    def update_user_search_status(self, user_id: int, is_search: bool) -> None:
+        query = 'UPDATE users SET is_search = %s WHERE user_id = %s;'
+        self.db.execute_query(query, (is_search, user_id))
+
+    def update_user_think_status(self, user_id: int, is_think: bool) -> None:
+        query = 'UPDATE users SET is_think = %s WHERE user_id = %s;'
+        self.db.execute_query(query, (is_think, user_id))
+
+    def update_user_location(self, user_id: int, location: str) -> None:
+        query = 'UPDATE users SET location = %s WHERE user_id = %s;'
+        self.db.execute_query(query, (location, user_id))
 
     def __del__(self):
         self.db.close_pool()

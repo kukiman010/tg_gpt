@@ -50,7 +50,7 @@ class Claud:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Client initialization failed: {str(e)}")
             raise
 
-    def post_gpt(self, gpt_model: str, context: list) -> Control.context_model.AnswerAssistent:
+    def post_gpt(self, gpt_model: str, context: list, web_search: bool) -> Control.context_model.AnswerAssistent:
         answer = Control.context_model.AnswerAssistent()
         
         # Валидация входных данных
@@ -63,11 +63,18 @@ class Claud:
             return answer
 
         try:
-            # Выполнение запроса к API
-            response = self.client.chat.completions.create(
-                model=gpt_model,
-                messages=context
-            )
+            create_args = {
+                'model': gpt_model,
+                'messages': context
+            }
+            
+            if web_search:
+                create_args['tools'] = [{
+                    "type": "web_search_preview",
+                    "search_context_size": "medium",
+                }]
+            
+            response = self.client.chat.completions.create(**create_args)
         except AuthenticationError as e:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Authentication failed: {str(e)}")
             answer.set_answer(401, "Invalid API token", 0)

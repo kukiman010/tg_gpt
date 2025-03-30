@@ -182,5 +182,32 @@ msgstr "If you encounter any problems, write here @assistant_gpts_help"
 msgid "TR_UNDO"
 msgstr "Undo"
 
+msgid "TR_MENU_WEBSEARCH"
+msgstr "Configure web search"
+
+msgid "TR_TITLE_WEBSEARCH_ON"
+msgstr "Web search - allows you to search for information on the internet.\nCurrently, search is enabled."
+
+msgid "TR_TITLE_WEBSEARCH_OFF"
+msgstr "Web search - allows you to search for information on the internet.\nCurrently, search is disabled."
+
+msgid "TR_ON"
+msgstr "Enable"
+
+msgid "TR_OFF"
+msgstr "Disable"
+
+msgid "TR_WEBSEARCH_ON"
+msgstr "Web search - enabled"
+
+msgid "TR_WEBSEARCH_OFF"
+msgstr "Web search - disabled"
+
+msgid "TR_MENU_THINKS"
+msgstr "Configure think"
+
+msgid "TR_MENU_LOCATE"
+msgstr "Set location"
+
 msgid "TR_"
 msgstr ""

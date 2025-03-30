@@ -426,6 +426,38 @@ def handle_callback_query(call):
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
         send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+    
+    elif key == 'menu_websearch':
+        bot.answer_callback_query(call.id, text = '')
+
+        if user.get_is_search():
+            t_mes = locale.find_translation(user.get_language(), 'TR_TITLE_WEBSEARCH_ON')
+        else:
+            t_mes = locale.find_translation(user.get_language(), 'TR_TITLE_WEBSEARCH_OFF')
+        markup = types.InlineKeyboardMarkup()
+
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_ON'),               callback_data='edit_websearch') )
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_OFF'),              callback_data='edit_websearch') )
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_promt') )
+        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+
+    elif key == 'edit_websearch':
+        bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
+
+        if user.get_is_search():
+            _db.update_user_search_status(user.get_userId(), False)
+            t_mes = locale.find_translation(user.get_language(), 'TR_WEBSEARCH_OFF')
+        else:
+            _db.update_user_search_status(user.get_userId(), True)
+            t_mes = locale.find_translation(user.get_language(), 'TR_WEBSEARCH_ON')
+
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_websearch') )
+        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+
+    # elif key == 'menu_think':
+
+    # elif key == 'menu_locate':
 
 
     elif key == 'errorPost':
@@ -675,7 +707,7 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
 
     try:
         if str(user.get_companyAi()).upper() == str("OpenAi").upper():
-            content = _gpt.post_gpt(json, model)
+            content = _gpt.post_gpt(json, model, user.get_is_search())
         elif str(user.get_companyAi()).upper() == str("Yandex").upper():
             _yag.set_token( _speak.get_IAM() )
             content = _yag.post_gpt(json, model)
@@ -686,7 +718,7 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
         elif str(user.get_companyAi()).upper() == str("X ai").upper():  
             content = _xai.post_gpt(model, json)
         elif str(user.get_companyAi()).upper() == str("Claude").upper():  
-            content = _claude.post_gpt(model, json)
+            content = _claude.post_gpt(model, json, user.get_is_search())
         elif str(user.get_companyAi()).upper() == str("DeepSeek").upper():  
             content = _deepseek.post_gpt(model, json)
         
@@ -776,7 +808,7 @@ def on_post_media(sender, userId, mediaList):
 
 
     action = user.get_wait_action()
-    if action != '':
+    if action != '' and action != None:
         if len(titleMessId) != 0:
             for medId in titleMessId:
                 bot.delete_message(chatId, medId)
@@ -815,9 +847,14 @@ def main_menu(user, charId, id_message = None):
     markup = types.InlineKeyboardMarkup()
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LANGUAGE'),    callback_data='menu_language') )
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PROMT'),       callback_data='menu_promt') )
+    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_WEBSEARCH'),   callback_data='menu_websearch') )
+    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_THINKS'),     callback_data='menu_think') )
+    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LOCATE'),     callback_data='menu_locate') )
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_HELP'),        callback_data='menu_help') )
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PREMIUM'),     callback_data='menu_premium') )
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_SUPPORT'),     callback_data='menu_support') )
+
+
 
     send_text(charId, t_mes, reply_markup=markup, id_message_for_edit=id_message)
     
@@ -835,7 +872,7 @@ def action_handler(chatId, user, action, text):
 
     else:
         _db.update_user_action(user.get_userId(), '')
-        _logger.add_critical('There is no processing of such a scenario: {}, the action will be reset').format(action)
+        _logger.add_critical('There is no processing of such a scenario: {}, the action will be reset'.format(action))
 
 
 def command_help(user):

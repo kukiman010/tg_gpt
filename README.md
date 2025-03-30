@@ -126,13 +126,12 @@ sudo update-ca-certificates
 - [ ] Добавить команду выключения
 - [ ] Так же при update environment нужно блокировать и обновлять список моделей.
 - [ ] Добавить в default_data переменную чата поддержки по умолчанию, а то сейчас поддержка хардкодиться в файлах переводов
-- [ ] Добавить возможность поиска в интеренете 
-https://community.openai.com/t/chatgpt-can-now-access-the-live-internet-can-the-api/401928
-https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling
+- [ +/- ] Добавить возможность поиска в интеренете (пока частично реализовано для openai и Claude)
 - [ ] Ссылка на источник
 https://community.openai.com/t/how-to-enable-web-search-results-with-chatgpt-api/318118/2
 - [ ] добавить выбор голоса для yndex tts
-- [ ] 
+- [ ] добавить в меню пункт добавления think
+- [ ] добавить в меню пункт добавления locate
 - [ ] 
 
 
