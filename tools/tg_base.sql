@@ -335,12 +335,12 @@ insert into assistant_ai values('OpenAi', 'gpt-4.5-preview',        '',         
 insert into assistant_ai values('Yandex', 'yandexgpt',              'yandex',   8000,   '06.12.2023',       2, True);
 insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   8000,   '06.12.2023',       2, False);
 insert into assistant_ai values('Yandex', 'yandexgpt-32k',          'yandex',   32000,  '06.12.2023',       2, True);
-insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, True);
+insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, False);
 insert into assistant_ai values('Meta',   'llama3-70b-8192',        'llama3',   8192,   '-',                1, True);
-insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072, '-',                2, True);
+insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072, '-',                2, False);
 insert into assistant_ai values('Claude', 'claude-3-7-sonnet-20250219', 'last', 200000, '2025.02.19',       2, True);
-insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',    'DeepSeek-R1',64000,'2025.01.20',       2, True);
-insert into assistant_ai values('DeepSeek', 'deepseek-chat',        'DeepSeek-V3',64000,'2025.03.29',       2, True);
+insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',    'DeepSeek-R1',64000,'2025.01.20',       2, False);
+insert into assistant_ai values('DeepSeek', 'deepseek-chat',        'DeepSeek-V3',64000,'2025.03.29',       2, False);
 
 
 

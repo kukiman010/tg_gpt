@@ -19,20 +19,23 @@ class Settings:
         if self.folder_exist(self.base_way + 'conf/') == False:
             self.folder_create(self.base_way + 'conf')
 
-        if self.folder_exist(self.base_way + 'voice/') == False:
-            self.folder_create(self.base_way + 'voice')
+        if self.folder_exist(self.base_way + 'users_media/') == False:
+            self.folder_create(self.base_way + 'user_media')
 
-        if self.folder_exist(self.base_way + 'photos/') == False:
-            self.folder_create(self.base_way + 'photos')
+        if self.folder_exist(self.base_way + 'users_media/voice/') == False:
+            self.folder_create(self.base_way + 'users_media/voice')
 
-        if self.folder_exist(self.base_way + 'ready/') == False:
-            self.folder_create(self.base_way + 'ready')
+        if self.folder_exist(self.base_way + 'users_media/photos/') == False:
+            self.folder_create(self.base_way + 'users_media/photos')
+
+        if self.folder_exist(self.base_way + 'users_media/ready/') == False:
+            self.folder_create(self.base_way + 'users_media/ready')
+
+        if self.folder_exist(self.base_way + 'users_media/files/') == False:
+            self.folder_create(self.base_way + 'users_media/files')
 
         if self.folder_exist(self.base_way + 'locale/') == False:
             self.folder_create(self.base_way + 'locale')
-
-        if self.folder_exist(self.base_way + 'files/') == False:
-            self.folder_create(self.base_way + 'files')
 
         # if self.folder_exist(self.base_way + 'static/') == False:
             # self.folder_create(self.base_way + 'static')

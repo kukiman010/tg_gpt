@@ -72,11 +72,8 @@ instance/
 # Sphinx documentation
 docs/_build/
 conf/
-voice/
-ready/
-photos/
+users_media/*
 cloudapi/
-files/
 
 # PyBuilder
 .pybuilder/

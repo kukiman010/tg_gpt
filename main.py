@@ -255,7 +255,7 @@ def voice_processing(message):
     downloaded_file = bot.download_file(file_path)
 
     filename = 'voice_{}_{}.ogg'.format(message.from_user.id, _speak.get_time_string())
-    with open('./voice/' + filename, 'wb') as f:
+    with open('./users_media/voice/' + filename, 'wb') as f:
         f.write(downloaded_file)
 
     text = _speak.voice_text_v1(downloaded_file, message.from_user.id)
@@ -491,7 +491,7 @@ def handle_docs(message):
             downloaded_file = bot.download_file(file_info.file_path)
 
             name = 'file_{}_{}.date'.format(message.from_user.id, _speak.get_time_string())
-            with open(os.path.join('files/', f'{name}'), 'wb') as new_file:
+            with open(os.path.join('users_media/files/', f'{name}'), 'wb') as new_file:
                 new_file.write(downloaded_file)
 
 
@@ -535,10 +535,10 @@ def handle_message(message):
     
     
     name = 'photo_{}_{}.jpg'.format(message.from_user.id, _speak.get_time_string())
-    with open(os.path.join('photos/', f'{name}'), 'wb') as new_file:
+    with open(os.path.join('users_media/photos/', f'{name}'), 'wb') as new_file:
         new_file.write(downloaded_file)
     
-    base64_image = encode_image(f'photos/{name}')
+    base64_image = encode_image(f'users_media/photos/{name}')
 
     text_to_photo = message.caption
 
@@ -754,8 +754,8 @@ def on_post_media(sender, userId, mediaList):
             chatId = media._chatId
         
         if media._type == "document":
-            message += _converterFile.convert_files_to_text('files/{}'.format(media._fileWay), media._fileName)
-            os.remove('files/{}'.format(media._fileWay))
+            message += _converterFile.convert_files_to_text('users_media/files/{}'.format(media._fileWay), media._fileName)
+            os.remove('users_media/files/{}'.format(media._fileWay))
         if media._type == "message":
             textMes += media._mediaData
         if media._type == "titleId":
