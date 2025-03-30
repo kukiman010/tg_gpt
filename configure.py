@@ -20,7 +20,7 @@ class Settings:
             self.folder_create(self.base_way + 'conf')
 
         if self.folder_exist(self.base_way + 'users_media/') == False:
-            self.folder_create(self.base_way + 'user_media')
+            self.folder_create(self.base_way + 'users_media')
 
         if self.folder_exist(self.base_way + 'users_media/voice/') == False:
             self.folder_create(self.base_way + 'users_media/voice')
