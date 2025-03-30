@@ -33,32 +33,20 @@ class chatgpt():
 
 
     def post_gpt(self, context, gpt_model, web_search):
-        create_args = {
-            'model': gpt_model,
-            'messages': context
-        }
-        
         if web_search:
-            create_args['tools'] = [{
-                "type": "function",
-                "function": {
-                    "name": "web_search",
-                    "description": "Perform a web search to find recent information",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {
-                                "type": "string",
-                                "description": "The search query"
-                            }
-                        },
-                        "required": ["query"]
-                    }
-                }
-            }]
-            create_args['tool_choice'] = {"type": "function", "function": {"name": "web_search"}}
-        
-        completion = openai.chat.completions.create(**create_args)
+            completion = openai.chat.completions.create(
+                model=gpt_model,
+                messages=context
+            )
+        else:
+            completion = openai.chat.completions.create(
+                model=gpt_model,
+                tools=[{
+                    "type": "web_search_preview",
+                    "search_context_size": "medium",
+                }],
+                messages=context
+            )
 
         answer = Control.context_model.AnswerAssistent()
         data = json.loads( str( completion.model_dump_json() ) )
