@@ -14,3 +14,4 @@ grpcio-tools
 PyAudio
 pydub
 tiktoken
+yandex-speechkit
