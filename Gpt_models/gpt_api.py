@@ -37,7 +37,7 @@ class chatgpt():
             completion = openai.chat.completions.create(
                 model=gpt_model,
                 tools=[{"type": "web_search_preview"}],
-                messages=context
+                input=context,
             )
         else:
             completion = openai.chat.completions.create(
