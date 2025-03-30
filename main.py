@@ -60,6 +60,7 @@ TOKEN_META_GPT = _setting.get_meta_gpt()
 TOKEN_XAI = _setting.get_xai_gpt()
 TOKEN_CLAUDE = _setting.get_claude_gpt()
 TOKEN_DEEPSEEK = _setting.get_deepseek_gpt()
+# TOKEN_YANDEX_API = _setting.get_yandex_api()
 
 
 if TOKEN_TG == '':
@@ -74,6 +75,10 @@ if TOKEN_FOLDER_ID == '':
     _logger.add_critical('No yandex folder id!')
     sys.exit()
 
+# if TOKEN_YANDEX_API == '':
+#     _logger.add_critical('No yandex api key!')
+#     sys.exit()
+
 if TOKEN_META_GPT == '':
     _logger.add_critical('No meta gpt toke!')
     sys.exit()
@@ -86,10 +91,8 @@ if TOKEN_DEEPSEEK == '':
     _logger.add_critical('No deepseek gpt toke!')
     sys.exit()
 
-_speak = speech.speaker(TOKEN_FOLDER_ID)
-if _speak.get_IAM() == '':
-    _logger.add_critical('No yandex iam token!')
-    sys.exit()
+_speak = speech.speaker()
+
 
 
 _env.update( _db.get_environment() )
@@ -258,8 +261,7 @@ def voice_processing(message):
     with open('./users_media/voice/' + filename, 'wb') as f:
         f.write(downloaded_file)
 
-    text = _speak.voice_text_v1(downloaded_file, message.from_user.id)
-    # text = _speak.voice_text_v3(downloaded_file, message.from_user.id)
+    text = _speak.recognize('./users_media/voice/' + filename, message.from_user.id)
     
     hasUser = _mediaWorker.find_userId(user.get_userId())
     media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
@@ -273,7 +275,6 @@ def voice_processing(message):
 
     media.add_mes(text)
     _mediaWorker.add_data(media)
-    # TODO: добавить возможность записи длинных голосовых сообщений(v3)
 
 
 
@@ -318,9 +319,7 @@ def handle_callback_query(call):
         t_mes = locale.find_translation(user.get_language(), 'TR_START_DECODE_VOICE')
         bot.answer_callback_query(call.id, text = t_mes)
 
-        # file = _speak.voice_synthesis_v1(text, chat_id)
-        file = _speak.voice_synthesis_v3(text, chat_id)
-        # file = _speak.synthesize(text)
+        file = _speak.speach(text, chat_id, 'alena')
         
         with open(file, "rb") as audio:
             bot.send_audio(chat_id, audio)

@@ -1,5 +1,7 @@
 #!/usr/bin/expect
 
+# https://yandex.cloud/ru/docs/iam/concepts/authorization/api-key
+
 # Установить тайм-аут на ожидание (в секундах)
 set timeout -1
 
