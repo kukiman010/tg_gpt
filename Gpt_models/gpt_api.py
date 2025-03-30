@@ -40,9 +40,23 @@ class chatgpt():
         
         if web_search:
             create_args['tools'] = [{
-                "type": "web_search_preview",
-                "search_context_size": "medium",
+                "type": "function",
+                "function": {
+                    "name": "web_search",
+                    "description": "Perform a web search to find recent information",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "The search query"
+                            }
+                        },
+                        "required": ["query"]
+                    }
+                }
             }]
+            create_args['tool_choice'] = {"type": "function", "function": {"name": "web_search"}}
         
         completion = openai.chat.completions.create(**create_args)
 
