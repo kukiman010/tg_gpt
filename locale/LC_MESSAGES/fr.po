@@ -182,5 +182,32 @@ msgstr "Si vous rencontrez des problèmes, écrivez ici @assistant_gpts_help"
 msgid "TR_UNDO"
 msgstr "Annuler"
 
+msgid "TR_MENU_WEBSEARCH"
+msgstr "Configurer la recherche web"
+
+msgid "TR_TITLE_WEBSEARCH_ON"
+msgstr "Recherche web - permet de rechercher des informations sur internet.\nActuellement, la recherche est activée."
+
+msgid "TR_TITLE_WEBSEARCH_OFF"
+msgstr "Recherche web - permet de rechercher des informations sur internet.\nActuellement, la recherche est désactivée."
+
+msgid "TR_ON"
+msgstr "Activer"
+
+msgid "TR_OFF"
+msgstr "Désactiver"
+
+msgid "TR_WEBSEARCH_ON"
+msgstr "Recherche web - activée"
+
+msgid "TR_WEBSEARCH_OFF"
+msgstr "Recherche web - désactivée"
+
+msgid "TR_MENU_THINKS"
+msgstr "Configurer think"
+
+msgid "TR_MENU_LOCATE"
+msgstr "Définir la localisation"
+
 msgid "TR_"
 msgstr ""

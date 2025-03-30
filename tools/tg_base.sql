@@ -20,6 +20,9 @@ CREATE TABLE users (
     text_to_audio       TEXT,
     audio_to_text       TEXT,
     speaker_name        TEXT,
+    is_search           BOOLEAN DEFAULT FALSE,
+    is_think            BOOLEAN DEFAULT FALSE,
+    location            TEXT,
     last_login          TIMESTAMP,
     registration_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     id                  BIGSERIAL PRIMARY KEY
@@ -220,7 +223,9 @@ DECLARE
 BEGIN
     -- Проверка на существование user_id или login в таблице users
     IF EXISTS (SELECT 1 FROM users WHERE user_id = p_user_id OR login = p_username) THEN
-        --RAISE EXCEPTION 'User with this user_id or login already exists';
+        -- Обновляем last_login если пользователь уже существует
+        UPDATE users SET last_login = CURRENT_TIMESTAMP 
+        WHERE user_id = p_user_id OR login = p_username;
         RETURN; 
     END IF;
 
@@ -234,21 +239,23 @@ BEGIN
     SELECT value INTO v_speaker_name FROM default_data WHERE key = 'speakerName';
     SELECT value INTO v_default_prompt FROM default_data WHERE key = 'prompt';
 
-    v_last_login := now();
-    v_registration_date := now();
+    v_last_login := CURRENT_TIMESTAMP;
+    v_registration_date := CURRENT_TIMESTAMP;
 
-    v_last_login := to_timestamp(to_char(v_last_login, 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS');
-    v_registration_date := to_timestamp(to_char(v_registration_date, 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS');
-
-    INSERT INTO users (user_id, login, type, language_code, company_ai, status_user, model, model_rec_photo, 
-                       model_gen_photo, text_to_audio, audio_to_text, speaker_name, last_login, registration_date)
-    VALUES (p_user_id, p_username, p_type, p_language_code, v_company_ai, CAST(v_permission AS BIGINT), 
-            v_assistant_model, v_rec_model, v_gen_model, v_tts_model, v_stt_model, v_speaker_name, 
-            v_last_login, v_registration_date);    
+    INSERT INTO users (
+        user_id, login, type, language_code, company_ai, status_user, model, 
+        model_rec_photo, model_gen_photo, text_to_audio, audio_to_text, 
+        speaker_name, last_login, registration_date, is_search, is_think
+    )
+    VALUES (
+        p_user_id, p_username, p_type, p_language_code, v_company_ai, 
+        CAST(v_permission AS BIGINT), v_assistant_model, v_rec_model, 
+        v_gen_model, v_tts_model, v_stt_model, v_speaker_name, 
+        v_last_login, v_registration_date, FALSE, FALSE
+    );    
 
     INSERT INTO user_prompts (user_id, prompt)
     VALUES (p_user_id, v_default_prompt);
-
 END;
 $$ LANGUAGE plpgsql;
 
@@ -291,6 +298,9 @@ RETURNS TABLE(
     text_to_audio TEXT,
     audio_to_text TEXT,
     speaker_name TEXT,
+    is_search BOOLEAN,
+    is_think BOOLEAN,
+    location TEXT,
     last_login TIMESTAMP,
     registration_date TIMESTAMP,
     prompt TEXT
@@ -298,8 +308,10 @@ RETURNS TABLE(
 BEGIN
     RETURN QUERY
     SELECT 
-        u.user_id, u.login, u.status_user, u.wait_action, u.type, u.company_ai, u.model, u.language_code, u.model_rec_photo, 
-        u.model_gen_photo, u.text_to_audio, u.audio_to_text, u.speaker_name, u.last_login, u.registration_date, up.prompt
+        u.user_id, u.login, u.status_user, u.wait_action, u.type, u.company_ai, 
+        u.model, u.language_code, u.model_rec_photo, u.model_gen_photo, 
+        u.text_to_audio, u.audio_to_text, u.speaker_name, u.is_search, 
+        u.is_think, u.location, u.last_login, u.registration_date, up.prompt
     FROM 
         users u
     INNER JOIN 
@@ -331,15 +343,16 @@ insert into assistant_ai values('OpenAi', 'gpt-4o',                 '',         
 insert into assistant_ai values('OpenAi', 'gpt-4o-mini',            'default',  128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'o1-preview',             '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi', 'o1-mini',                '',         128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi', 'gpt-4.5-preview',        '',         128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('Yandex', 'yandexgpt',              'yandex',   8000,   '06.12.2023',       2, True);
 insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   8000,   '06.12.2023',       2, False);
 insert into assistant_ai values('Yandex', 'yandexgpt-32k',          'yandex',   32000,  '06.12.2023',       2, True);
-insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, True);
+insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, False);
 insert into assistant_ai values('Meta',   'llama3-70b-8192',        'llama3',   8192,   '-',                1, True);
-insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072, '-',                2, True);
+insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072, '-',                2, False);
 insert into assistant_ai values('Claude', 'claude-3-7-sonnet-20250219', 'last', 200000, '2025.02.19',       2, True);
-insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',    'DeepSeek-R1',64000,'2025.01.20',       2, True);
-insert into assistant_ai values('DeepSeek', 'deepseek-chat',        'DeepSeek-V3',64000,'2025.03.29',       2, True);
+insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',    'DeepSeek-R1',64000,'2025.01.20',       2, False);
+insert into assistant_ai values('DeepSeek', 'deepseek-chat',        'DeepSeek-V3',64000,'2025.03.29',       2, False);
 
 
 
@@ -378,7 +391,7 @@ insert into default_data values ('generate_photo_model',            'dall-e-3');
 insert into default_data values ('text_to_audio',                   'yandex');
 insert into default_data values ('audio_to_text',                   'yandex');
 insert into default_data values ('speakerName',                     'alena');
-insert into default_data values ('count_char_for_gen_audio',        '1000');            -- We need to get rid of this
+insert into default_data values ('count_char_for_gen_audio',        '5000');            -- We need to get rid of this
 insert into default_data values ('sum_max_file_size',               '1048576');         -- 1 mb to bite
 insert into default_data values ('prompt',                          '###INSTRUCTIONS###
 You MUST follow the instructions for answering:

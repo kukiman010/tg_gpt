@@ -19,20 +19,23 @@ class Settings:
         if self.folder_exist(self.base_way + 'conf/') == False:
             self.folder_create(self.base_way + 'conf')
 
-        if self.folder_exist(self.base_way + 'voice/') == False:
-            self.folder_create(self.base_way + 'voice')
+        if self.folder_exist(self.base_way + 'users_media/') == False:
+            self.folder_create(self.base_way + 'users_media')
 
-        if self.folder_exist(self.base_way + 'photos/') == False:
-            self.folder_create(self.base_way + 'photos')
+        if self.folder_exist(self.base_way + 'users_media/voice/') == False:
+            self.folder_create(self.base_way + 'users_media/voice')
 
-        if self.folder_exist(self.base_way + 'ready/') == False:
-            self.folder_create(self.base_way + 'ready')
+        if self.folder_exist(self.base_way + 'users_media/photos/') == False:
+            self.folder_create(self.base_way + 'users_media/photos')
+
+        if self.folder_exist(self.base_way + 'users_media/ready/') == False:
+            self.folder_create(self.base_way + 'users_media/ready')
+
+        if self.folder_exist(self.base_way + 'users_media/files/') == False:
+            self.folder_create(self.base_way + 'users_media/files')
 
         if self.folder_exist(self.base_way + 'locale/') == False:
             self.folder_create(self.base_way + 'locale')
-
-        if self.folder_exist(self.base_way + 'files/') == False:
-            self.folder_create(self.base_way + 'files')
 
         # if self.folder_exist(self.base_way + 'static/') == False:
             # self.folder_create(self.base_way + 'static')
@@ -57,6 +60,9 @@ class Settings:
 
         if self.file_exist(self.base_way + 'conf/deepseek_config.key') == False:
             self.file_create(self.base_way + 'conf/deepseek_config.key')
+
+        if self.file_exist(self.base_way + 'conf/yandex_api.key') == False:
+            self.file_create(self.base_way + 'conf/yandex_api.key')
 
 
         if self.file_exist(self.base_way + 'conf/db_config.ini') :
@@ -157,6 +163,17 @@ class Settings:
             file.close()
         else:
             file = open(self.base_way + "conf/deepseek_config.key", 'r')
+            TOKEN_FOLDER = file.read()
+            file.close()
+        return TOKEN_FOLDER
+    
+    def get_yandex_api(self):
+        TOKEN_FOLDER = ""
+        if not( os.path.exists(self.base_way + "conf/yandex_api.key") ):
+            file = open(self.base_way + "conf/yandex_api.key", 'w')
+            file.close()
+        else:
+            file = open(self.base_way + "conf/yandex_api.key", 'r')
             TOKEN_FOLDER = file.read()
             file.close()
         return TOKEN_FOLDER

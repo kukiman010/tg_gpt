@@ -182,5 +182,32 @@ msgstr "如果您遇到任何问题，请在此处写信 @assistant_gpts_help"
 msgid "TR_UNDO"
 msgstr "撤销"
 
+msgid "TR_MENU_WEBSEARCH"
+msgstr "配置网络搜索"
+
+msgid "TR_TITLE_WEBSEARCH_ON"
+msgstr "网络搜索 - 允许在互联网上搜索信息。\n当前搜索功能已开启。"
+
+msgid "TR_TITLE_WEBSEARCH_OFF"
+msgstr "网络搜索 - 允许在互联网上搜索信息。\n当前搜索功能已关闭。"
+
+msgid "TR_ON"
+msgstr "开启"
+
+msgid "TR_OFF"
+msgstr "关闭"
+
+msgid "TR_WEBSEARCH_ON"
+msgstr "网络搜索 - 已开启"
+
+msgid "TR_WEBSEARCH_OFF"
+msgstr "网络搜索 - 已关闭"
+
+msgid "TR_MENU_THINKS"
+msgstr "配置think"
+
+msgid "TR_MENU_LOCATE"
+msgstr "设置位置"
+
 msgid "TR_"
 msgstr ""

@@ -32,10 +32,20 @@ class chatgpt():
         return answer
 
 
-    def post_gpt(self, context, gpt_model):
-        completion = openai.chat.completions.create(
-            model=gpt_model,
-            messages=context
+    def post_gpt(self, context, gpt_model, web_search):
+        if web_search:
+            completion = openai.chat.completions.create(
+                model=gpt_model,
+                tools=[{
+                    "type": "web_search_preview",
+                    "search_context_size": "medium",
+                }],
+                input=context[-1]['content']
+            )
+        else:
+            completion = openai.chat.completions.create(
+                model=gpt_model,
+                messages=context
             )
 
         answer = Control.context_model.AnswerAssistent()
