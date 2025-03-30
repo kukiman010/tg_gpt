@@ -44,7 +44,7 @@ class Claud:
         try:
             self.client = OpenAI(
                 api_key=self.TOKEN,
-                base_url="https://api.deepseek.com"
+                base_url="https://api.anthropic.com/v1/"
             )
         except Exception as e:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Client initialization failed: {str(e)}")
