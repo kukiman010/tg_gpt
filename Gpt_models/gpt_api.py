@@ -36,10 +36,7 @@ class chatgpt():
         if web_search:
             completion = openai.chat.completions.create(
                 model=gpt_model,
-                tools=[{
-                    "type": "web_search_preview",
-                    "search_context_size": "medium",
-                }],
+                tools=[{"type": "web_search_preview"}],
                 messages=context
             )
         else:
