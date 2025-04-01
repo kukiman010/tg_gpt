@@ -60,7 +60,7 @@ TOKEN_META_GPT = _setting.get_meta_gpt()
 TOKEN_XAI = _setting.get_xai_gpt()
 TOKEN_CLAUDE = _setting.get_claude_gpt()
 TOKEN_DEEPSEEK = _setting.get_deepseek_gpt()
-# TOKEN_YANDEX_API = _setting.get_yandex_api()
+TOKEN_YANDEX_API = _setting.get_yandex_api()
 
 
 if TOKEN_TG == '':
@@ -75,9 +75,9 @@ if TOKEN_FOLDER_ID == '':
     _logger.add_critical('No yandex folder id!')
     sys.exit()
 
-# if TOKEN_YANDEX_API == '':
-#     _logger.add_critical('No yandex api key!')
-#     sys.exit()
+if TOKEN_YANDEX_API == '':
+    _logger.add_critical('No yandex api key!')
+    sys.exit()
 
 if TOKEN_META_GPT == '':
     _logger.add_critical('No meta gpt toke!')
