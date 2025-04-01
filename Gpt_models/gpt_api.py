@@ -46,7 +46,7 @@ class chatgpt():
         return answer
 
 
-    def post_gpt(self, context: str, gpt_model: list, web_search: bool) -> Control.context_model.AnswerAssistent:
+    def post_gpt(self, context: str, gpt_model: list, web_search: bool = False) -> Control.context_model.AnswerAssistent:
         answer = Control.context_model.AnswerAssistent()
         tool = None
 
