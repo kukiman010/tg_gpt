@@ -1,7 +1,5 @@
-# https://api-docs.deepseek.com/
+# https://ai.google.dev/tutorials/python_quickstart
 
-
-# from openai import OpenAI, APIError, AuthenticationError, RateLimitError, APIConnectionError, Timeout
 from openai import (
     OpenAI,
     APIError,
@@ -11,7 +9,7 @@ from openai import (
     APITimeoutError,
     APIStatusError
 )
-import tiktoken 
+import tiktoken
 import sys
 import os
 
@@ -25,7 +23,7 @@ from logger import LoggerSingleton
 _logger = LoggerSingleton.new_instance('log_gpt.log')
 
 
-class DeepSeek:
+class Google:
     def __init__(self, tokenID: str) -> None:
         if not tokenID:
             raise ValueError("API token must be provided")
@@ -34,7 +32,7 @@ class DeepSeek:
         try:
             self.client = OpenAI(
                 api_key=self.TOKEN,
-                base_url="https://api.deepseek.com"
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
             )
         except Exception as e:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Client initialization failed: {str(e)}")
@@ -145,11 +143,9 @@ class DeepSeek:
             answer.set_answer(413, f"Context too long ({token_count}/{MAX_TOKENS} tokens)", token_count)
             return answer
 
-        # Если всё в порядке - выполняем основной запрос
         return self.post_gpt(gpt_model, context)
 
     def count_tokens(self, messages: list, model: str) -> int:
-        """Подсчёт токенов с использованием tiktoken"""
         try:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:

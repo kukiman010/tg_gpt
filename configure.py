@@ -64,6 +64,9 @@ class Settings:
         if self.file_exist(self.base_way + 'conf/yandex_api.key') == False:
             self.file_create(self.base_way + 'conf/yandex_api.key')
 
+        if self.file_exist(self.base_way + 'conf/google_api.key') == False:
+            self.file_create(self.base_way + 'conf/google_api.key')
+
 
         if self.file_exist(self.base_way + 'conf/db_config.ini') :
             self.isInitDB = self.db_conf_read()
@@ -167,6 +170,7 @@ class Settings:
             file.close()
         return TOKEN_FOLDER
     
+
     def get_yandex_api(self):
         TOKEN_FOLDER = ""
         if not( os.path.exists(self.base_way + "conf/yandex_api.key") ):
@@ -174,6 +178,18 @@ class Settings:
             file.close()
         else:
             file = open(self.base_way + "conf/yandex_api.key", 'r')
+            TOKEN_FOLDER = file.read()
+            file.close()
+        return TOKEN_FOLDER
+    
+    
+    def get_google_api(self):
+        TOKEN_FOLDER = ""
+        if not( os.path.exists(self.base_way + "conf/google_api.key") ):
+            file = open(self.base_way + "conf/google_api.key", 'w')
+            file.close()
+        else:
+            file = open(self.base_way + "conf/google_api.key", 'r')
             TOKEN_FOLDER = file.read()
             file.close()
         return TOKEN_FOLDER
