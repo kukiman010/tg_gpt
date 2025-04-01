@@ -78,14 +78,8 @@ class chatgpt():
                     tools=tool,
                     messages=context
                 )
-
-            # data = json.loads( str( completion.model_dump_json() ) )
-            # total_tokens = data['usage']['total_tokens']
-            # content = data['choices'][0]['message']['content']
-            # answer.set_answer(200, content, total_tokens)
-            # return answer
-
-            # response = self.client.chat.completions.create(**create_args)
+                
+                
         except AuthenticationError as e:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Authentication failed: {str(e)}")
             answer.set_answer(401, "Invalid API token", 0)
@@ -118,9 +112,11 @@ class chatgpt():
             answer.set_answer(500, "Unknown error occurred", 0)
             return answer
 
-        # Обработка ответа
         try:
-            content = response.choices[0].message.content
+            if web_search:
+                content = response.output_text
+            else:
+                content = response.choices[0].message.content
             total_tokens = response.usage.total_tokens
         except (AttributeError, IndexError, KeyError) as e:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Invalid API response format: {str(e)}")
