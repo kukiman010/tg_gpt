@@ -719,9 +719,9 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
         elif str(user.get_companyAi()).upper() == str("X ai").upper():  
             content = _xai.post_gpt(model, json)
         elif str(user.get_companyAi()).upper() == str("Claude").upper():  
-            content = _claude.post_gpt( json, model, user.get_is_search())
+            content = _claude.post_gpt( json, model)
         elif str(user.get_companyAi()).upper() == str("DeepSeek").upper():  
-            content = _deepseek.post_gpt(json, model)
+            content = _deepseek.post_gpt(json, model, user.get_is_search())
         
             
 

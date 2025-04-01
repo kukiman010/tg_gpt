@@ -40,10 +40,10 @@ class DeepSeek:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Client initialization failed: {str(e)}")
             raise
 
-    def post_gpt(self, context: list, gpt_model: str) -> Control.context_model.AnswerAssistent:
+    def post_gpt(self, context: str, gpt_model: list, web_search: bool) -> Control.context_model.AnswerAssistent:
         answer = Control.context_model.AnswerAssistent()
-        
-        # Валидация входных данных
+        tool = None
+
         if not gpt_model:
             answer.set_answer(400, "Model name is required", 0)
             return answer
@@ -52,12 +52,27 @@ class DeepSeek:
             answer.set_answer(400, "Context must be a non-empty list", 0)
             return answer
 
+        if web_search:
+            tool=[{
+                    "type": "web_search_preview",
+                    "search_context_size": "medium",
+                }]
+        
+
         try:
-            # Выполнение запроса к API
-            response = self.client.chat.completions.create(
-                model=gpt_model,
-                messages=context
-            )
+            if web_search:
+                response = self.client.responses.create(
+                    model=gpt_model,
+                    tools=tool,
+                    input=context
+                )
+            else:
+                response = self.client.chat.completions.create(
+                    model=gpt_model,
+                    messages=context
+                )
+                
+
         except AuthenticationError as e:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Authentication failed: {str(e)}")
             answer.set_answer(401, "Invalid API token", 0)
@@ -74,7 +89,7 @@ class DeepSeek:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Request timeout: {str(e)}")
             answer.set_answer(504, "Request timeout", 0)
             return answer
-        except APIStatusError as e:  # Добавлено: обработка HTTP статусов (включая 402)
+        except APIStatusError as e:  
             error_msg = f"API Error: {e.message}"
             if e.status_code == 402:
                 error_msg = "Insufficient API balance"
@@ -90,10 +105,13 @@ class DeepSeek:
             answer.set_answer(500, "Unknown error occurred", 0)
             return answer
 
-        # Обработка ответа
         try:
-            content = response.choices[0].message.content
-            total_tokens = response.usage.total_tokens
+            total_tokens = 0
+            if web_search:
+                content = response.output_text
+            else:
+                content = response.choices[0].message.content
+                total_tokens = response.usage.total_tokens
         except (AttributeError, IndexError, KeyError) as e:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Invalid API response format: {str(e)}")
             answer.set_answer(500, "Invalid API response format", 0)
