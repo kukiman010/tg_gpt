@@ -10,7 +10,7 @@ import Gpt_models.yandexgpt
 import Gpt_models.sbergpt
 import Gpt_models.metagpt
 import Gpt_models.x_ai
-# import Gpt_models.googlegpt
+import Gpt_models.google_api
 import Gpt_models.claude_api
 import Gpt_models.deepseak_api
 import Control.context_model
@@ -61,6 +61,7 @@ TOKEN_XAI = _setting.get_xai_gpt()
 TOKEN_CLAUDE = _setting.get_claude_gpt()
 TOKEN_DEEPSEEK = _setting.get_deepseek_gpt()
 TOKEN_YANDEX_API = _setting.get_yandex_api()
+TOKEN_GOOGLE_API = _setting.get_google_api()
 
 
 if TOKEN_TG == '':
@@ -91,6 +92,10 @@ if TOKEN_DEEPSEEK == '':
     _logger.add_critical('No deepseek gpt toke!')
     sys.exit()
 
+if TOKEN_GOOGLE_API == '':
+    _logger.add_critical('No google gpt toke!')
+    sys.exit()
+
 _speak = speech.speaker()
 
 
@@ -118,6 +123,7 @@ _xai = Gpt_models.x_ai.Xai(TOKEN_XAI)
 # _sber.start_key_generation()
 _claude = Gpt_models.claude_api.Claud(TOKEN_CLAUDE)
 _deepseek = Gpt_models.deepseak_api.DeepSeek(TOKEN_DEEPSEEK)
+_google = Gpt_models.google_api.Google(TOKEN_GOOGLE_API)
 
 
 
@@ -708,7 +714,6 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
     try:
         if str(user.get_companyAi()).upper() == str("OpenAi").upper():
             content = _gpt.post_gpt(json, model, user.get_is_search())
-            # content = _gpt.post_gpt()
         elif str(user.get_companyAi()).upper() == str("Yandex").upper():
             _yag.set_token( _speak.get_IAM() )
             content = _yag.post_gpt(json, model)
@@ -721,7 +726,9 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
         elif str(user.get_companyAi()).upper() == str("Claude").upper():  
             content = _claude.post_gpt( json, model)
         elif str(user.get_companyAi()).upper() == str("DeepSeek").upper():  
-            content = _deepseek.post_gpt(json, model, user.get_is_search())
+            content = _deepseek.post_gpt(json, model)
+        elif str(user.get_companyAi()).upper() == str("Google").upper():  
+            content = _google.post_gpt(json, model)
         
             
 
