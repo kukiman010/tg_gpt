@@ -719,9 +719,9 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
         elif str(user.get_companyAi()).upper() == str("X ai").upper():  
             content = _xai.post_gpt(model, json)
         elif str(user.get_companyAi()).upper() == str("Claude").upper():  
-            content = _claude.post_gpt(model, json, user.get_is_search())
+            content = _claude.post_gpt( json, model, user.get_is_search())
         elif str(user.get_companyAi()).upper() == str("DeepSeek").upper():  
-            content = _deepseek.post_gpt(model, json)
+            content = _deepseek.post_gpt(json, model)
         
             
 
@@ -820,7 +820,7 @@ def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
                 
         except Exception as e:
             _logger.add_critical(f"Ошибка для chat_id:{chat_id} при отправке сообщения. Ошибка: {e}\n В этом тексте: \n{converted_text}")
-            bot.send_message(chat_id, converted_text, reply_markup=reply_markup)
+            bot.send_message(chat_id, converted_text)
 
 
 

@@ -40,7 +40,7 @@ class DeepSeek:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Client initialization failed: {str(e)}")
             raise
 
-    def post_gpt(self, gpt_model: str, context: list) -> Control.context_model.AnswerAssistent:
+    def post_gpt(self, context: list, gpt_model: str) -> Control.context_model.AnswerAssistent:
         answer = Control.context_model.AnswerAssistent()
         
         # Валидация входных данных

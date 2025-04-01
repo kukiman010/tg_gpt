@@ -112,6 +112,7 @@ class chatgpt():
             return answer
 
         try:
+            total_tokens = 0
             if web_search:
                 content = response.output_text
             else:
