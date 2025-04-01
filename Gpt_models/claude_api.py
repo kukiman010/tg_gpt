@@ -91,7 +91,7 @@ class Claud:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Request timeout: {str(e)}")
             answer.set_answer(504, "Request timeout", 0)
             return answer
-        except APIStatusError as e:  # Добавлено: обработка HTTP статусов (включая 402)
+        except APIStatusError as e:  
             error_msg = f"API Error: {e.message}"
             if e.status_code == 402:
                 error_msg = "Insufficient API balance"

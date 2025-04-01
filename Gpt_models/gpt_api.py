@@ -66,11 +66,18 @@ class chatgpt():
         
 
         try:
-            response = self.client.chat.completions.create(
-                model=gpt_model,
-                tools=tool,
-                input=context
-            )
+            if web_search:
+                response = self.client.responses.create(
+                    model=gpt_model,
+                    tools=tool,
+                    input=context
+                )
+            else:
+                response = self.client.chat.completions.create(
+                    model=gpt_model,
+                    tools=tool,
+                    messages=context
+                )
 
             # data = json.loads( str( completion.model_dump_json() ) )
             # total_tokens = data['usage']['total_tokens']
