@@ -62,7 +62,7 @@ class chatgpt():
             tool=[{
                     "type": "web_search_preview",
                     "search_context_size": "medium",
-                }],
+                }]
         
 
         try:
@@ -75,11 +75,10 @@ class chatgpt():
             else:
                 response = self.client.chat.completions.create(
                     model=gpt_model,
-                    tools=tool,
                     messages=context
                 )
                 
-                
+
         except AuthenticationError as e:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Authentication failed: {str(e)}")
             answer.set_answer(401, "Invalid API token", 0)
@@ -117,7 +116,7 @@ class chatgpt():
                 content = response.output_text
             else:
                 content = response.choices[0].message.content
-            total_tokens = response.usage.total_tokens
+                total_tokens = response.usage.total_tokens
         except (AttributeError, IndexError, KeyError) as e:
             _logger.add_error(f"Source: {str(self.__class__.__name__)}. Invalid API response format: {str(e)}")
             answer.set_answer(500, "Invalid API response format", 0)

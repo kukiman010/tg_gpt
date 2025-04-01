@@ -708,6 +708,7 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
     try:
         if str(user.get_companyAi()).upper() == str("OpenAi").upper():
             content = _gpt.post_gpt(json, model, user.get_is_search())
+            # content = _gpt.post_gpt()
         elif str(user.get_companyAi()).upper() == str("Yandex").upper():
             _yag.set_token( _speak.get_IAM() )
             content = _yag.post_gpt(json, model)
