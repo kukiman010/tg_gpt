@@ -81,19 +81,19 @@ if TOKEN_YANDEX_API == '':
     sys.exit()
 
 if TOKEN_META_GPT == '':
-    _logger.add_critical('No meta gpt toke!')
+    _logger.add_critical('No meta gpt token!')
     sys.exit()
 
 if TOKEN_CLAUDE == '':
-    _logger.add_critical('No claude gpt toke!')
+    _logger.add_critical('No claude gpt token!')
     sys.exit()
 
 if TOKEN_DEEPSEEK == '':
-    _logger.add_critical('No deepseek gpt toke!')
+    _logger.add_critical('No deepseek gpt token!')
     sys.exit()
 
 if TOKEN_GOOGLE_API == '':
-    _logger.add_critical('No google gpt toke!')
+    _logger.add_critical('No google gpt token!')
     sys.exit()
 
 _speak = speech.speaker()

@@ -353,8 +353,8 @@ insert into assistant_ai values('X ai',   'grok-beta',               'last',    
 insert into assistant_ai values('Claude', 'claude-3-7-sonnet-20250219', 'last', 200000, '2025.02.19',       2, True);
 insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',    'DeepSeek-R1',64000,'2025.01.20',       2, True);
 insert into assistant_ai values('DeepSeek', 'deepseek-chat',        'DeepSeek-V3',64000,'2025.03.29',       2, True);
-insert into assistant_ai values('Google', 'gemini-2.5-pro-exp-03-25','gemini-2.5-pro',1048576,'2025.01.15', 2, True);
-insert into assistant_ai values('Google', 'gemini-2.0-flash',       'gemini-2.0',1048576,'2024.05.15',      1, True);
+insert into assistant_ai values('Google', 'gemini-2.5-pro-exp-03-25','gemini-2.5-pro',1048576,'2025.01.15', 2, False);
+insert into assistant_ai values('Google', 'gemini-2.0-flash',       'gemini-2.0',1048576,'2024.05.15',      1, False);
 
 
 
