@@ -336,25 +336,25 @@ $$ LANGUAGE plpgsql;
 
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades
 -- нужно добавить в эту таблицу больше данных о модели, умеет ли она работать с фото, синтезировать, распознавать делать поиск в интернете, и т.д.
-insert into assistant_ai values('OpenAi', 'gpt-3.5-turbo',          '',         4097,   'Up to Sep 2021',   1, False);
-insert into assistant_ai values('OpenAi', 'gpt-4',                  '',         8192,   'Up to Sep 2021',   1, False);
-insert into assistant_ai values('OpenAi', 'gpt-4-turbo',            '',         128000, 'Up to Dec 2023',   2, False);
-insert into assistant_ai values('OpenAi', 'gpt-4o',                 '',         128000, 'Oct 01, 2023',     2, True);
-insert into assistant_ai values('OpenAi', 'gpt-4o-mini',            'default',  128000, 'Up to Oct 2023',   2, True);
-insert into assistant_ai values('OpenAi', 'o1-preview',             '',         128000, 'Up to Oct 2023',   2, True);
-insert into assistant_ai values('OpenAi', 'o1-mini',                '',         128000, 'Up to Oct 2023',   2, True);
-insert into assistant_ai values('OpenAi', 'gpt-4.5-preview',        '',         128000, 'Up to Oct 2023',   2, True);
-insert into assistant_ai values('Yandex', 'yandexgpt',              'yandex',   8000,   '06.12.2023',       2, True);
-insert into assistant_ai values('Yandex', 'yandexgpt-lite',         'yandex',   8000,   '06.12.2023',       2, False);
-insert into assistant_ai values('Yandex', 'yandexgpt-32k',          'yandex',   32000,  '06.12.2023',       2, False);
-insert into assistant_ai values('Sber',   'GigaChat',               'sber',     4096,   '-',                1, False);
-insert into assistant_ai values('Meta',   'llama3-70b-8192',        'llama3',   8192,   '-',                1, True);
-insert into assistant_ai values('X ai',   'grok-beta',               'last',    131072, '-',                2, False);
-insert into assistant_ai values('Claude', 'claude-3-7-sonnet-20250219', 'last', 200000, '2025.02.19',       2, True);
-insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',    'DeepSeek-R1',64000,'2025.01.20',       2, True);
-insert into assistant_ai values('DeepSeek', 'deepseek-chat',        'DeepSeek-V3',64000,'2025.03.29',       2, True);
-insert into assistant_ai values('Google', 'gemini-2.5-pro-exp-03-25','gemini-2.5-pro',1048576,'2025.01.15', 2, False);
-insert into assistant_ai values('Google', 'gemini-2.0-flash',       'gemini-2.0',1048576,'2024.05.15',      1, False);
+insert into assistant_ai values('OpenAi',   'gpt-3.5-turbo',          'gpt-3.5-turbo',          4097,   'Up to Sep 2021',   1, False);
+insert into assistant_ai values('OpenAi',   'gpt-4',                  'gpt-4',                  8192,   'Up to Sep 2021',   1, False);
+insert into assistant_ai values('OpenAi',   'gpt-4-turbo',            'gpt-4-turbo',            128000, 'Up to Dec 2023',   2, False);
+insert into assistant_ai values('OpenAi',   'gpt-4o',                 'gpt-4o',                 128000, 'Oct 01, 2023',     2, True);
+insert into assistant_ai values('OpenAi',   'gpt-4o-mini',            'gpt-4o-mini',            128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi',   'o1-preview',             'o1',                     128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi',   'o1-mini',                'o1-mini',                128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi',   'gpt-4.5-preview',        'gpt-4.5',                128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('Yandex',   'yandexgpt',              'Yandex GPT 5',           8000,   '06.12.2023',       2, True);
+insert into assistant_ai values('Yandex',   'yandexgpt-lite',         'Yandex Lite',            8000,   '06.12.2023',       2, False);
+insert into assistant_ai values('Yandex',   'yandexgpt-32k',          'Yandex GPT 5-32k',       32000,  '06.12.2023',       2, False);
+insert into assistant_ai values('Sber',     'GigaChat',               'GigaChat',               4096,   '-',                1, False);
+insert into assistant_ai values('Meta',     'llama3-70b-8192',        'llama3-70b',             8192,   '-',                1, True);
+insert into assistant_ai values('X ai',     'grok-beta',              'grok',                   131072, '-',                2, False);
+insert into assistant_ai values('Claude',   'claude-3-7-sonnet-20250219', 'claude-3-7-sonnet',  200000, '2025.02.19',       2, True);
+insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',     'DeepSeek-R1',             64000,  '2025.01.20',       2, True);
+insert into assistant_ai values('DeepSeek', 'deepseek-chat',         'DeepSeek-V3',             64000,  '2025.03.29',       2, True);
+insert into assistant_ai values('Google',   'gemini-2.5-pro-exp-03-25','gemini-2.5-pro',        1048576,'2025.01.15',       2, False);
+insert into assistant_ai values('Google',   'gemini-2.0-flash',       'gemini-2.0',             1048576,'2024.05.15',       1, False);
 
 
 

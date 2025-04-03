@@ -42,7 +42,7 @@ class assistent_api:
 
         for i in range(len(self.model)):
             self.button_name.append( "set_model_" + str(i) )
-            self.text_to_button[i] = str( self.model[i].get_company_ai() + ":\n" + self.model[i].get_model_name())
+            self.text_to_button[i] = str( self.model[i].get_company_ai() + ":\n" + self.model[i].get_description())
 
     def find_button(self, key):
         if self.button_name[key] != None:
