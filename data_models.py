@@ -83,6 +83,14 @@ class assistent_api:
             if self.model[i].get_model_name() == model:
                 return self.model[i].get_token_size()
         return 0
+    
+    def get_description(self, model_name:str, company: str) -> str:
+        for i in range(len(self.model)):
+            if self.model[i].get_company_ai() == company and  self.model[i].get_model_name() == model_name:
+                return self.model[i].get_description()
+            
+        return ""
+
 
 
 
