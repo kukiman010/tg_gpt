@@ -250,7 +250,9 @@ def help(message):
         but = types.InlineKeyboardButton(value, callback_data=key)
         markup.add(but)
 
-    text = locale.find_translation(user.get_language(), 'TR_DESCRIPTION_MODELS').format(user.get_model(), user.get_companyAi())
+    descrption_model = _assistent_api.get_description( user.get_model(), user.get_companyAi() )
+
+    text = locale.find_translation(user.get_language(), 'TR_DESCRIPTION_MODELS').format(descrption_model, user.get_companyAi())
     send_text(message.chat.id, text, reply_markup=markup)
 
 
