@@ -437,15 +437,15 @@ def handle_callback_query(call):
     
     elif key == 'menu_websearch':
         bot.answer_callback_query(call.id, text = '')
+        markup = types.InlineKeyboardMarkup()
 
         if user.get_is_search():
             t_mes = locale.find_translation(user.get_language(), 'TR_TITLE_WEBSEARCH_ON')
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_OFF'),              callback_data='edit_websearch') )
         else:
             t_mes = locale.find_translation(user.get_language(), 'TR_TITLE_WEBSEARCH_OFF')
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_ON'),               callback_data='edit_websearch') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_OFF'),              callback_data='edit_websearch') )
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_ON'),               callback_data='edit_websearch') )
+        
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_promt') )
         send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
 
@@ -466,6 +466,11 @@ def handle_callback_query(call):
     # elif key == 'menu_think':
 
     # elif key == 'menu_locate':
+    #     bot.answer_callback_query(call.id, text = '')
+    #     t_mes = locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC').format(user.get_prompt())
+    #     markup = types.InlineKeyboardMarkup()
+    #     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu',request_location=True) )
+    #     send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
 
 
     elif key == 'errorPost':
