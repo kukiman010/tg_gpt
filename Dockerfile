@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1
 
+WORKDIR /app
 COPY conf ./conf
 COPY tools ./tools
 
@@ -23,8 +24,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     portaudio19-dev \
     && curl -s https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -a 
-
-WORKDIR /app
 
 RUN expect tools/yc_init.expect  
 
