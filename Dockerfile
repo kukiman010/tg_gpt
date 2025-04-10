@@ -23,8 +23,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     portaudio19-dev \
     && curl -s https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -a 
 
-RUN expect tools/yc_init.expect \
-    && ln -s /root/yandex-cloud/bin/yc /usr/local/bin/yc \
+RUN expect tools/yc_init.expect 
+
+RUN ln -s /root/yandex-cloud/bin/yc /usr/local/bin/yc \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
