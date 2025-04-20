@@ -209,7 +209,6 @@ msgstr "Настроить think"
 msgid "TR_MENU_LOCATE"
 msgstr "Задать локацию"
 
-
 msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
 msgstr "Оплата не доступна для заблокированных пользователей"
 

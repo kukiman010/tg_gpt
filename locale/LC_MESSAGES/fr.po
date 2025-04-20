@@ -209,5 +209,32 @@ msgstr "Configurer think"
 msgid "TR_MENU_LOCATE"
 msgstr "Définir la localisation"
 
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "Le paiement n'est pas disponible pour les utilisateurs bannis"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "Il n'est actuellement pas possible de choisir un mode de paiement"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "Sélectionnez un mode de paiement :"
+
+msgid "TR_SELECT_TARIFF"
+msgstr "Ici, vous pouvez sélectionner un forfait à ce lien {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "Actuellement, un seul forfait est disponible donnant accès à tout. Plus de détails [ici]({})\nSélectionnez un mode de paiement :"
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "Les paiements ne sont pas acceptés pour le moment."
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "Abonnement pour 1 mois !"
+
+msgid "TR_PAY"
+msgstr "Payer {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "Vérifier le paiement"
+
 msgid "TR_"
 msgstr ""

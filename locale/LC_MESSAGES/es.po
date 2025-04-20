@@ -209,5 +209,32 @@ msgstr "Configurar think"
 msgid "TR_MENU_LOCATE"
 msgstr "Establecer ubicación"
 
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "El pago no está disponible para usuarios bloqueados"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "Actualmente no es posible elegir un método de pago"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "Seleccione un método de pago:"
+
+msgid "TR_SELECT_TARIFF"
+msgstr "Aquí puede seleccionar una tarifa en este enlace {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "Actualmente solo hay una tarifa disponible que otorga acceso a todo. Más detalles [aquí]({})\nSeleccione un método de pago:"
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "Actualmente no se aceptan pagos."
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "¡Suscripción por 1 mes!"
+
+msgid "TR_PAY"
+msgstr "Pagar {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "Comprobar pago"
+
 msgid "TR_"
 msgstr ""

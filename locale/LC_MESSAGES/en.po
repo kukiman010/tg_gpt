@@ -209,5 +209,32 @@ msgstr "Configure think"
 msgid "TR_MENU_LOCATE"
 msgstr "Set location"
 
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "Payment is not available for banned users"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "It is currently not possible to choose a payment method"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "Select a payment method:"
+
+msgid "TR_SELECT_TARIFF"
+msgstr "Here you can select a tariff at this link {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "Currently, only one tariff is available, granting access to everything. More details [here]({})\nSelect a payment method:"
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "Payments are not being accepted at this time."
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "Subscribe for 1 month!"
+
+msgid "TR_PAY"
+msgstr "Pay {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "Check payment"
+
 msgid "TR_"
 msgstr ""

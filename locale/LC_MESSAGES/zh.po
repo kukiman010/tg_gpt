@@ -209,5 +209,32 @@ msgstr "配置think"
 msgid "TR_MENU_LOCATE"
 msgstr "设置位置"
 
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "被封禁用户无法支付"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "目前无法选择支付方式"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "请选择支付方式："
+
+msgid "TR_SELECT_TARIFF"
+msgstr "您可以通过此链接选择套餐 {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "目前仅有一个套餐可用，能够访问全部内容。更多详情请见[这里]({}) \n请选择支付方式："
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "目前不接受支付。"
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "订阅 1 个月！"
+
+msgid "TR_PAY"
+msgstr "支付 {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "检查支付"
+
 msgid "TR_"
 msgstr ""
