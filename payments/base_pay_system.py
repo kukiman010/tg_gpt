@@ -13,6 +13,7 @@ from logger import LoggerSingleton
 class BasePaymentSystem(ABC):
     def __init__(self, logName = 'payment_system.log'):
         self._logger = LoggerSingleton.new_instance(logName)
+        self.payment_system_name = ''
 
     def generate_payment_label(self, user_id, prefix="PAY") -> str:
         timestamp = int(time.time())

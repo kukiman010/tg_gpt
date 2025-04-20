@@ -1,6 +1,7 @@
 from database import Database
 from data_models import assistent_model
 from data_models import languages_model
+from data_models import payments_model
 from Control.user import User
 from typing import List
 
@@ -182,6 +183,17 @@ class dbApi:
     def update_user_location(self, user_id: int, location: str) -> None:
         query = 'UPDATE users SET location = %s WHERE user_id = %s;'
         self.db.execute_query(query, (location, user_id))
+
+
+    def get_payment_systems(self):
+        query = "select * from payment_services;"
+        data = self.db.execute_query(query)
+        array = []
+        for i in data:
+                pm = payments_model()
+                pm.set_model(i[0],i[1],i[2])
+                array.append( pm )
+        return array
 
     def __del__(self):
         self.db.close_pool()

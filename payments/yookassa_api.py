@@ -1,12 +1,14 @@
 # https://github.com/yoomoney/yookassa-sdk-python/tree/master/docs/examples
+# https://yookassa.ru/developers/payment-acceptance/testing-and-going-live/testing#test-bank-card
 
 from yookassa import Configuration, Payment
-from base_pay_system import BasePaymentSystem
+
 import os, sys
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../'))
 from Control.payment_info import SubscriptionPaymentInfo
+from Payments.base_pay_system import BasePaymentSystem
 
 
 
@@ -22,6 +24,7 @@ class Yookassa(BasePaymentSystem):
 
         self.redirect_uri = botName
         self.capture = capture
+        self.payment_system_name = 'Yoomoney'
 
         
 
@@ -159,6 +162,7 @@ class Yookassa(BasePaymentSystem):
                 info.status =       payment.status
                 info.currency =     payment.amount.currency
                 info.amount =       float(payment.amount.value)
+                info.payment_system = self.payment_system_name
                 info.created_at =   payment.created_at
                 info.description =  payment.description
                 info.url_pay =      payment.confirmation.confirmation_url
@@ -175,3 +179,20 @@ class Yookassa(BasePaymentSystem):
             return None
         
         
+
+# userId= 111777
+# # payment_id = '2f95bad0-000f-5001-8000-1d66ef30b712'
+
+
+# yoo = Yookassa()
+
+# payInfo = yoo.createInvoice(userId, 1000, "RUB", "Тест")
+# print(f"Ссылка для оплаты: {payInfo.url_pay}")
+# payment_id = payInfo.payment_id
+# print(payment_id)
+
+# answer = yoo.getStatusInvoicePayment(payment_id)
+# # answer = yoo.cancelInvoicePayment(payment_id)
+# # answer = yoo.accesInvoicePayment(payment_id)
+
+# yoo.class_to_paymentInfo(answer)

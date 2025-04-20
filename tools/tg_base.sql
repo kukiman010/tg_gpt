@@ -102,6 +102,13 @@ CREATE TABLE languages (
     _isView             BOOLEAN
 );
 
+CREATE TABLE payment_services (
+    name                TEXT UNIQUE NOT NULL,
+    description         TEXT,
+    is_enabled          BOOLEAN DEFAULT TRUE,
+    id                  SERIAL PRIMARY KEY
+);
+
 -- CREATE TABLE user_statistic (
 --     user_id             BIGINT UNIQUE,
 --     login               TEXT UNIQUE,
@@ -365,6 +372,7 @@ insert into assistant_ai_photo values('Meta',   'llama3-70b-8192',  'llama3',   
 insert into assistant_ai_photo values('OpenAi', 'gpt-4o-mini',      '',         128000, 'Up to Oct 2023',   1, True);
 insert into assistant_ai_photo values('X ai',   'grok-vision-beta', '',         8192,   '-',                1, True);
 
+
 -- -- https://cloud.yandex.com/en-ru/docs/speechkit/tts/voices
 -- insert into voices values('dasha',  'Russian',  'F','ru-RU');
 -- insert into voices values('alena',  'Russian',  'F','ru-RU');
@@ -382,6 +390,11 @@ insert into languages values ('Espanol',    'es', True);
 insert into languages values ('English',    'en', True);
 insert into languages values ('Russian',    'ru', True);
 insert into languages values ('France',     'fr', True);
+
+
+insert into payment_services values ('Yoomoney',            'Yoomoney',             True);
+insert into payment_services values ('Crypto Pay',          'Crypto Pay',           True);
+insert into payment_services values ('Telegram stars',      'Telegram stars',       True);
 
 
 
@@ -419,5 +432,8 @@ Follow in the strict order:
 Ill answer as the world-famous <specific field> scientists with <most prestigious LOCAL award>
 <Deep knowledge step-by-step answer, with CONCRETE details>'
 );
+insert into default_data values ('global_payment',                  'True');
+insert into default_data values ('support_chat',                    '@assistant_gpts_help');
+insert into default_data values ('payments_tariff',                 'https://t.me/assistant_gpts/2');
 
 -- insert into default_data values ('',     '');

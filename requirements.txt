@@ -15,4 +15,4 @@ PyAudio
 pydub
 tiktoken
 yandex-speechkit
-YooMoney
+yookassa

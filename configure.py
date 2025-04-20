@@ -65,6 +65,12 @@ class Settings:
         if self.file_exist(self.base_way + 'conf/google_api.key') == False:
             self.file_create(self.base_way + 'conf/google_api.key')
 
+        if self.file_exist(self.base_way + 'conf/yoomoney_clientId.key') == False:
+            self.file_create(self.base_way + 'conf/yoomoney_clientId.key')
+            
+        if self.file_exist(self.base_way + 'conf/yoomoney_token.key') == False:
+            self.file_create(self.base_way + 'conf/yoomoney_token.key')
+
 
         if self.file_exist(self.base_way + 'conf/db_config.ini') :
             self.isInitDB = self.db_conf_read()
@@ -187,6 +193,29 @@ class Settings:
             file.close()
         else:
             file = open(self.base_way + "conf/google_api.key", 'r')
+            TOKEN_FOLDER = file.read()
+            file.close()
+        return TOKEN_FOLDER
+    
+
+    def get_yoomoney_shopId(self):
+        TOKEN_FOLDER = ""
+        if not( os.path.exists(self.base_way + "conf/yoomoney_clientId.key") ):
+            file = open(self.base_way + "conf/yoomoney_clientId.key", 'w')
+            file.close()
+        else:
+            file = open(self.base_way + "conf/yoomoney_clientId.key", 'r')
+            TOKEN_FOLDER = file.read()
+            file.close()
+        return TOKEN_FOLDER
+    
+    def get_yoomoney_token(self):
+        TOKEN_FOLDER = ""
+        if not( os.path.exists(self.base_way + "conf/yoomoney_token.key") ):
+            file = open(self.base_way + "conf/yoomoney_token.key", 'w')
+            file.close()
+        else:
+            file = open(self.base_way + "conf/yoomoney_token.key", 'r')
             TOKEN_FOLDER = file.read()
             file.close()
         return TOKEN_FOLDER

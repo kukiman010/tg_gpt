@@ -209,5 +209,33 @@ msgstr "Настроить think"
 msgid "TR_MENU_LOCATE"
 msgstr "Задать локацию"
 
+
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "Оплата не доступна для заблокированных пользователей"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "В данный момент невозможно выбрать способ оплаты"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "Выберите способ оплаты:"
+
+msgid "TR_SELECT_TARIFF"
+msgstr "Тут вы можете выберете тариф по этой ссылке {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "В данный момент доступен только один тариф открывающий доступ ко всему. Подробнее о нем [здесь]({}) \nВыберите способ оплаты:"
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "В данный момент платежи не принимаются."
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "Оформление подписки на 1 месяц!"
+
+msgid "TR_PAY"
+msgstr "Оплатить {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "Проверить платеж"
+
 msgid "TR_"
 msgstr ""
