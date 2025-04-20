@@ -109,6 +109,59 @@ CREATE TABLE payment_services (
     id                  SERIAL PRIMARY KEY
 );
 
+CREATE TABLE invoice_journal (
+    user_id             INTEGER NOT NULL,
+    user_name           TEXT,
+    payment_id          TEXT UNIQUE NOT NULL,
+    label_pay           TEXT,
+    status              TEXT,                       -- pending/paid/failed/canceled/refunded
+    currency            TEXT,
+    amount              INT,
+    payment_system      VARCHAR,
+    created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at          TIMESTAMP WITH TIME ZONE,
+    card_type           TEXT,
+    card_number         TEXT,
+    email               TEXT,
+    description         TEXT,
+    attempts            INT,
+    updated_at          TIMESTAMP WITH TIME ZONE,
+    failure_reason      TEXT,
+    provider_response   TEXT,
+    metadata            JSON,                       -- для дополнительной информации
+    url_pay             TEXT,
+    is_test             BOOLEAN DEFAULT FALSE,
+    id                  SERIAL PRIMARY KEY
+);
+
+CREATE TABLE successful_payments (
+    payment_id          TEXT UNIQUE NOT NULL REFERENCES invoice_journal(payment_id),
+    user_id             INT,
+    paid_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    amount              INT,
+    currency            TEXT,
+    payment_system      TEXT,
+    card_type           TEXT,
+    email               TEXT,
+    description         TEXT,
+    provider_response   TEXT,
+    metadata            JSON,
+    id                  SERIAL PRIMARY KEY
+);
+
+CREATE TABLE subscription_users (
+    user_id             INT UNIQUE NOT NULL,
+    user_name           TEXT,
+    email               TEXT,
+    active_since        TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    active_until        TIMESTAMP WITH TIME ZONE,
+    status              TEXT,                    -- active/inactive/canceled
+    last_payment_id     TEXT REFERENCES successful_payments(payment_id),
+    id                  SERIAL PRIMARY KEY
+);
+
+
+
 -- CREATE TABLE user_statistic (
 --     user_id             BIGINT UNIQUE,
 --     login               TEXT UNIQUE,
