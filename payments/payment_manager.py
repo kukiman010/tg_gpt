@@ -5,8 +5,9 @@ import requests
 import math
 import threading
 import time
-from datetime import datetime
-from blinker import signal
+from datetime import datetime, timedelta
+# import datetime
+# from blinker import signal
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '..'))
@@ -15,10 +16,11 @@ from data_models    import payments_model
 from Payments.yookassa_api import Yookassa
 from Payments.base_pay_system import BasePaymentSystem
 from Control.payment_info import SubscriptionPaymentInfo
+import signals
 
 
 
-post_signal = signal('PaymentManager')
+# post_signal = signal('PaymentManager')
 
 class PaymentManager:
     def __init__(self, is_work):
@@ -32,7 +34,7 @@ class PaymentManager:
         self.payment_systems : list[BasePaymentSystem] = []
         self.payment_systems.append(Yookassa())
 
-        self._payments = []        # Список SubscriptionPaymentInfo
+        self._payments: list[BasePaymentSystem] = []        # Список SubscriptionPaymentInfo
         self._lock = threading.Lock()
         self._running = False
         self._worker = None
@@ -53,7 +55,8 @@ class PaymentManager:
             if isinstance(payment, Yookassa) and payment.payment_system_name == payment_system:
                 payment: Yookassa  # type: ignore
                 pay_info = payment.createInvoice(userId, price, 'RUB',description)
-                pay_info.diedTime = datetime.now() + datetime.timedelta(min=30)
+                # datetime.time
+                pay_info.diedTime = datetime.now() + timedelta(minutes=30)
                 self._logger.add_info('{}. Создание платежа {} для пользователя {}, payment_id= {}'.format(str(self.__class__.__name__), payment_system, userId, pay_info.payment_id))
                 return pay_info
             # elif isinstance(payment, ...) and payment.payment_system_name == payment_system:
@@ -67,7 +70,13 @@ class PaymentManager:
         for payment in self.payment_systems:
             if isinstance(payment, Yookassa) and payment.payment_system_name == pay_info.payment_system:
                 payment: Yookassa  # type: ignore
-                payment.getStatusInvoicePayment(pay_info.payment_id)
+                
+                payment_data = payment.getStatusInvoicePayment(pay_info.payment_id)
+                # pay_info = payment.update_payment_to_SubPaymentInfo(payment_data, pay_info)
+                payment.update_payment_to_SubPaymentInfo(payment_data, pay_info)
+
+                # pay_update_info
+                # if pay_info.status != payment_info.
                 # pay_info = payment.createInvoice(pay_info.user_id, pay_info.amount, 'RUB',description)
                 # pay_info.diedTime = datetime.now() + datetime.timedelta(min=30)
                 # self._logger.add_info('{}. Создание платежа {} для пользователя {}, payment_id= {}'.format(str(self.__class__.__name__), pay_info.payment_system, userId, pay_info.payment_id))
@@ -135,7 +144,7 @@ class PaymentManager:
         self._logger.add_info(f"Оплата успешна user_id={payment_info.user_id}, id={payment_info.payment_id}")
         # сигнал/коллбек на ваш вкус: GUI, email, другой компонент
         print(f"== SIGNAL paymentSucceeded: user_id={payment_info.user_id}")
-        post_signal.send('PaymentManager', userId=payment_info.user_id, mediaList=payment_info)
+        signals.finish_payment.send('PaymentManager', userId=payment_info.user_id, data=payment_info)
 
     def _payment_loop(self):
         while self._running:
@@ -143,17 +152,25 @@ class PaymentManager:
             now = datetime.now()
             to_remove = []
             with self._lock:
-                for payment in self._payments:
+                for pay_info in self._payments:
                     # Время "смерти" истекло?
-                    if payment.diedTime and now > payment.diedTime:
-                        self._logger.add_warning(f"Оплата user_id={payment.user_id} НЕ УСПЕШНА — истекло время ожидания.")
-                        print(f"Время истекло для user_id={payment.user_id}, платеж удалён из пула.")
-                        to_remove.append(payment)
+                    if pay_info.diedTime and now > pay_info.diedTime:
+                        self._logger.add_warning(f"Оплата user_id={pay_info.user_id} НЕ УСПЕШНА — истекло время ожидания.")
+                        print(f"Время истекло для user_id={pay_info.user_id}, платеж удалён из пула.")
+                        to_remove.append(pay_info)
                         continue
                     # Успешная оплата?
-                    if payment.check_invoice():
-                        self._on_payment_succeeded(payment)
-                        to_remove.append(payment)
+                    # if payment.check_invoice():
+                    pay_info = self.check_status(pay_info)
+
+                    if pay_info.status == 'succeeded':
+                        self._on_payment_succeeded(pay_info)
+                        to_remove.append(pay_info)
+                    elif pay_info.status == 'waiting_for_capture':
+                        self._logger.add_critical('{}. Пока не определил что делать со статусом оплаты waiting_for_capture'.format(str(self.__class__.__name__)) ) ############!!!!!!!!!!!
+                    elif pay_info.status == 'canceled':
+                        self._payments.remove(p)
+
                 for p in to_remove:
                     self._payments.remove(p)
 

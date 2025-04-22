@@ -236,5 +236,8 @@ msgstr "Оплатить {}{}"
 msgid "TR_CHECK_PAY"
 msgstr "Проверить платеж"
 
+msgid "TR_SUCCESSFUL_PAYMENT"
+msgstr "Успешная оплата! \nТеперь вам доступен новый функционал."
+
 msgid "TR_"
 msgstr ""

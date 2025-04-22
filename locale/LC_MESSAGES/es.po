@@ -236,5 +236,8 @@ msgstr "Pagar {}{}"
 msgid "TR_CHECK_PAY"
 msgstr "Comprobar pago"
 
+msgid "TR_SUCCESSFUL_PAYMENT"
+msgstr "¡Pago exitoso! \nAhora tienes acceso a nuevas funciones."
+
 msgid "TR_"
 msgstr ""

@@ -9,6 +9,7 @@ class SubscriptionPaymentInfo:
         self.tarrif = 0
         self.status = ''                # например: pending, waiting_for_capture, succeeded и canceled.
         self.amount = 0.0               # прайс
+        self.fee = 0.0                  # коммисия, в той же единице, что и amount
         self.currency = ''              # например: 'RUB', 'USD'
         self.payment_system = ''        # напр. 'Qiwi', 'Yookassa', 'SBP'
         self.created_at = datetime      #
@@ -26,6 +27,7 @@ class SubscriptionPaymentInfo:
         self.url_pay = ''
         self.is_test = False            # для тестирования оплаты
         self.diedTime = datetime        # время смерти команды
+        self.paid = False               # признак успешной оплаты
 
 
 

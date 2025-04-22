@@ -116,7 +116,8 @@ CREATE TABLE invoice_journal (
     label_pay           TEXT,
     tarrif_id           INT,
     status              TEXT,                       -- pending, waiting_for_capture, succeeded, canceled
-    amount              INT,
+    amount              FLOAT,
+    fee                 FLOAT,
     currency            TEXT,
     payment_system      VARCHAR,
     created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -136,27 +137,29 @@ CREATE TABLE invoice_journal (
 );
 
 CREATE TABLE successful_payments (
-    payment_id          TEXT UNIQUE NOT NULL REFERENCES invoice_journal(payment_id),
     user_id             INT,
-    paid_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    amount              INT,
+    payment_id          TEXT UNIQUE NOT NULL REFERENCES invoice_journal(payment_id),
+    tarrif_id           INT,
+    final_amount        FLOAT,
     currency            TEXT,
     payment_system      TEXT,
     card_type           TEXT,
     email               TEXT,
-    description         TEXT,
-    provider_response   TEXT,
-    metadata            JSON,
+    paid_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    -- description         TEXT,
+    -- provider_response   TEXT,
+    -- metadata            JSON,
     id                  SERIAL PRIMARY KEY
 );
 
 CREATE TABLE subscription_users (
-    user_id             INT UNIQUE NOT NULL,
+    user_id             INT NOT NULL,
     user_name           TEXT,
+    tarrif_id           INT,
     email               TEXT,
     active_since        TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     active_until        TIMESTAMP WITH TIME ZONE,
-    status              TEXT,                    -- active/inactive/canceled
+    -- status              TEXT,                    -- active/inactive/canceled
     last_payment_id     TEXT REFERENCES successful_payments(payment_id),
     id                  SERIAL PRIMARY KEY
 );
@@ -393,6 +396,92 @@ BEGIN
     user_id = p_user_id;
 END;
 $$ LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION update_invoice_journal(
+    in_payment_id TEXT,
+    in_label_pay TEXT,
+    in_status TEXT,
+    in_card_type TEXT,
+    in_card_number TEXT,
+    in_fee FLOAT,
+    in_expires_at TIMESTAMP WITH TIME ZONE
+)
+RETURNS VOID AS $$
+BEGIN
+    -- Сначала пробуем обновить по payment_id
+    UPDATE invoice_journal
+       SET status = in_status,
+           card_type = in_card_type,
+           card_number = in_card_number,
+           fee = in_fee,
+           expires_at = in_expires_at,
+           updated_at = now()
+     WHERE payment_id = in_payment_id;
+
+    -- Если не обновили ни одной строки, тогда ищем по label_pay
+    IF NOT FOUND THEN
+        UPDATE invoice_journal
+           SET status = in_status,
+               card_type = in_card_type,
+               card_number = in_card_number,
+               fee = in_fee,
+               expires_at = in_expires_at,
+               updated_at = now()
+         WHERE label_pay = in_label_pay;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION upsert_subscription_user(
+    in_user_id INT,
+    in_user_name TEXT,
+    in_tarrif_id INT,
+    in_email TEXT,
+    in_hours INT,
+    in_payment_id TEXT
+)
+RETURNS VOID AS $$
+DECLARE
+    v_now TIMESTAMPTZ := CURRENT_TIMESTAMP;
+    v_active_until TIMESTAMPTZ;
+BEGIN
+    -- Ищем существующую подписку по user_id + tarrif_id
+    SELECT active_until
+      INTO v_active_until
+      FROM subscription_users
+     WHERE user_id = in_user_id
+       AND tarrif_id = in_tarrif_id
+     ORDER BY active_until DESC
+     LIMIT 1;
+
+    IF FOUND THEN
+        -- Если уже есть, продляем active_until
+        UPDATE subscription_users
+           SET active_until = 
+                CASE
+                    WHEN v_active_until > v_now 
+                        THEN v_active_until + (in_hours || ' hour')::interval
+                    ELSE v_now + (in_hours || ' hour')::interval
+                END,
+               last_payment_id = in_payment_id
+         WHERE user_id = in_user_id
+            AND tarrif_id = in_tarrif_id
+            AND active_until = v_active_until;
+    ELSE
+        -- Если нет, создаём новую запись
+        INSERT INTO subscription_users (
+            user_id, user_name, tarrif_id, email, active_since, active_until, last_payment_id
+        ) VALUES (
+            in_user_id, in_user_name, in_tarrif_id, in_email, v_now, v_now + (in_hours || ' hour')::interval, in_payment_id
+        );
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
 
 
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades

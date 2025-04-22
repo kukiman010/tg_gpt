@@ -178,6 +178,18 @@ class Yookassa(BasePaymentSystem):
             self._logger.add_error('{}. Ошибка: класс Payment - не валидный'.format(str(self.__class__.__name__)))
             return None
         
+    def update_payment_to_SubPaymentInfo(self, payment: Payment, pay_info: SubscriptionPaymentInfo) -> SubscriptionPaymentInfo:
+        if payment.status != pay_info.status:
+            pay_info.expires_at = payment.captured_at
+            pay_info.status = payment.status
+            pay_info.card_type = payment.payment_method.type
+            pay_info.card_number = payment.payment_method.account_number
+            pay_info.paid = payment.paid
+            pay_info.fee = float(payment.amount.value) - float(payment.income_amount.value)
+        pay_info = pay_info
+        
+
+        
         
 
 # userId= 111777

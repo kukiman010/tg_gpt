@@ -236,5 +236,8 @@ msgstr "支付 {}{}"
 msgid "TR_CHECK_PAY"
 msgstr "检查支付"
 
+msgid "TR_SUCCESSFUL_PAYMENT"
+msgstr "支付成功！\n您现在可以使用新功能。"
+
 msgid "TR_"
 msgstr ""

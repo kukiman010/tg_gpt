@@ -195,14 +195,27 @@ class dbApi:
                 array.append( pm )
         return array
     
-    def add_invoice_journal(self, userId, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, expires_at, is_test ):
-        query = "INSERT INTO context(user_id, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, expires_at, is_test) " \
-                            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
-        self.db.execute_query(query, (userId, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, expires_at, is_test) )
+    def add_invoice_journal(self, userId, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, is_test:bool ):
+        query = "INSERT INTO invoice_journal(user_id, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, is_test) " \
+                            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+        self.db.execute_query(query, (userId, str(payment_id), str(label_pay), tarrif_id, str(status), amount, str(currency), str(payment_system), str(description), str(created_at), is_test))
 
-    # def update_invoice_journal(self,):
-        # query = 'UPDATE users SET location = %s WHERE user_id = %s;'
-        # self.db.execute_query(query, (location, user_id))
+    def update_invoice_journal(self, payment_id, label_pay, status, card_type, card_number, fee, expires_at):
+        query = 'select from update_invoice_journal(%s,%s,%s,%s,%s,%s,%s);'
+        self.db.execute_query(query, (payment_id, label_pay, status, card_type, card_number, fee, expires_at))
+    
+    def add_successful_payments(self, userId, payment_id, tarrif_id, final_amount, currency, payment_system, card_type, email, expires_at):
+        query = "INSERT INTO successful_payments VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+        self.db.execute_query(query, (userId, payment_id, tarrif_id, final_amount, currency, payment_system, card_type, email, expires_at))
+
+    def upsert_subscription_user(self, userId, userName, tarrif_id, email, hours, last_payment_id):
+        query = "select from upsert_subscription_user(%s,%s,%s,%s,%s,%s);"
+        self.db.execute_query(query, (userId, userName, tarrif_id, email, hours, last_payment_id))
+
+    def update_status_in_users(self, userId, status):
+        query = 'UPDATE users SET status_user = %s WHERE user_id = %s;'
+        self.db.execute_query(query, (status, userId))
+
 
     def __del__(self):
         self.db.close_pool()

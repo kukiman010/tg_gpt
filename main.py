@@ -34,6 +34,7 @@ from file_worker        import FileConverter
 from Control.user_media import UserMedia
 from Control.environment import Environment
 
+import signals
 
 _setting = Settings()
 sys.stdout.reconfigure(encoding='utf-8')
@@ -41,6 +42,7 @@ _logger = LoggerSingleton.new_instance('log_gpt.log')
 locale = Locale('locale/LC_MESSAGES/')
 _mediaWorker = MediaWorker.new_instance()
 post_signal = signal('post_media')
+# post_signal_payment = signal('finish_payment')
 _converterFile = FileConverter()
 _env = Environment()
 
@@ -341,8 +343,8 @@ def handle_callback_query(call):
     payments_pattern = r'^set_payments_(\S+)$'
     payments_match = re.match(payments_pattern, key)
 
-    check_pay_pattern = r'^check_pay_(\S+)$'
-    check_pay_match = re.match(check_pay_pattern, key)
+    # check_pay_pattern = r'^check_pay_(\S+)$'
+    # check_pay_match = re.match(check_pay_pattern, key)
 
     message_id = call.message.message_id
     chat_id = call.message.chat.id
@@ -546,11 +548,13 @@ def handle_callback_query(call):
         paymet_system = payments_match.group(1)
 
         description = locale.find_translation(user.get_language(), 'TR_SUBSCRIBE_FOR_ONE_MOUNTH')
-        pay_info = _payMan.create_invoice(paymet_system, 12, user.get_userId(), description)
-        print()
+
+        price_in_usd = 12 ###################################################################################### !!! ввести тарифы
+        pay_info = _payMan.create_invoice(paymet_system, price_in_usd, user.get_userId(), description)
+        pay_info.tarrif = 1 #################################################################################### !!! пока по умолчанию, нужно ввести систему тарифов
+
         if pay_info.status == 'pending':
-            # _db.addPay....(pay_info)
-            _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.expires_at, pay_info.is_test)
+            _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.is_test)
             _payMan.add_payment(pay_info)
 
             markup = types.InlineKeyboardMarkup()
@@ -561,9 +565,6 @@ def handle_callback_query(call):
             markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
             
             send_text(chat_id, description, markup, message_id)
-
-    elif check_pay_match:
-        bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
 
 
     else:
@@ -721,7 +722,7 @@ def user_verification_custom(userId, chatId, chat_username, chatType, lang_code)
 
     return user
 
-def user_verification_easy(userId):
+def user_verification_easy(userId) -> User:
     user = User()
     if _db.find_user(userId) == False:
         return None
@@ -957,7 +958,29 @@ def on_post_media(sender, userId, mediaList):
 
 
 def on_finish_payment(sender, userId, data):
-    print(sender, userId)
+    if sender != 'PaymentManager':
+        _logger.add_critical('Сигнал on_finish_payment инициализирован {}, а не PaymentManager'.format(sender))
+        return
+    hours_tarif = 720 # 720h == 30 days
+    _db.update_invoice_journal(data.payment_id, data.label_pay, data.status, data.card_type, data.card_number, data.fee, data.expires_at)
+    # нужно продумать тарифы, но в данный момент tarrif_id=1 - тариф который открывает доступ ко всему
+    _db.add_successful_payments(data.user_id, data.payment_id, data.tarrif, float(data.amount - data.fee), data.currency, data.payment_system, data.card_type, data.email, data.expires_at )
+    _db.upsert_subscription_user(data.user_id, data.user_name, data.tarrif, data.email, hours_tarif, data.payment_id)
+
+    if data.tarrif == 1:
+        user = user_verification_easy(userId)
+
+        user.get_language()
+        _db.update_status_in_users(userId, 3)
+
+        if user == None:
+            send_text(userId, locale.find_translation('en', 'TR_SUCCESSFUL_PAYMENT')) 
+        else :
+            send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_SUCCESSFUL_PAYMENT'))
+
+    else:
+        _logger.add_critical('Пользователь {}, произвел оплату {}, но тариф {} не обработан'.format(userId, data.payment_id, data.tarrif))
+    
 
 
 def main_menu(user, charId, id_message = None):
@@ -1033,7 +1056,7 @@ def premium_button(user: User, callFromMenu: bool, id_message_for_edit : int = 0
 
 try:
     post_signal.connect(on_post_media, sender='MediaWorker')
-    post_signal.connect(on_finish_payment, sender='PaymentManager')
+    signals.finish_payment.connect(on_finish_payment, sender='PaymentManager')
     bot.infinity_polling()
     # bot.polling()
 except requests.exceptions.ConnectionError as e:
