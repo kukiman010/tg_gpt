@@ -183,7 +183,8 @@ class Yookassa(BasePaymentSystem):
             pay_info.expires_at = payment.captured_at
             pay_info.status = payment.status
             pay_info.card_type = payment.payment_method.type
-            pay_info.card_number = payment.payment_method.account_number
+            # pay_info.card_number = payment.payment_method.account_number
+            pay_info.card_number = payment.payment_method.title
             pay_info.paid = payment.paid
             pay_info.fee = float(payment.amount.value) - float(payment.income_amount.value)
         pay_info = pay_info
