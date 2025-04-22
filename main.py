@@ -552,6 +552,7 @@ def handle_callback_query(call):
         price_in_usd = 12 ###################################################################################### !!! ввести тарифы
         pay_info = _payMan.create_invoice(paymet_system, price_in_usd, user.get_userId(), description)
         pay_info.tarrif = 1 #################################################################################### !!! пока по умолчанию, нужно ввести систему тарифов
+        pay_info.user_name = user.get_login()
 
         if pay_info.status == 'pending':
             _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.is_test)
