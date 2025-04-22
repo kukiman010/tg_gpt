@@ -138,6 +138,7 @@ _google = Gpt_models.google_api.Google(TOKEN_GOOGLE_API)
 
 _payMan = PaymentManager( _env.get_global_payment())
 _payMan.update(_db.get_payment_systems())
+_payMan.start_auto_checker()
 
 
 
@@ -549,6 +550,8 @@ def handle_callback_query(call):
         print()
         if pay_info.status == 'pending':
             # _db.addPay....(pay_info)
+            _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.expires_at, pay_info.is_test)
+            _payMan.add_payment(pay_info)
 
             markup = types.InlineKeyboardMarkup()
             chech_key = 'check_pay_' + pay_info.payment_id
@@ -953,6 +956,10 @@ def on_post_media(sender, userId, mediaList):
         send_text(chatId, content.get_result())
 
 
+def on_finish_payment(sender, userId, data):
+    print(sender, userId)
+
+
 def main_menu(user, charId, id_message = None):
     t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
     
@@ -1026,6 +1033,7 @@ def premium_button(user: User, callFromMenu: bool, id_message_for_edit : int = 0
 
 try:
     post_signal.connect(on_post_media, sender='MediaWorker')
+    post_signal.connect(on_finish_payment, sender='PaymentManager')
     bot.infinity_polling()
     # bot.polling()
 except requests.exceptions.ConnectionError as e:

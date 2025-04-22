@@ -114,9 +114,10 @@ CREATE TABLE invoice_journal (
     user_name           TEXT,
     payment_id          TEXT UNIQUE NOT NULL,
     label_pay           TEXT,
-    status              TEXT,                       -- pending/paid/failed/canceled/refunded
-    currency            TEXT,
+    tarrif_id           INT,
+    status              TEXT,                       -- pending, waiting_for_capture, succeeded, canceled
     amount              INT,
+    currency            TEXT,
     payment_system      VARCHAR,
     created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     expires_at          TIMESTAMP WITH TIME ZONE,

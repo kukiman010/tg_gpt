@@ -194,6 +194,15 @@ class dbApi:
                 pm.set_model(i[0],i[1],i[2])
                 array.append( pm )
         return array
+    
+    def add_invoice_journal(self, userId, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, expires_at, is_test ):
+        query = "INSERT INTO context(user_id, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, expires_at, is_test) " \
+                            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+        self.db.execute_query(query, (userId, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, expires_at, is_test) )
+
+    # def update_invoice_journal(self,):
+        # query = 'UPDATE users SET location = %s WHERE user_id = %s;'
+        # self.db.execute_query(query, (location, user_id))
 
     def __del__(self):
         self.db.close_pool()

@@ -6,9 +6,10 @@ class SubscriptionPaymentInfo:
         self.user_name = ''             # 
         self.payment_id = ''            #
         self.label_pay = ''             #
-        self.status = ''                # например: pending/paid/failed/canceled/refunded
-        self.currency = ''              # например: 'RUB', 'USD'
+        self.tarrif = 0
+        self.status = ''                # например: pending, waiting_for_capture, succeeded и canceled.
         self.amount = 0.0               # прайс
+        self.currency = ''              # например: 'RUB', 'USD'
         self.payment_system = ''        # напр. 'Qiwi', 'Yookassa', 'SBP'
         self.created_at = datetime      #
         self.expires_at = datetime      #
@@ -24,6 +25,7 @@ class SubscriptionPaymentInfo:
         self.metadata = dict            #
         self.url_pay = ''
         self.is_test = False            # для тестирования оплаты
+        self.diedTime = datetime        # время смерти команды
 
 
 
