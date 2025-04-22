@@ -102,6 +102,70 @@ CREATE TABLE languages (
     _isView             BOOLEAN
 );
 
+CREATE TABLE payment_services (
+    name                TEXT UNIQUE NOT NULL,
+    description         TEXT,
+    is_enabled          BOOLEAN DEFAULT TRUE,
+    id                  SERIAL PRIMARY KEY
+);
+
+CREATE TABLE invoice_journal (
+    user_id             INTEGER NOT NULL,
+    user_name           TEXT,
+    payment_id          TEXT UNIQUE NOT NULL,
+    label_pay           TEXT,
+    tarrif_id           INT,
+    status              TEXT,                       -- pending, waiting_for_capture, succeeded, canceled
+    amount              FLOAT,
+    fee                 FLOAT,
+    currency            TEXT,
+    payment_system      VARCHAR,
+    created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    expires_at          TIMESTAMP WITH TIME ZONE,
+    card_type           TEXT,
+    card_number         TEXT,
+    email               TEXT,
+    description         TEXT,
+    attempts            INT,
+    updated_at          TIMESTAMP WITH TIME ZONE,
+    failure_reason      TEXT,
+    provider_response   TEXT,
+    metadata            JSON,                       -- для дополнительной информации
+    url_pay             TEXT,
+    is_test             BOOLEAN DEFAULT FALSE,
+    id                  SERIAL PRIMARY KEY
+);
+
+CREATE TABLE successful_payments (
+    user_id             INT,
+    payment_id          TEXT UNIQUE NOT NULL REFERENCES invoice_journal(payment_id),
+    tarrif_id           INT,
+    final_amount        FLOAT,
+    currency            TEXT,
+    payment_system      TEXT,
+    card_type           TEXT,
+    email               TEXT,
+    paid_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    -- description         TEXT,
+    -- provider_response   TEXT,
+    -- metadata            JSON,
+    id                  SERIAL PRIMARY KEY
+);
+
+CREATE TABLE subscription_users (
+    user_id             INT NOT NULL,
+    user_name           TEXT,
+    tarrif_id           INT,
+    email               TEXT,
+    active_since        TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    active_until        TIMESTAMP WITH TIME ZONE,
+    -- status              TEXT,                    -- active/inactive/canceled
+    last_payment_id     TEXT REFERENCES successful_payments(payment_id),
+    id                  SERIAL PRIMARY KEY
+);
+
+
+
 -- CREATE TABLE user_statistic (
 --     user_id             BIGINT UNIQUE,
 --     login               TEXT UNIQUE,
@@ -334,6 +398,92 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+
+CREATE OR REPLACE FUNCTION update_invoice_journal(
+    in_payment_id TEXT,
+    in_label_pay TEXT,
+    in_status TEXT,
+    in_card_type TEXT,
+    in_card_number TEXT,
+    in_fee FLOAT,
+    in_expires_at TIMESTAMP WITH TIME ZONE
+)
+RETURNS VOID AS $$
+BEGIN
+    -- Сначала пробуем обновить по payment_id
+    UPDATE invoice_journal
+       SET status = in_status,
+           card_type = in_card_type,
+           card_number = in_card_number,
+           fee = in_fee,
+           expires_at = in_expires_at,
+           updated_at = now()
+     WHERE payment_id = in_payment_id;
+
+    -- Если не обновили ни одной строки, тогда ищем по label_pay
+    IF NOT FOUND THEN
+        UPDATE invoice_journal
+           SET status = in_status,
+               card_type = in_card_type,
+               card_number = in_card_number,
+               fee = in_fee,
+               expires_at = in_expires_at,
+               updated_at = now()
+         WHERE label_pay = in_label_pay;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION upsert_subscription_user(
+    in_user_id INT,
+    in_user_name TEXT,
+    in_tarrif_id INT,
+    in_email TEXT,
+    in_hours INT,
+    in_payment_id TEXT
+)
+RETURNS VOID AS $$
+DECLARE
+    v_now TIMESTAMPTZ := CURRENT_TIMESTAMP;
+    v_active_until TIMESTAMPTZ;
+BEGIN
+    -- Ищем существующую подписку по user_id + tarrif_id
+    SELECT active_until
+      INTO v_active_until
+      FROM subscription_users
+     WHERE user_id = in_user_id
+       AND tarrif_id = in_tarrif_id
+     ORDER BY active_until DESC
+     LIMIT 1;
+
+    IF FOUND THEN
+        -- Если уже есть, продляем active_until
+        UPDATE subscription_users
+           SET active_until = 
+                CASE
+                    WHEN v_active_until > v_now 
+                        THEN v_active_until + (in_hours || ' hour')::interval
+                    ELSE v_now + (in_hours || ' hour')::interval
+                END,
+               last_payment_id = in_payment_id
+         WHERE user_id = in_user_id
+            AND tarrif_id = in_tarrif_id
+            AND active_until = v_active_until;
+    ELSE
+        -- Если нет, создаём новую запись
+        INSERT INTO subscription_users (
+            user_id, user_name, tarrif_id, email, active_since, active_until, last_payment_id
+        ) VALUES (
+            in_user_id, in_user_name, in_tarrif_id, in_email, v_now, v_now + (in_hours || ' hour')::interval, in_payment_id
+        );
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades
 -- нужно добавить в эту таблицу больше данных о модели, умеет ли она работать с фото, синтезировать, распознавать делать поиск в интернете, и т.д.
 insert into assistant_ai values('OpenAi',   'gpt-3.5-turbo',          'gpt-3.5-turbo',          4097,   'Up to Sep 2021',   1, False);
@@ -343,7 +493,8 @@ insert into assistant_ai values('OpenAi',   'gpt-4o',                 'gpt-4o', 
 insert into assistant_ai values('OpenAi',   'gpt-4o-mini',            'gpt-4o-mini',            128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi',   'o1-preview',             'o1',                     128000, 'Up to Oct 2023',   2, True);
 insert into assistant_ai values('OpenAi',   'o1-mini',                'o1-mini',                128000, 'Up to Oct 2023',   2, True);
-insert into assistant_ai values('OpenAi',   'gpt-4.5-preview',        'gpt-4.5',                128000, 'Up to Oct 2023',   2, True);
+-- insert into assistant_ai values('OpenAi',   'gpt-4.5-preview',        'gpt-4.5',                128000, 'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi',   'gpt-4.1',                 'gpt-4.1',                 1047576, 'Jun 01, 2024',     2, True);
 insert into assistant_ai values('Yandex',   'yandexgpt',              'Yandex GPT 5',           8000,   '06.12.2023',       2, True);
 insert into assistant_ai values('Yandex',   'yandexgpt-lite',         'Yandex Lite',            8000,   '06.12.2023',       2, False);
 insert into assistant_ai values('Yandex',   'yandexgpt-32k',          'Yandex GPT 5-32k',       32000,  '06.12.2023',       2, False);
@@ -351,7 +502,7 @@ insert into assistant_ai values('Sber',     'GigaChat',               'GigaChat'
 insert into assistant_ai values('Meta',     'llama3-70b-8192',        'llama3-70b',             8192,   '-',                1, True);
 insert into assistant_ai values('X ai',     'grok-beta',              'grok',                   131072, '-',                2, False);
 insert into assistant_ai values('Claude',   'claude-3-7-sonnet-20250219', 'claude-3-7-sonnet',  200000, '2025.02.19',       2, True);
-insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',     'DeepSeek-R1',             64000,  '2025.01.20',       2, True);
+insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',     'DeepSeek-R1',             64000,  '2025.01.20',       1, True);
 insert into assistant_ai values('DeepSeek', 'deepseek-chat',         'DeepSeek-V3',             64000,  '2025.03.29',       2, True);
 insert into assistant_ai values('Google',   'gemini-2.5-pro-exp-03-25','gemini-2.5-pro',        1048576,'2025.01.15',       2, False);
 insert into assistant_ai values('Google',   'gemini-2.0-flash',       'gemini-2.0',             1048576,'2024.05.15',       1, False);
@@ -363,6 +514,7 @@ insert into assistant_ai_photo values('OpenAi', 'gpt-4o',           '',         
 insert into assistant_ai_photo values('Meta',   'llama3-70b-8192',  'llama3',   8192,   '-',                1, False);
 insert into assistant_ai_photo values('OpenAi', 'gpt-4o-mini',      '',         128000, 'Up to Oct 2023',   1, True);
 insert into assistant_ai_photo values('X ai',   'grok-vision-beta', '',         8192,   '-',                1, True);
+
 
 -- -- https://cloud.yandex.com/en-ru/docs/speechkit/tts/voices
 -- insert into voices values('dasha',  'Russian',  'F','ru-RU');
@@ -381,6 +533,11 @@ insert into languages values ('Espanol',    'es', True);
 insert into languages values ('English',    'en', True);
 insert into languages values ('Russian',    'ru', True);
 insert into languages values ('France',     'fr', True);
+
+
+insert into payment_services values ('Yoomoney',            'Yoomoney',             True);
+insert into payment_services values ('Crypto Pay',          'Crypto Pay',           True);
+insert into payment_services values ('Telegram stars',      'Telegram stars',       True);
 
 
 
@@ -418,5 +575,8 @@ Follow in the strict order:
 Ill answer as the world-famous <specific field> scientists with <most prestigious LOCAL award>
 <Deep knowledge step-by-step answer, with CONCRETE details>'
 );
+insert into default_data values ('global_payment',                  'True');
+insert into default_data values ('support_chat',                    '@assistant_gpts_help');
+insert into default_data values ('payments_tariff',                 'https://t.me/assistant_gpts/2');
 
 -- insert into default_data values ('',     '');

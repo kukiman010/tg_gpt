@@ -196,3 +196,16 @@ class languages_api:
     #         if self.model[i].get_model_name() == model:
     #             return self.model[i].get_token_size()
     #     return 0
+
+
+
+class payments_model:
+    def __init__(self) -> None:
+        self.name = ""
+        self.description = ""
+        self.is_enabled = True
+
+    def set_model(self, name, description, is_enabled):
+        self.name = name
+        self.description = description
+        self.is_enabled = is_enabled

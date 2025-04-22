@@ -62,7 +62,7 @@ class LoggerSingleton(object):
             pattern = r'^(\d+-\d+-\d+\s*\d+:\d+:\d+,\d+)\s*-\s* INFO \s*-\s*.*$'
 
         data = ''
-        with open(self.log_file, 'r') as file:
+        with open(self.log_file, 'r', encoding="utf-8") as file:
             lines = file.readlines()
             if num_lines > len(lines):  
                 num_lines = len(lines) 

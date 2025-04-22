@@ -15,3 +15,4 @@ PyAudio
 pydub
 tiktoken
 yandex-speechkit
+yookassa

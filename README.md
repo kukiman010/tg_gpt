@@ -131,8 +131,13 @@ https://community.openai.com/t/how-to-enable-web-search-results-with-chatgpt-api
 - [ ] Добавить в меню пункт добавления think
 - [ ] Добавить в меню пункт добавления locate
 - [ ] Задать такую переменную как tire для моделей openai, так же нужно запрашивать tire аккаунта при старте и update_env
+- [ ] нужно сделать свою таблицу моделей на основе этих:
+https://llmarena.ru/
+https://lmarena.ai/
+https://openlm.ai/chatbot-arena/
+https://huggingface.co/spaces/lmarena-ai/chatbot-arena-leaderboard
+- [ ] при обновлении переменных(update_env), нужно учитывать доступность платежных систем 
 - [ ] 
-
 
 
 

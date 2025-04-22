@@ -14,7 +14,7 @@ import Gpt_models.google_api
 import Gpt_models.claude_api
 import Gpt_models.deepseak_api
 import Control.context_model
-import Control.environment
+from Payments.payment_manager import PaymentManager
 
 from logger         import LoggerSingleton
 from openai         import OpenAIError
@@ -34,6 +34,7 @@ from file_worker        import FileConverter
 from Control.user_media import UserMedia
 from Control.environment import Environment
 
+import signals
 
 _setting = Settings()
 sys.stdout.reconfigure(encoding='utf-8')
@@ -41,6 +42,7 @@ _logger = LoggerSingleton.new_instance('log_gpt.log')
 locale = Locale('locale/LC_MESSAGES/')
 _mediaWorker = MediaWorker.new_instance()
 post_signal = signal('post_media')
+# post_signal_payment = signal('finish_payment')
 _converterFile = FileConverter()
 _env = Environment()
 
@@ -62,6 +64,8 @@ TOKEN_CLAUDE = _setting.get_claude_gpt()
 TOKEN_DEEPSEEK = _setting.get_deepseek_gpt()
 TOKEN_YANDEX_API = _setting.get_yandex_api()
 TOKEN_GOOGLE_API = _setting.get_google_api()
+YOOMONEY_SHOP_ID = _setting.get_yoomoney_shopId()
+TOKEN_YOOMONEY = _setting.get_yoomoney_token()
 
 
 if TOKEN_TG == '':
@@ -96,7 +100,13 @@ if TOKEN_GOOGLE_API == '':
     _logger.add_critical('No google gpt token!')
     sys.exit()
 
-_speak = speech.speaker()
+if YOOMONEY_SHOP_ID == '':
+    _logger.add_critical('No yoomoney shop id!')
+    sys.exit()
+
+if TOKEN_YOOMONEY == '':
+    _logger.add_critical('No yoomoney token!')
+    sys.exit()
 
 
 
@@ -105,6 +115,8 @@ if not _env.is_valid():
     _logger.add_critical('Environment is not corrected!')
     exit 
 
+
+_speak = speech.speaker()
 _speak.start_key_generation()
 _assistent_api = assistent_api( _db.get_assistant_ai() )
 _languages_api = languages_api( _db.get_languages() )
@@ -125,6 +137,10 @@ _claude = Gpt_models.claude_api.Claud(TOKEN_CLAUDE)
 _deepseek = Gpt_models.deepseak_api.DeepSeek(TOKEN_DEEPSEEK)
 _google = Gpt_models.google_api.Google(TOKEN_GOOGLE_API)
 
+
+_payMan = PaymentManager( _env.get_global_payment())
+_payMan.update(_db.get_payment_systems())
+_payMan.start_auto_checker()
 
 
 
@@ -227,7 +243,16 @@ def help(message):
 @bot.message_handler(commands=['premium'])
 def premium(message):
     user = user_verification(message)
-    send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC'))
+    # send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC'))
+
+    if user.get_status() == 0: 
+        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'))
+        return
+    
+    premium_button(user, False)
+
+        
+
 
 @bot.message_handler(commands=['settings'])
 def settings(message):
@@ -314,6 +339,12 @@ def handle_callback_query(call):
     
     language_pattern = r'^set_lang_model_(\d+)$'
     language_match = re.match(language_pattern, key)
+
+    payments_pattern = r'^set_payments_(\S+)$'
+    payments_match = re.match(payments_pattern, key)
+
+    # check_pay_pattern = r'^check_pay_(\S+)$'
+    # check_pay_match = re.match(check_pay_pattern, key)
 
     message_id = call.message.message_id
     chat_id = call.message.chat.id
@@ -422,11 +453,7 @@ def handle_callback_query(call):
         send_text(chat_id, text, reply_markup=markup, id_message_for_edit=message_id)
 
     elif key == 'menu_premium':
-        bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC').format(user.get_prompt())
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        premium_button(user, True, message_id)
 
     elif key == 'menu_support':
         bot.answer_callback_query(call.id, text = '')
@@ -515,6 +542,31 @@ def handle_callback_query(call):
         else:
             bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_SUPPORT'))
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
+
+    elif payments_match:
+        bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
+        paymet_system = payments_match.group(1)
+
+        description = locale.find_translation(user.get_language(), 'TR_SUBSCRIBE_FOR_ONE_MOUNTH')
+
+        price_in_usd = 12 ###################################################################################### !!! ввести тарифы
+        pay_info = _payMan.create_invoice(paymet_system, price_in_usd, user.get_userId(), description)
+        pay_info.tarrif = 1 #################################################################################### !!! пока по умолчанию, нужно ввести систему тарифов
+        pay_info.user_name = user.get_login()
+
+        if pay_info.status == 'pending':
+            _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.is_test)
+            _payMan.add_payment(pay_info)
+
+            markup = types.InlineKeyboardMarkup()
+            chech_key = 'check_pay_' + pay_info.payment_id
+            pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(pay_info.amount, pay_info.currency)
+            markup.add( types.InlineKeyboardButton(pay_description,                                                     url=pay_info.url_pay) )
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_CHECK_PAY'),        callback_data=chech_key) )
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
+            
+            send_text(chat_id, description, markup, message_id)
+
 
     else:
         t_mes = locale.find_translation(user.get_language(), 'TR_ERROR')
@@ -638,7 +690,7 @@ def handle_message(message):
 
     
 
-def user_verification(message):
+def user_verification(message) -> User:
     user = User()
 
     if _db.find_user(message.from_user.id) == False:
@@ -671,7 +723,7 @@ def user_verification_custom(userId, chatId, chat_username, chatType, lang_code)
 
     return user
 
-def user_verification_easy(userId):
+def user_verification_easy(userId) -> User:
     user = User()
     if _db.find_user(userId) == False:
         return None
@@ -906,6 +958,32 @@ def on_post_media(sender, userId, mediaList):
         send_text(chatId, content.get_result())
 
 
+def on_finish_payment(sender, userId, data):
+    if sender != 'PaymentManager':
+        _logger.add_critical('Сигнал on_finish_payment инициализирован {}, а не PaymentManager'.format(sender))
+        return
+    hours_tarif = 720 # 720h == 30 days
+    _db.update_invoice_journal(data.payment_id, data.label_pay, data.status, data.card_type, data.card_number, data.fee, data.expires_at)
+    # нужно продумать тарифы, но в данный момент tarrif_id=1 - тариф который открывает доступ ко всему
+    _db.add_successful_payments(data.user_id, data.payment_id, data.tarrif, float(data.amount - data.fee), data.currency, data.payment_system, data.card_type, data.email, data.expires_at )
+    _db.upsert_subscription_user(data.user_id, data.user_name, data.tarrif, data.email, hours_tarif, data.payment_id)
+
+    if data.tarrif == 1:
+        user = user_verification_easy(userId)
+
+        user.get_language()
+        _db.update_status_in_users(userId, 3)
+
+        if user == None:
+            send_text(userId, locale.find_translation('en', 'TR_SUCCESSFUL_PAYMENT')) 
+        else :
+            send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_SUCCESSFUL_PAYMENT'))
+
+    else:
+        _logger.add_critical('Пользователь {}, произвел оплату {}, но тариф {} не обработан'.format(userId, data.payment_id, data.tarrif))
+    
+
+
 def main_menu(user, charId, id_message = None):
     t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
     
@@ -955,9 +1033,31 @@ def command_help(user):
     return text
 
 
+def premium_button(user: User, callFromMenu: bool, id_message_for_edit : int = 0):
+    buttons = _payMan.get_buttons()
+    markup = types.InlineKeyboardMarkup()
+
+    if len(buttons) > 0:
+        text = locale.find_translation(user.get_language(), 'TR_TARIFF_ONCE').format(_env.get_payments_tariff())
+
+        for key, value in buttons.items():
+            button = types.InlineKeyboardButton(value, callback_data=key)
+            markup.add(button)
+
+        if callFromMenu:
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
+            send_text(user.get_userId(), text, reply_markup=markup, id_message_for_edit=id_message_for_edit)
+        else:
+            send_text(user.get_userId(), text, reply_markup=markup)
+        
+    else:
+        send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_SYSTEM_EMPTY') )
+
+
 
 try:
     post_signal.connect(on_post_media, sender='MediaWorker')
+    signals.finish_payment.connect(on_finish_payment, sender='PaymentManager')
     bot.infinity_polling()
     # bot.polling()
 except requests.exceptions.ConnectionError as e:
