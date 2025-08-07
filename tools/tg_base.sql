@@ -491,10 +491,12 @@ insert into assistant_ai values('OpenAi',   'gpt-4',                  'gpt-4',  
 insert into assistant_ai values('OpenAi',   'gpt-4-turbo',            'gpt-4-turbo',            128000, 'Up to Dec 2023',   2, False);
 insert into assistant_ai values('OpenAi',   'gpt-4o',                 'gpt-4o',                 128000, 'Oct 01, 2023',     2, True);
 insert into assistant_ai values('OpenAi',   'gpt-4o-mini',            'gpt-4o-mini',            128000, 'Up to Oct 2023',   2, True);
-insert into assistant_ai values('OpenAi',   'o1-preview',             'o1',                     128000, 'Up to Oct 2023',   2, True);
-insert into assistant_ai values('OpenAi',   'o1-mini',                'o1-mini',                128000, 'Up to Oct 2023',   2, True);
--- insert into assistant_ai values('OpenAi',   'gpt-4.5-preview',        'gpt-4.5',                128000, 'Up to Oct 2023',   2, True);
-insert into assistant_ai values('OpenAi',   'gpt-4.1',                 'gpt-4.1',                 1047576, 'Jun 01, 2024',     2, True);
+insert into assistant_ai values('OpenAi',   'o1-preview',             'o1',                     128000, 'Up to Oct 2023',   2, False);
+insert into assistant_ai values('OpenAi',   'o1-mini',                'o1-mini',                128000, 'Up to Oct 2023',   2, False);
+insert into assistant_ai values('OpenAi',   'gpt-o3-pro',             'gpt-o3-pro',             200000, 'Jul 01, 2024',     2, False);
+insert into assistant_ai values('OpenAi',   'gpt-4.1',                'gpt-4.1',                1047576, 'Jun 01, 2024',    2, False);
+insert into assistant_ai values('OpenAi',   'gpt-5',                  'gpt-5',                  400000, 'Oct 04, 2024',     2, True);
+insert into assistant_ai values('OpenAi',   'gpt-5-mini',             'gpt-5-mini',             400000, 'May 31, 2024',     2, True);
 insert into assistant_ai values('Yandex',   'yandexgpt',              'Yandex GPT 5',           8000,   '06.12.2023',       2, True);
 insert into assistant_ai values('Yandex',   'yandexgpt-lite',         'Yandex Lite',            8000,   '06.12.2023',       2, False);
 insert into assistant_ai values('Yandex',   'yandexgpt-32k',          'Yandex GPT 5-32k',       32000,  '06.12.2023',       2, False);
