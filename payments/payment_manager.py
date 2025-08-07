@@ -13,8 +13,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '..'))
 from logger         import LoggerSingleton
 from data_models    import payments_model
-from Payments.yookassa_api import Yookassa
-from Payments.base_pay_system import BasePaymentSystem
+
+from payments.yookassa_api import Yookassa
+from payments.base_pay_system import BasePaymentSystem
 from Control.payment_info import SubscriptionPaymentInfo
 import signals
 

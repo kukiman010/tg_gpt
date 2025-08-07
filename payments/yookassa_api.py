@@ -8,7 +8,7 @@ import os, sys
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../'))
 from Control.payment_info import SubscriptionPaymentInfo
-from Payments.base_pay_system import BasePaymentSystem
+from payments.base_pay_system import BasePaymentSystem
 
 
 

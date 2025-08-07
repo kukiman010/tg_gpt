@@ -7,14 +7,14 @@ import os
 import re
 
 import Gpt_models.yandexgpt
-import Gpt_models.sbergpt
+# import Gpt_models.sbergpt
 import Gpt_models.metagpt
 import Gpt_models.x_ai
 import Gpt_models.google_api
 import Gpt_models.claude_api
 import Gpt_models.deepseak_api
 import Control.context_model
-from Payments.payment_manager import PaymentManager
+from payments.payment_manager import PaymentManager
 
 from logger         import LoggerSingleton
 from openai         import OpenAIError
@@ -638,8 +638,8 @@ def handle_message(message):
 
     text_to_photo = message.caption
 
-    if text_to_photo == '' or text_to_photo == None:
-        text_to_photo = 'What’s in this image?'
+    # if text_to_photo == '' or text_to_photo == None:
+        # text_to_photo = 'What’s in this image?'
 
 
 
