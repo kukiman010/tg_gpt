@@ -503,7 +503,9 @@ insert into assistant_ai values('Yandex',   'yandexgpt-32k',          'Yandex GP
 insert into assistant_ai values('Sber',     'GigaChat',               'GigaChat',               4096,   '-',                1, False);
 insert into assistant_ai values('Meta',     'llama3-70b-8192',        'llama3-70b',             8192,   '-',                1, True);
 insert into assistant_ai values('X ai',     'grok-beta',              'grok',                   131072, '-',                2, False);
-insert into assistant_ai values('Claude',   'claude-3-7-sonnet-20250219', 'claude-3-7-sonnet',  200000, '2025.02.19',       2, True);
+insert into assistant_ai values('Claude',   'claude-3-7-sonnet-20250219', 'claude-3-7-sonnet',  200000, '2025.02.19',       2, False);
+insert into assistant_ai values('Claude',   'claude-opus-4-1',        'claude-opus-4-1',        200000, '2025.08.05',       2, True);
+insert into assistant_ai values('Claude',   'claude-opus-4-0',        'claude-opus-4-0',        200000, '2025.05.14',       2, True);
 insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',     'DeepSeek-R1',             64000,  '2025.01.20',       1, True);
 insert into assistant_ai values('DeepSeek', 'deepseek-chat',         'DeepSeek-V3',             64000,  '2025.03.29',       2, True);
 insert into assistant_ai values('Google',   'gemini-2.5-pro-exp-03-25','gemini-2.5-pro',        1048576,'2025.01.15',       2, False);
