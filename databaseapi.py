@@ -216,6 +216,17 @@ class dbApi:
         query = 'UPDATE users SET status_user = %s WHERE user_id = %s;'
         self.db.execute_query(query, (status, userId))
 
+    def get_tarif_by_paylabel(self, label) -> int:
+        query = "select tarrif_id from invoice_journal where label_pay = '{}'".format(label)
+        data = self.db.execute_query(query)
+        
+        if len(data) == 1:
+            for i in data:
+                return i[0]
+        else:
+            return 0
+
+
 
     def __del__(self):
         self.db.close_pool()

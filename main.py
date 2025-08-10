@@ -5,6 +5,7 @@ import base64
 import sys
 import os
 import re
+import datetime
 
 import Gpt_models.yandexgpt
 # import Gpt_models.sbergpt
@@ -14,7 +15,6 @@ import Gpt_models.google_api
 import Gpt_models.claude_api
 import Gpt_models.deepseak_api
 import Control.context_model
-from payments.payment_manager import PaymentManager
 
 from logger         import LoggerSingleton
 from openai         import OpenAIError
@@ -22,17 +22,20 @@ from configure      import Settings
 from databaseapi    import dbApi
 from telebot        import types
 from translator     import Locale
-from Control.user   import User
 from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
 from data_models    import languages_api
+from payments.payment_manager import PaymentManager
+from payments.base_pay_system import BasePaymentSystem
 
 
 from blinker            import signal
 from file_worker        import MediaWorker
 from file_worker        import FileConverter
+from Control.user       import User
 from Control.user_media import UserMedia
 from Control.environment import Environment
+from Control.payment_info import SubscriptionPaymentInfo
 
 import signals
 
@@ -335,6 +338,48 @@ def handle_user_message(message):
     _mediaWorker.add_data(media)
 
 
+# Обработчик проверки платежа
+@bot.pre_checkout_query_handler(func=lambda query: True)
+def handle_pre_checkout_query(pre_checkout_query):
+    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+
+
+@bot.message_handler(content_types=['successful_payment'])
+def handle_successful_payment(message):
+    user = user_verification(message)
+    # user_id = message.from_user.id
+    # user.get_userId()
+    payment_id = message.successful_payment.provider_payment_charge_id  
+    amount = message.successful_payment.total_amount
+    currency = message.successful_payment.currency
+    label = message.successful_payment.invoice_payload
+
+    tarif = _db.get_tarif_by_paylabel(label)
+    fee = 0 # коммисия
+
+
+    userId = user.get_userId()
+
+    hours_tarif = 720 # 720h == 30 days
+    _db.update_invoice_journal(payment_id, label, 'succeeded', 'stars', None, fee, datetime.datetime.now())
+    # нужно продумать тарифы, но в данный момент tarrif_id=1 - тариф который открывает доступ ко всему
+    _db.add_successful_payments(userId, label, tarif, float(amount - fee), currency, 'TelegramStarsPay', 'stars', '', datetime.datetime.now() )
+    _db.upsert_subscription_user(userId, user.get_login(), tarif, '', hours_tarif, label)
+
+    if tarif == 1:
+        user = user_verification_easy(userId)
+
+        user.get_language()
+        _db.update_status_in_users(userId, 3)
+
+        if user == None:
+            send_text(userId, locale.find_translation('en', 'TR_SUCCESSFUL_PAYMENT')) 
+        else :
+            send_text(userId, locale.find_translation(user.get_language(), 'TR_SUCCESSFUL_PAYMENT'))
+
+    else:
+        _logger.add_critical('Пользователь {}, произвел оплату {}, но тариф {} не обработан'.format(userId, payment_id, tarif))
+
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -553,26 +598,58 @@ def handle_callback_query(call):
     elif payments_match:
         bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
         paymet_system = payments_match.group(1)
-
+        
         description = locale.find_translation(user.get_language(), 'TR_SUBSCRIBE_FOR_ONE_MOUNTH')
-
         price_in_usd = 12 ###################################################################################### !!! ввести тарифы
-        pay_info = _payMan.create_invoice(paymet_system, price_in_usd, user.get_userId(), description)
-        pay_info.tarrif = 1 #################################################################################### !!! пока по умолчанию, нужно ввести систему тарифов
-        pay_info.user_name = user.get_login()
+        tarif = 1         ###################################################################################### !!! пока по умолчанию, нужно ввести систему тарифов
+        
 
-        if pay_info.status == 'pending':
-            _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.is_test)
-            _payMan.add_payment(pay_info)
+        if paymet_system == 'TelegramStarsPay':
+            # pay_info = SubscriptionPaymentInfo()
+            price = _payMan.convector.usd_to_tgStars(price_in_usd)
+            price = _payMan.convector.custom_round(price)
+
+            # label = BasePaymentSystem.generate_payment_label(user.get_userId())
+            label = _payMan.generate_payment_label(user.get_userId())
 
             markup = types.InlineKeyboardMarkup()
-            chech_key = 'check_pay_' + pay_info.payment_id
-            pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(pay_info.amount, pay_info.currency)
-            markup.add( types.InlineKeyboardButton(pay_description,                                                     url=pay_info.url_pay) )
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_CHECK_PAY'),        callback_data=chech_key) )
+            pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(price, ' stars')
+            markup.add( types.InlineKeyboardButton(pay_description,                                                     pay=True) )
             markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
+
+            price =1 
+            prices = [types.LabeledPrice(label="XTR", amount=price)]  # XTR
+            bot.send_invoice(
+                chat_id,
+                title=description,
+                description=description,
+                invoice_payload=label,
+                provider_token="",
+                currency="XTR",
+                prices=prices,
+                reply_markup=markup
+            )
+
+            _db.add_invoice_journal(user.get_userId(), label, label, tarif, 'pending', price, 'XTR', paymet_system, description, datetime.datetime.now(), False)
             
-            send_text(chat_id, description, markup, message_id)
+
+        else:
+            pay_info = _payMan.create_invoice(paymet_system, price_in_usd, user.get_userId(), description)
+            pay_info.tarrif = tarif
+            pay_info.user_name = user.get_login()
+
+            if pay_info.status == 'pending':
+                _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.is_test)
+                _payMan.add_payment(pay_info)
+
+                markup = types.InlineKeyboardMarkup()
+                chech_key = 'check_pay_' + pay_info.payment_id
+                pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(pay_info.amount, pay_info.currency)
+                markup.add( types.InlineKeyboardButton(pay_description,                                                     url=pay_info.url_pay) )
+                markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_CHECK_PAY'),        callback_data=chech_key) )
+                markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
+                
+                send_text(chat_id, description, markup, message_id)
 
 
     else:

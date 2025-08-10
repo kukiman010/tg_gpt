@@ -5,6 +5,9 @@ import requests
 import math
 import threading
 import time
+import uuid
+import time
+import hashlib
 from datetime import datetime, timedelta
 # import datetime
 # from blinker import signal
@@ -15,6 +18,7 @@ from logger         import LoggerSingleton
 from data_models    import payments_model
 
 from payments.yookassa_api import Yookassa
+# from payments.tg_stars_api import TelegramStarsPay
 from payments.base_pay_system import BasePaymentSystem
 from Control.payment_info import SubscriptionPaymentInfo
 import signals
@@ -22,6 +26,8 @@ import signals
 
 
 # post_signal = signal('PaymentManager')
+
+
 
 class PaymentManager:
     def __init__(self, is_work):
@@ -34,12 +40,23 @@ class PaymentManager:
         self.convector = OnlineConvector()
         self.payment_systems : list[BasePaymentSystem] = []
         self.payment_systems.append(Yookassa())
+        # self.payment_systems.append(TelegramStarsPay())
+
 
         self._payments: list[BasePaymentSystem] = []        # Список SubscriptionPaymentInfo
         self._lock = threading.Lock()
         self._running = False
         self._worker = None
         self._interval = 30        # секунд
+
+    def generate_payment_label(self, user_id, prefix="PAY") -> str:
+        timestamp = int(time.time())
+        unique_id = uuid.uuid4().hex[:8]  
+        
+        label = f"{prefix}_{user_id}_{unique_id}_{timestamp}"
+        checksum = hashlib.md5(label.encode()).hexdigest()[:4]
+        
+        return f"{label}_{checksum}"
 
 
 
@@ -48,18 +65,28 @@ class PaymentManager:
             self._logger.add_error("{}. В данный момент оплата отключена".format(str(self.__class__.__name__)))
             return None
 
-        
-        price = self.convector.usd_to_rub(price_in_usd)
-        price = self.convector.custom_round(price)
-
         for payment in self.payment_systems:
             if isinstance(payment, Yookassa) and payment.payment_system_name == payment_system:
+                price = self.convector.usd_to_rub(price_in_usd)
+                price = self.convector.custom_round(price)
+
                 payment: Yookassa  # type: ignore
                 pay_info = payment.createInvoice(userId, price, 'RUB',description)
                 # datetime.time
                 pay_info.diedTime = datetime.now() + timedelta(minutes=30)
                 self._logger.add_info('{}. Создание платежа {} для пользователя {}, payment_id= {}'.format(str(self.__class__.__name__), payment_system, userId, pay_info.payment_id))
                 return pay_info
+            
+            # elif isinstance(payment, TelegramStarsPay) and payment.payment_system_name == payment_system:
+            #     price = self.convector.usd_to_tgStars(price_in_usd)
+            #     price = self.convector.custom_round(price)
+
+            #     payment: TelegramStarsPay
+            #     pay_info = payment.createInvoice(userId, price, 'XTR', description)
+
+            #     pay_info.diedTime = datetime.now() + timedelta(minutes=30)
+            #     self._logger.add_info('{}. Создание платежа {} для пользователя {}, payment_id= {}'.format(str(self.__class__.__name__), payment_system, userId, pay_info.payment_id))
+            #     return pay_info
             # elif isinstance(payment, ...) and payment.payment_system_name == payment_system:
                 # payment: ...
                     # print()
@@ -82,6 +109,11 @@ class PaymentManager:
                 # pay_info.diedTime = datetime.now() + datetime.timedelta(min=30)
                 # self._logger.add_info('{}. Создание платежа {} для пользователя {}, payment_id= {}'.format(str(self.__class__.__name__), pay_info.payment_system, userId, pay_info.payment_id))
                 return pay_info
+            
+            # elif isinstance(payment, TelegramStarsPay) and payment.payment_system_name == pay_info.payment_system:
+            #     payment: TelegramStarsPay
+            #     print()
+
             # elif isinstance(payment, ...) and payment.payment_system_name == payment_system:
 
 
@@ -265,6 +297,13 @@ class OnlineConvector:
         # Если меньше 100, округлять до целого
         else:
             return math.ceil(amount)
-
+        
+    def usd_to_tgStars(self, amount: float) -> float:
+        # к сожалению я не нашел нормальный конвектор для звезд, по этому придется считать по текущему курсу на 2025.08.10
+        clear_price_one = 0.013 # $ за 1 звезду
+        #                 max     min
+        buy_price_one = (0.0225 + 0.02) / 2 # $ за 1 звезду
+        midle_price_one = (buy_price_one + clear_price_one) / 2
+        return amount / midle_price_one
 
 

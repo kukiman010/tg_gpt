@@ -542,8 +542,8 @@ insert into languages values ('France',     'fr', True);
 
 
 insert into payment_services values ('Yoomoney',            'Yoomoney',             True);
-insert into payment_services values ('Crypto Pay',          'Crypto Pay',           True);
-insert into payment_services values ('Telegram stars',      'Telegram stars',       True);
+insert into payment_services values ('Crypto_pay',          'Crypto Pay',           False);
+insert into payment_services values ('TelegramStarsPay',    'Telegram stars',       True);
 
 
 
