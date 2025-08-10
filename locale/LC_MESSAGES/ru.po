@@ -239,5 +239,11 @@ msgstr "Проверить платеж"
 msgid "TR_SUCCESSFUL_PAYMENT"
 msgstr "Успешная оплата! \nТеперь вам доступен новый функционал."
 
+msgid "TR_SUBSCRIPRION_ENDED"
+msgstr "К сожалению, ваша подписка истекла. Продлить её можно в разделе /premium."
+
+msgid "TR_DUBLICATE_PAY"
+msgstr "К сожалению, второй раз не получиться оплатить по этой ссылке."
+
 msgid "TR_"
 msgstr ""

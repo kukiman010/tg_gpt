@@ -26,7 +26,7 @@ from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
 from data_models    import languages_api
 from payments.payment_manager import PaymentManager
-from payments.base_pay_system import BasePaymentSystem
+from threading import Thread
 
 
 from blinker            import signal
@@ -35,7 +35,7 @@ from file_worker        import FileConverter
 from Control.user       import User
 from Control.user_media import UserMedia
 from Control.environment import Environment
-from Control.payment_info import SubscriptionPaymentInfo
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 import signals
 
@@ -341,14 +341,38 @@ def handle_user_message(message):
 # Обработчик проверки платежа
 @bot.pre_checkout_query_handler(func=lambda query: True)
 def handle_pre_checkout_query(pre_checkout_query):
-    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+    label = pre_checkout_query.invoice_payload
+    isDuplicate  = _db.checking_for_duplicate_payment(label)
+
+    userId_pattern = r'^^PAY_(\d+)_\S+_\S+_\S+$'
+    userId_match = re.match(userId_pattern, label)
+    if userId_match:
+        userId = userId_match.group(1)
+
+    user = user_verification_easy(userId)
+
+    if isDuplicate:
+        t_mes= ''
+        if user != None:
+            t_mes = locale.find_translation(user.get_language(), 'TR_DUBLICATE_PAY')
+        else:
+            t_mes = locale.find_translation('en', 'TR_DUBLICATE_PAY')
+            
+        bot.answer_pre_checkout_query(
+            pre_checkout_query.id,
+            ok=False,
+            error_message=t_mes
+        )
+        send_text(user.get_userId(), t_mes )
+        return
+    else:
+        bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+
 
 
 @bot.message_handler(content_types=['successful_payment'])
 def handle_successful_payment(message):
     user = user_verification(message)
-    # user_id = message.from_user.id
-    # user.get_userId()
     payment_id = message.successful_payment.provider_payment_charge_id  
     amount = message.successful_payment.total_amount
     currency = message.successful_payment.currency
@@ -605,11 +629,9 @@ def handle_callback_query(call):
         
 
         if paymet_system == 'TelegramStarsPay':
-            # pay_info = SubscriptionPaymentInfo()
             price = _payMan.convector.usd_to_tgStars(price_in_usd)
             price = _payMan.convector.custom_round(price)
 
-            # label = BasePaymentSystem.generate_payment_label(user.get_userId())
             label = _payMan.generate_payment_label(user.get_userId())
 
             markup = types.InlineKeyboardMarkup()
@@ -618,7 +640,7 @@ def handle_callback_query(call):
             markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
 
             # price =1 
-            prices = [types.LabeledPrice(label="XTR", amount=price)]  # XTR
+            prices = [types.LabeledPrice(label="XTR", amount=price)]  
             bot.send_invoice(
                 chat_id,
                 title=description,
@@ -1141,11 +1163,43 @@ def premium_button(user: User, callFromMenu: bool, id_message_for_edit : int = 0
         send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_SYSTEM_EMPTY') )
 
 
+def subscription_verification():
+    tz_moscow = datetime.timezone(datetime.timedelta(hours=3))
+    data_now = datetime.datetime.now(tz_moscow)
+
+    list = _db.get_subscription_users()
+
+    for userSub in list:
+        data_until = userSub.active_until
+        if data_until < data_now:
+            userId = userSub.userId
+
+            user = user_verification_easy(userId)
+
+            # _db.add_invoice_journal(userId, userSub.last_label, userSub.last_label, userSub.tarif, 'subscription ended', 0, 'none', None, 'Подписка истекла', datetime.datetime.now(), False)
+            _db.update_invoice_journal(userSub.last_label, userSub.last_label, 'subscription ended', None , None, 0, datetime.datetime.now())
+            _db.remove_subscription_ended(userSub.last_label)
+            _db.update_status_in_users(userId, 1)
+
+            text = locale.find_translation(user.get_language(), 'TR_SUBSCRIPRION_ENDED')
+            send_text(userId, text)
+
+        else:
+            continue
+
+def run_scheduler():
+    scheduler = BlockingScheduler(timezone="Europe/Moscow")
+    scheduler.add_job(subscription_verification, 'cron', hour=13, minute=0)
+    scheduler.start()
+
 
 try:
+    subscription_verification()
+    Thread(target=run_scheduler, daemon=True).start()
+
     post_signal.connect(on_post_media, sender='MediaWorker')
     signals.finish_payment.connect(on_finish_payment, sender='PaymentManager')
-    bot.infinity_polling()
+    bot.infinity_polling()    
     # bot.polling()
 except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)

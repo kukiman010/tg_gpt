@@ -239,5 +239,11 @@ msgstr "Vérifier le paiement"
 msgid "TR_SUCCESSFUL_PAYMENT"
 msgstr "Paiement réussi ! \nDe nouvelles fonctionnalités sont maintenant disponibles pour vous."
 
+msgid "TR_SUBSCRIPRION_ENDED"
+msgstr "Malheureusement, votre abonnement a expiré. Vous pouvez le renouveler dans la section /premium."
+
+msgid "TR_DUBLICATE_PAY"
+msgstr "Malheureusement, il n'est pas possible de payer à nouveau avec ce lien."
+
 msgid "TR_"
 msgstr ""

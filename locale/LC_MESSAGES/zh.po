@@ -239,5 +239,11 @@ msgstr "检查支付"
 msgid "TR_SUCCESSFUL_PAYMENT"
 msgstr "支付成功！\n您现在可以使用新功能。"
 
+msgid "TR_SUBSCRIPRION_ENDED"
+msgstr "很抱歉，您的订阅已过期。您可以在 /premium 部分续订。"
+
+msgid "TR_DUBLICATE_PAY"
+msgstr "很抱歉，您无法通过此链接再次付款。"
+
 msgid "TR_"
 msgstr ""

@@ -19,3 +19,5 @@ yandex-speechkit
 yookassa
 pandas
 lxml
+apscheduler
+

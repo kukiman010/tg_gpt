@@ -4,6 +4,7 @@ from data_models import languages_model
 from data_models import payments_model
 from Control.user import User
 from typing import List
+from Control.subscription_data import SubscriptionData
 
 import Control.context_model
 
@@ -226,7 +227,39 @@ class dbApi:
         else:
             return 0
 
+    def get_subscription_users(self) -> List[SubscriptionData]:
+        query = "SELECT * FROM public.subscription_users"
+        data = self.db.execute_query(query)
+        array = []
 
+        for i in data:
+            sd = SubscriptionData()
+
+            sd.set_userId(i[0])
+            sd.set_tarif(i[2])
+            sd.set_active_until(i[5])
+            sd.set_last_label(i[6])
+            sd.set_id(i[7])
+
+            array.append(sd)
+
+        return array
+    
+    def remove_subscription_ended(self, label):
+        query = "delete from subscription_users where last_payment_id='{}';".format(label)
+        self.db.execute_query(query)
+
+    def checking_for_duplicate_payment(self, label):
+        query = "SELECT EXISTS (    SELECT 1    FROM successful_payments    WHERE payment_id = '{}' ) AS payment_exists;".format(label)
+        data = self.db.execute_query(query)
+        
+        if len(data) == 1:
+            if data[0][0] == True:
+                return True
+            else:
+                return False
+            
+        return False
 
     def __del__(self):
         self.db.close_pool()

@@ -239,5 +239,11 @@ msgstr "Check payment"
 msgid "TR_SUCCESSFUL_PAYMENT"
 msgstr "Payment successful! \nNew features are now available to you."
 
+msgid "TR_SUBSCRIPRION_ENDED"
+msgstr "Unfortunately, your subscription has expired. You can renew it in the /premium section."
+
+msgid "TR_DUBLICATE_PAY"
+msgstr "Unfortunately, you cannot pay again using this link."
+
 msgid "TR_"
 msgstr ""
