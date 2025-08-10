@@ -1,8 +1,10 @@
 from database import Database
 from data_models import assistent_model
 from data_models import languages_model
+from data_models import payments_model
 from Control.user import User
 from typing import List
+from Control.subscription_data import SubscriptionData
 
 import Control.context_model
 
@@ -168,8 +170,8 @@ class dbApi:
         self.db.execute_query(query)
 
     def update_user_action(self, userId, action) -> None:
-        query = "select from update_user_action({}, '{}');".format(userId, action)
-        self.db.execute_query(query)
+        query = 'UPDATE users SET wait_action = %s WHERE user_id = %s;'
+        self.db.execute_query(query, (action, userId))
 
     def update_user_search_status(self, user_id: int, is_search: bool) -> None:
         query = 'UPDATE users SET is_search = %s WHERE user_id = %s;'
@@ -182,6 +184,82 @@ class dbApi:
     def update_user_location(self, user_id: int, location: str) -> None:
         query = 'UPDATE users SET location = %s WHERE user_id = %s;'
         self.db.execute_query(query, (location, user_id))
+
+
+    def get_payment_systems(self):
+        query = "select * from payment_services;"
+        data = self.db.execute_query(query)
+        array = []
+        for i in data:
+                pm = payments_model()
+                pm.set_model(i[0],i[1],i[2])
+                array.append( pm )
+        return array
+    
+    def add_invoice_journal(self, userId, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, is_test:bool ):
+        query = "INSERT INTO invoice_journal(user_id, payment_id, label_pay, tarrif_id, status, amount, currency, payment_system, description, created_at, is_test) " \
+                            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+        self.db.execute_query(query, (userId, str(payment_id), str(label_pay), tarrif_id, str(status), amount, str(currency), str(payment_system), str(description), str(created_at), is_test))
+
+    def update_invoice_journal(self, payment_id, label_pay, status, card_type, card_number, fee, expires_at):
+        query = 'select from update_invoice_journal(%s,%s,%s,%s,%s,%s,%s);'
+        self.db.execute_query(query, (payment_id, label_pay, status, card_type, card_number, fee, expires_at))
+    
+    def add_successful_payments(self, userId, payment_id, tarrif_id, final_amount, currency, payment_system, card_type, email, expires_at):
+        query = "INSERT INTO successful_payments VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);"
+        self.db.execute_query(query, (userId, payment_id, tarrif_id, final_amount, currency, payment_system, card_type, email, expires_at))
+
+    def upsert_subscription_user(self, userId, userName, tarrif_id, email, hours, last_payment_id):
+        query = "select from upsert_subscription_user(%s,%s,%s,%s,%s,%s);"
+        self.db.execute_query(query, (userId, userName, tarrif_id, email, hours, last_payment_id))
+
+    def update_status_in_users(self, userId, status):
+        query = 'UPDATE users SET status_user = %s WHERE user_id = %s;'
+        self.db.execute_query(query, (status, userId))
+
+    def get_tarif_by_paylabel(self, label) -> int:
+        query = "select tarrif_id from invoice_journal where label_pay = '{}'".format(label)
+        data = self.db.execute_query(query)
+        
+        if len(data) == 1:
+            for i in data:
+                return i[0]
+        else:
+            return 0
+
+    def get_subscription_users(self) -> List[SubscriptionData]:
+        query = "SELECT * FROM public.subscription_users"
+        data = self.db.execute_query(query)
+        array = []
+
+        for i in data:
+            sd = SubscriptionData()
+
+            sd.set_userId(i[0])
+            sd.set_tarif(i[2])
+            sd.set_active_until(i[5])
+            sd.set_last_label(i[6])
+            sd.set_id(i[7])
+
+            array.append(sd)
+
+        return array
+    
+    def remove_subscription_ended(self, label):
+        query = "delete from subscription_users where last_payment_id='{}';".format(label)
+        self.db.execute_query(query)
+
+    def checking_for_duplicate_payment(self, label):
+        query = "SELECT EXISTS (    SELECT 1    FROM successful_payments    WHERE payment_id = '{}' ) AS payment_exists;".format(label)
+        data = self.db.execute_query(query)
+        
+        if len(data) == 1:
+            if data[0][0] == True:
+                return True
+            else:
+                return False
+            
+        return False
 
     def __del__(self):
         self.db.close_pool()

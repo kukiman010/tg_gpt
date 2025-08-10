@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "Non"
 
 msgid "TR_SETTING"
-msgstr "Pour l'instant, vous ne pouvez changer que la langue, mais d'autres paramètres seront disponibles plus tard."
+msgstr "Paramètres du bot"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "Pas encore implémenté !"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "Invite par défaut"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "Votre invite actuelle : {}"
+msgstr "Votre invite actuelle : \n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "Écrivez une invite qui sera attachée au début de chaque conversation"
@@ -208,6 +208,42 @@ msgstr "Configurer think"
 
 msgid "TR_MENU_LOCATE"
 msgstr "Définir la localisation"
+
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "Le paiement n'est pas disponible pour les utilisateurs bannis"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "Il n'est actuellement pas possible de choisir un mode de paiement"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "Sélectionnez un mode de paiement :"
+
+msgid "TR_SELECT_TARIFF"
+msgstr "Ici, vous pouvez sélectionner un forfait à ce lien {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "Actuellement, un seul forfait est disponible donnant accès à tout. Plus de détails [ici]({})\nSélectionnez un mode de paiement :"
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "Les paiements ne sont pas acceptés pour le moment."
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "Abonnement pour 1 mois !"
+
+msgid "TR_PAY"
+msgstr "Payer {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "Vérifier le paiement"
+
+msgid "TR_SUCCESSFUL_PAYMENT"
+msgstr "Paiement réussi ! \nDe nouvelles fonctionnalités sont maintenant disponibles pour vous."
+
+msgid "TR_SUBSCRIPRION_ENDED"
+msgstr "Malheureusement, votre abonnement a expiré. Vous pouvez le renouveler dans la section /premium."
+
+msgid "TR_DUBLICATE_PAY"
+msgstr "Malheureusement, il n'est pas possible de payer à nouveau avec ce lien."
 
 msgid "TR_"
 msgstr ""

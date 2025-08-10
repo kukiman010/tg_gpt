@@ -1,6 +1,6 @@
 from logger         import LoggerSingleton
 
-_logger = LoggerSingleton.new_instance('log_gpt.log')
+_logger = LoggerSingleton.new_instance('logs/log_gpt.log')
 
 class Environment():
     def __init__(self):
@@ -16,6 +16,9 @@ class Environment():
         self._count_char_for_gen_audio = ''
         self._sum_max_file_size = ''
         self._prompt = ''
+        self._global_payment = ''
+        self._support_chat = ''
+        self._payments_tariff = ''
 
     def is_valid(self) -> bool:
         if self._sum_max_file_size and self._count_char_for_gen_audio and self._language:
@@ -28,18 +31,21 @@ class Environment():
             _logger.add_critical('Нет данных для обновления.')
             return False
 
-        self._language = data_dict.get("language", self._language)
-        self._company_ai = data_dict.get("company_ai", self._company_ai)
-        self._permission = data_dict.get("permission", self._permission)
-        self._assistant_model = data_dict.get("assistant_model", self._assistant_model)
-        self._recognizes_photo_model = data_dict.get("recognizes_photo_model", self._recognizes_photo_model)
-        self._generate_photo_model = data_dict.get("generate_photo_model", self._generate_photo_model)
-        self._text_to_audio = data_dict.get("text_to_audio", self._text_to_audio)
-        self._audio_to_text = data_dict.get("audio_to_text", self._audio_to_text)
-        self._speakerName = data_dict.get("speakerName", self._speakerName)
-        self._count_char_for_gen_audio = data_dict.get("count_char_for_gen_audio", self._count_char_for_gen_audio)
-        self._sum_max_file_size = data_dict.get("sum_max_file_size", self._sum_max_file_size)
-        self._prompt = data_dict.get("prompt", self._prompt)
+        self._language =                    data_dict.get("language", self._language)
+        self._company_ai =                  data_dict.get("company_ai", self._company_ai)
+        self._permission =                  data_dict.get("permission", self._permission)
+        self._assistant_model =             data_dict.get("assistant_model", self._assistant_model)
+        self._recognizes_photo_model =      data_dict.get("recognizes_photo_model", self._recognizes_photo_model)
+        self._generate_photo_model =        data_dict.get("generate_photo_model", self._generate_photo_model)
+        self._text_to_audio =               data_dict.get("text_to_audio", self._text_to_audio)
+        self._audio_to_text =               data_dict.get("audio_to_text", self._audio_to_text)
+        self._speakerName =                 data_dict.get("speakerName", self._speakerName)
+        self._count_char_for_gen_audio =    data_dict.get("count_char_for_gen_audio", self._count_char_for_gen_audio)
+        self._sum_max_file_size =           data_dict.get("sum_max_file_size", self._sum_max_file_size)
+        self._prompt =                      data_dict.get("prompt", self._prompt)
+        self._global_payment =              data_dict.get("global_payment", self._global_payment)
+        self._support_chat =                data_dict.get('support_chat', self._support_chat)
+        self._payments_tariff =             data_dict.get('payments_tariff', self._payments_tariff)
         
         return self.is_valid()
     
@@ -92,3 +98,17 @@ class Environment():
     
     def get_prompt(self) -> str:
         return self._prompt
+    
+    def get_global_payment(self) -> bool:
+        if self._global_payment.lower() == 'true' :
+            return True
+        else:
+            return False
+        
+    def get_support_chat(self) -> str:
+        return self._support_chat
+        
+    def get_payments_tariff(self) -> str:
+        return self._payments_tariff
+    
+    

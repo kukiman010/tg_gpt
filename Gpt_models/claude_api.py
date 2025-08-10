@@ -32,7 +32,7 @@ import Control.context_model
 from logger import LoggerSingleton
 
 
-_logger = LoggerSingleton.new_instance('log_gpt.log')
+_logger = LoggerSingleton.new_instance('logs/log_gpt.log')
 
 
 class Claud:

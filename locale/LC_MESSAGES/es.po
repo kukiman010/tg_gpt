@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "No"
 
 msgid "TR_SETTING"
-msgstr "Por ahora, solo puedes cambiar el idioma, pero en el futuro habrá más configuraciones disponibles."
+msgstr "Ajustes del bot"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "¡Aún no se ha implementado esta función!"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "Aviso predeterminado"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "Su aviso actual: {}"
+msgstr "Su aviso actual: \n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "Escribe un aviso que se adjuntará al comienzo de cada conversación"
@@ -208,6 +208,42 @@ msgstr "Configurar think"
 
 msgid "TR_MENU_LOCATE"
 msgstr "Establecer ubicación"
+
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "El pago no está disponible para usuarios bloqueados"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "Actualmente no es posible elegir un método de pago"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "Seleccione un método de pago:"
+
+msgid "TR_SELECT_TARIFF"
+msgstr "Aquí puede seleccionar una tarifa en este enlace {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "Actualmente solo hay una tarifa disponible que otorga acceso a todo. Más detalles [aquí]({})\nSeleccione un método de pago:"
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "Actualmente no se aceptan pagos."
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "¡Suscripción por 1 mes!"
+
+msgid "TR_PAY"
+msgstr "Pagar {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "Comprobar pago"
+
+msgid "TR_SUCCESSFUL_PAYMENT"
+msgstr "¡Pago exitoso! \nAhora tienes acceso a nuevas funciones."
+
+msgid "TR_SUBSCRIPRION_ENDED"
+msgstr "Desafortunadamente, su suscripción ha expirado. Puede renovarla en la sección /premium."
+
+msgid "TR_DUBLICATE_PAY"
+msgstr "Desafortunadamente, no se puede pagar de nuevo usando este enlace."
 
 msgid "TR_"
 msgstr ""

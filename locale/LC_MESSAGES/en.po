@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "No"
 
 msgid "TR_SETTING"
-msgstr "So far, you can only change the language here, but later other settings will appear here"
+msgstr "Bot settings"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "Not implemented yet!"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "Default Prompt"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "Your current prompt: {}"
+msgstr "Your current prompt: \n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "Write a prompt that will be attached at the beginning of each conversation"
@@ -208,6 +208,42 @@ msgstr "Configure think"
 
 msgid "TR_MENU_LOCATE"
 msgstr "Set location"
+
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "Payment is not available for banned users"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "It is currently not possible to choose a payment method"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "Select a payment method:"
+
+msgid "TR_SELECT_TARIFF"
+msgstr "Here you can select a tariff at this link {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "Currently, only one tariff is available, granting access to everything. More details [here]({})\nSelect a payment method:"
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "Payments are not being accepted at this time."
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "Subscribe for 1 month!"
+
+msgid "TR_PAY"
+msgstr "Pay {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "Check payment"
+
+msgid "TR_SUCCESSFUL_PAYMENT"
+msgstr "Payment successful! \nNew features are now available to you."
+
+msgid "TR_SUBSCRIPRION_ENDED"
+msgstr "Unfortunately, your subscription has expired. You can renew it in the /premium section."
+
+msgid "TR_DUBLICATE_PAY"
+msgstr "Unfortunately, you cannot pay again using this link."
 
 msgid "TR_"
 msgstr ""

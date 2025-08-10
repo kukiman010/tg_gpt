@@ -2,7 +2,8 @@ requests
 telebot
 groq
 openai
-psycopg2-binary~=2.8.6
+psycopg2-binary
+# psycopg2-binary~=2.8.6
 babel
 polib
 blinker
@@ -15,3 +16,8 @@ PyAudio
 pydub
 tiktoken
 yandex-speechkit
+yookassa
+pandas
+lxml
+apscheduler
+

@@ -5,16 +5,16 @@ import base64
 import sys
 import os
 import re
+import datetime
 
 import Gpt_models.yandexgpt
-import Gpt_models.sbergpt
+# import Gpt_models.sbergpt
 import Gpt_models.metagpt
 import Gpt_models.x_ai
 import Gpt_models.google_api
 import Gpt_models.claude_api
 import Gpt_models.deepseak_api
 import Control.context_model
-import Control.environment
 
 from logger         import LoggerSingleton
 from openai         import OpenAIError
@@ -22,25 +22,30 @@ from configure      import Settings
 from databaseapi    import dbApi
 from telebot        import types
 from translator     import Locale
-from Control.user   import User
 from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
 from data_models    import languages_api
+from payments.payment_manager import PaymentManager
+from threading import Thread
 
 
 from blinker            import signal
 from file_worker        import MediaWorker
 from file_worker        import FileConverter
+from Control.user       import User
 from Control.user_media import UserMedia
 from Control.environment import Environment
+from apscheduler.schedulers.blocking import BlockingScheduler
 
+import signals
 
 _setting = Settings()
 sys.stdout.reconfigure(encoding='utf-8')
-_logger = LoggerSingleton.new_instance('log_gpt.log')
+_logger = LoggerSingleton.new_instance('logs/log_gpt.log')
 locale = Locale('locale/LC_MESSAGES/')
 _mediaWorker = MediaWorker.new_instance()
 post_signal = signal('post_media')
+# post_signal_payment = signal('finish_payment')
 _converterFile = FileConverter()
 _env = Environment()
 
@@ -62,6 +67,8 @@ TOKEN_CLAUDE = _setting.get_claude_gpt()
 TOKEN_DEEPSEEK = _setting.get_deepseek_gpt()
 TOKEN_YANDEX_API = _setting.get_yandex_api()
 TOKEN_GOOGLE_API = _setting.get_google_api()
+YOOMONEY_SHOP_ID = _setting.get_yoomoney_shopId()
+TOKEN_YOOMONEY = _setting.get_yoomoney_token()
 
 
 if TOKEN_TG == '':
@@ -96,7 +103,13 @@ if TOKEN_GOOGLE_API == '':
     _logger.add_critical('No google gpt token!')
     sys.exit()
 
-_speak = speech.speaker()
+if YOOMONEY_SHOP_ID == '':
+    _logger.add_critical('No yoomoney shop id!')
+    sys.exit()
+
+if TOKEN_YOOMONEY == '':
+    _logger.add_critical('No yoomoney token!')
+    sys.exit()
 
 
 
@@ -105,6 +118,8 @@ if not _env.is_valid():
     _logger.add_critical('Environment is not corrected!')
     exit 
 
+
+_speak = speech.speaker()
 _speak.start_key_generation()
 _assistent_api = assistent_api( _db.get_assistant_ai() )
 _languages_api = languages_api( _db.get_languages() )
@@ -125,6 +140,10 @@ _claude = Gpt_models.claude_api.Claud(TOKEN_CLAUDE)
 _deepseek = Gpt_models.deepseak_api.DeepSeek(TOKEN_DEEPSEEK)
 _google = Gpt_models.google_api.Google(TOKEN_GOOGLE_API)
 
+
+_payMan = PaymentManager( _env.get_global_payment())
+_payMan.update(_db.get_payment_systems())
+_payMan.start_auto_checker()
 
 
 
@@ -227,7 +246,16 @@ def help(message):
 @bot.message_handler(commands=['premium'])
 def premium(message):
     user = user_verification(message)
-    send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC'))
+    # send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC'))
+
+    if user.get_status() == 0: 
+        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'))
+        return
+    
+    premium_button(user, False)
+
+        
+
 
 @bot.message_handler(commands=['settings'])
 def settings(message):
@@ -289,6 +317,13 @@ def voice_processing(message):
 @bot.message_handler(func=lambda message: True)
 def handle_user_message(message):
     user = user_verification(message)
+
+    action = user.get_wait_action()
+    if action != '' and action != None:
+        action_handler(user.get_userId(), user, action, message.text)
+        return
+
+
     hasUser = _mediaWorker.find_userId(user.get_userId())
     media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
 
@@ -303,6 +338,72 @@ def handle_user_message(message):
     _mediaWorker.add_data(media)
 
 
+# Обработчик проверки платежа
+@bot.pre_checkout_query_handler(func=lambda query: True)
+def handle_pre_checkout_query(pre_checkout_query):
+    label = pre_checkout_query.invoice_payload
+    isDuplicate  = _db.checking_for_duplicate_payment(label)
+
+    userId_pattern = r'^^PAY_(\d+)_\S+_\S+_\S+$'
+    userId_match = re.match(userId_pattern, label)
+    if userId_match:
+        userId = userId_match.group(1)
+
+    user = user_verification_easy(userId)
+
+    if isDuplicate:
+        t_mes= ''
+        if user != None:
+            t_mes = locale.find_translation(user.get_language(), 'TR_DUBLICATE_PAY')
+        else:
+            t_mes = locale.find_translation('en', 'TR_DUBLICATE_PAY')
+            
+        bot.answer_pre_checkout_query(
+            pre_checkout_query.id,
+            ok=False,
+            error_message=t_mes
+        )
+        send_text(user.get_userId(), t_mes )
+        return
+    else:
+        bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+
+
+
+@bot.message_handler(content_types=['successful_payment'])
+def handle_successful_payment(message):
+    user = user_verification(message)
+    payment_id = message.successful_payment.provider_payment_charge_id  
+    amount = message.successful_payment.total_amount
+    currency = message.successful_payment.currency
+    label = message.successful_payment.invoice_payload
+
+    tarif = _db.get_tarif_by_paylabel(label)
+    fee = 0 # коммисия
+
+
+    userId = user.get_userId()
+
+    hours_tarif = 720 # 720h == 30 days
+    _db.update_invoice_journal(payment_id, label, 'succeeded', 'stars', None, fee, datetime.datetime.now())
+    # нужно продумать тарифы, но в данный момент tarrif_id=1 - тариф который открывает доступ ко всему
+    _db.add_successful_payments(userId, label, tarif, float(amount - fee), currency, 'TelegramStarsPay', 'stars', '', datetime.datetime.now() )
+    _db.upsert_subscription_user(userId, user.get_login(), tarif, '', hours_tarif, label)
+
+    if tarif == 1:
+        user = user_verification_easy(userId)
+
+        user.get_language()
+        _db.update_status_in_users(userId, 3)
+
+        if user == None:
+            send_text(userId, locale.find_translation('en', 'TR_SUCCESSFUL_PAYMENT')) 
+        else :
+            send_text(userId, locale.find_translation(user.get_language(), 'TR_SUCCESSFUL_PAYMENT'))
+
+    else:
+        _logger.add_critical('Пользователь {}, произвел оплату {}, но тариф {} не обработан'.format(userId, payment_id, tarif))
+
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -314,6 +415,12 @@ def handle_callback_query(call):
     
     language_pattern = r'^set_lang_model_(\d+)$'
     language_match = re.match(language_pattern, key)
+
+    payments_pattern = r'^set_payments_(\S+)$'
+    payments_match = re.match(payments_pattern, key)
+
+    # check_pay_pattern = r'^check_pay_(\S+)$'
+    # check_pay_match = re.match(check_pay_pattern, key)
 
     message_id = call.message.message_id
     chat_id = call.message.chat.id
@@ -372,7 +479,7 @@ def handle_callback_query(call):
 
     elif key == 'menu_promt':
         bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_LANGUAGE')
+        t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_PROMT')
         markup = types.InlineKeyboardMarkup()
 
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_PROMT_NOW'),    callback_data='show_my_promt') )
@@ -422,11 +529,7 @@ def handle_callback_query(call):
         send_text(chat_id, text, reply_markup=markup, id_message_for_edit=message_id)
 
     elif key == 'menu_premium':
-        bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC').format(user.get_prompt())
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        premium_button(user, True, message_id)
 
     elif key == 'menu_support':
         bot.answer_callback_query(call.id, text = '')
@@ -516,6 +619,61 @@ def handle_callback_query(call):
             bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_SUPPORT'))
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
 
+    elif payments_match:
+        bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
+        paymet_system = payments_match.group(1)
+        
+        description = locale.find_translation(user.get_language(), 'TR_SUBSCRIBE_FOR_ONE_MOUNTH')
+        price_in_usd = 12 ###################################################################################### !!! ввести тарифы
+        tarif = 1         ###################################################################################### !!! пока по умолчанию, нужно ввести систему тарифов
+        
+
+        if paymet_system == 'TelegramStarsPay':
+            price = _payMan.convector.usd_to_tgStars(price_in_usd)
+            price = _payMan.convector.custom_round(price)
+
+            label = _payMan.generate_payment_label(user.get_userId())
+
+            markup = types.InlineKeyboardMarkup()
+            pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(price, ' stars')
+            markup.add( types.InlineKeyboardButton(pay_description,                                                     pay=True) )
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
+
+            # price =1 
+            prices = [types.LabeledPrice(label="XTR", amount=price)]  
+            bot.send_invoice(
+                chat_id,
+                title=description,
+                description=description,
+                invoice_payload=label,
+                provider_token="",
+                currency="XTR",
+                prices=prices,
+                reply_markup=markup
+            )
+
+            _db.add_invoice_journal(user.get_userId(), label, label, tarif, 'pending', price, 'XTR', paymet_system, description, datetime.datetime.now(), False)
+            
+
+        else:
+            pay_info = _payMan.create_invoice(paymet_system, price_in_usd, user.get_userId(), description)
+            pay_info.tarrif = tarif
+            pay_info.user_name = user.get_login()
+
+            if pay_info.status == 'pending':
+                _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.is_test)
+                _payMan.add_payment(pay_info)
+
+                markup = types.InlineKeyboardMarkup()
+                chech_key = 'check_pay_' + pay_info.payment_id
+                pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(pay_info.amount, pay_info.currency)
+                markup.add( types.InlineKeyboardButton(pay_description,                                                     url=pay_info.url_pay) )
+                markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_CHECK_PAY'),        callback_data=chech_key) )
+                markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
+                
+                send_text(chat_id, description, markup, message_id)
+
+
     else:
         t_mes = locale.find_translation(user.get_language(), 'TR_ERROR')
         bot.answer_callback_query(call.id, text = t_mes)
@@ -586,8 +744,8 @@ def handle_message(message):
 
     text_to_photo = message.caption
 
-    if text_to_photo == '' or text_to_photo == None:
-        text_to_photo = 'What’s in this image?'
+    # if text_to_photo == '' or text_to_photo == None:
+        # text_to_photo = 'What’s in this image?'
 
 
 
@@ -638,7 +796,7 @@ def handle_message(message):
 
     
 
-def user_verification(message):
+def user_verification(message) -> User:
     user = User()
 
     if _db.find_user(message.from_user.id) == False:
@@ -671,7 +829,7 @@ def user_verification_custom(userId, chatId, chat_username, chatType, lang_code)
 
     return user
 
-def user_verification_easy(userId):
+def user_verification_easy(userId) -> User:
     user = User()
     if _db.find_user(userId) == False:
         return None
@@ -799,7 +957,7 @@ def fix_markdown_blocks(array):
 def replace_stars_with_backticks(text):
     return re.sub(r'\*\*(.*?)\*\*', r'`\1`', text)
 
-def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
+def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None, isMarkdown=False):
     max_message_length = 4050
     hard_break_point = 3700
     soft_break_point = 3300
@@ -820,21 +978,34 @@ def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
     if text:
         results.append(text)
 
-    fix_markdown_blocks(results)
+    if isMarkdown:
+        fix_markdown_blocks(results)
 
     for chunk in results:
-        converted_text = replace_stars_with_backticks(chunk) # The telebot bug has been fixed. do not send markdown text with _ in the block **
+        converted_text = ''
+        if isMarkdown:
+            converted_text = replace_stars_with_backticks(chunk) # The telebot bug has been fixed. do not send markdown text with _ in the block **
+        else:
+            converted_text = chunk
+
         try:
             if id_message_for_edit:
-                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=converted_text, reply_markup=reply_markup, parse_mode='Markdown')
+                if isMarkdown:
+                    bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=converted_text, reply_markup=reply_markup, parse_mode='Markdown')
+                else:
+                    bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=converted_text, reply_markup=reply_markup)
+
                 id_message_for_edit = None
             else:
-                bot.send_message(chat_id, converted_text, reply_markup=reply_markup, parse_mode='Markdown')
+                if isMarkdown:
+                    bot.send_message(chat_id, converted_text, reply_markup=reply_markup, parse_mode='Markdown')
+                else:
+                    bot.send_message(chat_id, converted_text, reply_markup=reply_markup)
 
                 
         except Exception as e:
             _logger.add_critical(f"Ошибка для chat_id:{chat_id} при отправке сообщения. Ошибка: {e}\n В этом тексте: \n{converted_text}")
-            bot.send_message(chat_id, converted_text)
+            bot.send_message(chat_id, converted_text, reply_markup=reply_markup)
 
 
 
@@ -873,17 +1044,7 @@ def on_post_media(sender, userId, mediaList):
         return
 
     _db.update_last_login(userId)
-
-
-    action = user.get_wait_action()
-    if action != '' and action != None:
-        if len(titleMessId) != 0:
-            for medId in titleMessId:
-                bot.delete_message(chatId, medId)
-
-        action_handler(chatId, user, action, message)
-        return
-
+    
     content = post_gpt(chatId, user, message, user.get_model())
     MAX_CHAR = int(_env.get_count_char_for_gen_audio())
 
@@ -894,7 +1055,7 @@ def on_post_media(sender, userId, mediaList):
     if not content.get_result() or content.get_code() >= 300:
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost ') )
-        send_text(chatId, locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT').format(content.get_result()), reply_markup=markup ) 
+        send_text(chatId, locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT').format(content.get_result()), reply_markup=markup, isMarkdown=True ) 
         return
 
     if len(content.get_result()) <= MAX_CHAR:
@@ -904,6 +1065,32 @@ def on_post_media(sender, userId, mediaList):
         send_text(chatId, content.get_result(), reply_markup=markup)
     else:    
         send_text(chatId, content.get_result())
+
+
+def on_finish_payment(sender, userId, data):
+    if sender != 'PaymentManager':
+        _logger.add_critical('Сигнал on_finish_payment инициализирован {}, а не PaymentManager'.format(sender))
+        return
+    hours_tarif = 720 # 720h == 30 days
+    _db.update_invoice_journal(data.payment_id, data.label_pay, data.status, data.card_type, data.card_number, data.fee, data.expires_at)
+    # нужно продумать тарифы, но в данный момент tarrif_id=1 - тариф который открывает доступ ко всему
+    _db.add_successful_payments(data.user_id, data.payment_id, data.tarrif, float(data.amount - data.fee), data.currency, data.payment_system, data.card_type, data.email, data.expires_at )
+    _db.upsert_subscription_user(data.user_id, data.user_name, data.tarrif, data.email, hours_tarif, data.payment_id)
+
+    if data.tarrif == 1:
+        user = user_verification_easy(userId)
+
+        user.get_language()
+        _db.update_status_in_users(userId, 3)
+
+        if user == None:
+            send_text(userId, locale.find_translation('en', 'TR_SUCCESSFUL_PAYMENT')) 
+        else :
+            send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_SUCCESSFUL_PAYMENT'))
+
+    else:
+        _logger.add_critical('Пользователь {}, произвел оплату {}, но тариф {} не обработан'.format(userId, data.payment_id, data.tarrif))
+    
 
 
 def main_menu(user, charId, id_message = None):
@@ -955,10 +1142,64 @@ def command_help(user):
     return text
 
 
+def premium_button(user: User, callFromMenu: bool, id_message_for_edit : int = 0):
+    buttons = _payMan.get_buttons()
+    markup = types.InlineKeyboardMarkup()
+
+    if len(buttons) > 0:
+        text = locale.find_translation(user.get_language(), 'TR_TARIFF_ONCE').format(_env.get_payments_tariff())
+
+        for key, value in buttons.items():
+            button = types.InlineKeyboardButton(value, callback_data=key)
+            markup.add(button)
+
+        if callFromMenu:
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
+            send_text(user.get_userId(), text, reply_markup=markup, id_message_for_edit=id_message_for_edit)
+        else:
+            send_text(user.get_userId(), text, reply_markup=markup)
+        
+    else:
+        send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_SYSTEM_EMPTY') )
+
+
+def subscription_verification():
+    tz_moscow = datetime.timezone(datetime.timedelta(hours=3))
+    data_now = datetime.datetime.now(tz_moscow)
+
+    list = _db.get_subscription_users()
+
+    for userSub in list:
+        data_until = userSub.active_until
+        if data_until < data_now:
+            userId = userSub.userId
+
+            user = user_verification_easy(userId)
+
+            # _db.add_invoice_journal(userId, userSub.last_label, userSub.last_label, userSub.tarif, 'subscription ended', 0, 'none', None, 'Подписка истекла', datetime.datetime.now(), False)
+            _db.update_invoice_journal(userSub.last_label, userSub.last_label, 'subscription ended', None , None, 0, datetime.datetime.now())
+            _db.remove_subscription_ended(userSub.last_label)
+            _db.update_status_in_users(userId, 1)
+
+            text = locale.find_translation(user.get_language(), 'TR_SUBSCRIPRION_ENDED')
+            send_text(userId, text)
+
+        else:
+            continue
+
+def run_scheduler():
+    scheduler = BlockingScheduler(timezone="Europe/Moscow")
+    scheduler.add_job(subscription_verification, 'cron', hour=13, minute=0)
+    scheduler.start()
+
 
 try:
+    subscription_verification()
+    Thread(target=run_scheduler, daemon=True).start()
+
     post_signal.connect(on_post_media, sender='MediaWorker')
-    bot.infinity_polling()
+    signals.finish_payment.connect(on_finish_payment, sender='PaymentManager')
+    bot.infinity_polling()    
     # bot.polling()
 except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)

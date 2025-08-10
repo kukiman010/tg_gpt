@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "否"
 
 msgid "TR_SETTING"
-msgstr "当前只支持更改语言设置，未来将添加更多选项。"
+msgstr "机器人设置"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "该功能尚未实现！"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "默认提示"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "您当前的提示：{}"
+msgstr "您当前的提示：\n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "写下将在每次对话的开头附加的提示"
@@ -208,6 +208,42 @@ msgstr "配置think"
 
 msgid "TR_MENU_LOCATE"
 msgstr "设置位置"
+
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "被封禁用户无法支付"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "目前无法选择支付方式"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "请选择支付方式："
+
+msgid "TR_SELECT_TARIFF"
+msgstr "您可以通过此链接选择套餐 {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "目前仅有一个套餐可用，能够访问全部内容。更多详情请见[这里]({}) \n请选择支付方式："
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "目前不接受支付。"
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "订阅 1 个月！"
+
+msgid "TR_PAY"
+msgstr "支付 {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "检查支付"
+
+msgid "TR_SUCCESSFUL_PAYMENT"
+msgstr "支付成功！\n您现在可以使用新功能。"
+
+msgid "TR_SUBSCRIPRION_ENDED"
+msgstr "很抱歉，您的订阅已过期。您可以在 /premium 部分续订。"
+
+msgid "TR_DUBLICATE_PAY"
+msgstr "很抱歉，您无法通过此链接再次付款。"
 
 msgid "TR_"
 msgstr ""

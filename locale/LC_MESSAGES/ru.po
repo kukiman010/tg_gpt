@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "Нет"
 
 msgid "TR_SETTING"
-msgstr "Пока тут можно изменить только язык, но позже тут появятся другие настройки."
+msgstr "Настройки бота"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "Пока не реализовано!"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "Промт по умолчанию"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "Ваш текущий промт: {}"
+msgstr "Ваш текущий промт: \n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "Напишите промт, который будет прикрепляться в начале каждой переписки"
@@ -208,6 +208,42 @@ msgstr "Настроить think"
 
 msgid "TR_MENU_LOCATE"
 msgstr "Задать локацию"
+
+msgid "TR_PAYMENT_LOCK_FOR_BANED_USER"
+msgstr "Оплата не доступна для заблокированных пользователей"
+
+msgid "TR_PAYMENT_SYSTEM_EMPTY"
+msgstr "В данный момент невозможно выбрать способ оплаты"
+
+msgid "TR_SELECT_PAYMENT"
+msgstr "Выберите способ оплаты:"
+
+msgid "TR_SELECT_TARIFF"
+msgstr "Тут вы можете выберете тариф по этой ссылке {}"
+
+msgid "TR_TARIFF_ONCE"
+msgstr "В данный момент доступен только один тариф открывающий доступ ко всему. Подробнее о нем [здесь]({}) \nВыберите способ оплаты:"
+
+msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
+msgstr "В данный момент платежи не принимаются."
+
+msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
+msgstr "Оформление подписки на 1 месяц!"
+
+msgid "TR_PAY"
+msgstr "Оплатить {}{}"
+
+msgid "TR_CHECK_PAY"
+msgstr "Проверить платеж"
+
+msgid "TR_SUCCESSFUL_PAYMENT"
+msgstr "Успешная оплата! \nТеперь вам доступен новый функционал."
+
+msgid "TR_SUBSCRIPRION_ENDED"
+msgstr "К сожалению, ваша подписка истекла. Продлить её можно в разделе /premium."
+
+msgid "TR_DUBLICATE_PAY"
+msgstr "К сожалению, второй раз не получиться оплатить по этой ссылке."
 
 msgid "TR_"
 msgstr ""
