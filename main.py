@@ -617,7 +617,7 @@ def handle_callback_query(call):
             markup.add( types.InlineKeyboardButton(pay_description,                                                     pay=True) )
             markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
 
-            price =1 
+            # price =1 
             prices = [types.LabeledPrice(label="XTR", amount=price)]  # XTR
             bot.send_invoice(
                 chat_id,
