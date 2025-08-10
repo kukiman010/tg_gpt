@@ -12,7 +12,7 @@ from logger         import LoggerSingleton
 class speaker:
     def __init__(self):
         self.stop_event = threading.Event()
-        self._logger = LoggerSingleton.new_instance('log_gpt.log')
+        self._logger = LoggerSingleton.new_instance('logs/log_gpt.log')
         self.ready_token = True
         self.TIME_GEN=18000 # once to timer (18000 = 5 hours)
 

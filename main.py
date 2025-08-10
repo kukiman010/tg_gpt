@@ -38,7 +38,7 @@ import signals
 
 _setting = Settings()
 sys.stdout.reconfigure(encoding='utf-8')
-_logger = LoggerSingleton.new_instance('log_gpt.log')
+_logger = LoggerSingleton.new_instance('logs/log_gpt.log')
 locale = Locale('locale/LC_MESSAGES/')
 _mediaWorker = MediaWorker.new_instance()
 post_signal = signal('post_media')
