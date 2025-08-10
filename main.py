@@ -317,10 +317,6 @@ def handle_user_message(message):
 
     action = user.get_wait_action()
     if action != '' and action != None:
-        # if len(titleMessId) != 0:
-            # for medId in titleMessId:
-                # bot.delete_message(chatId, medId)
-
         action_handler(user.get_userId(), user, action, message.text)
         return
 
@@ -949,17 +945,7 @@ def on_post_media(sender, userId, mediaList):
         return
 
     _db.update_last_login(userId)
-
-
-    # action = user.get_wait_action()
-    # if action != '' and action != None:
-    #     if len(titleMessId) != 0:
-    #         for medId in titleMessId:
-    #             bot.delete_message(chatId, medId)
-
-    #     action_handler(chatId, user, action, message)
-    #     return
-
+    
     content = post_gpt(chatId, user, message, user.get_model())
     MAX_CHAR = int(_env.get_count_char_for_gen_audio())
 

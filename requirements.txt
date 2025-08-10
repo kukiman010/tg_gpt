@@ -18,3 +18,4 @@ tiktoken
 yandex-speechkit
 yookassa
 pandas
+lxml

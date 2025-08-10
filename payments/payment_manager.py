@@ -182,6 +182,9 @@ class PaymentManager:
 
 
 class OnlineConvector:
+    def __init__(self):
+        self._logger = LoggerSingleton.new_instance('logs/payment_system.log')
+
     def get_fiat_rate(self, ticker: str) -> float:
         try:
             url = "https://www.fontanka.ru/currency.html"
@@ -194,8 +197,8 @@ class OnlineConvector:
                 rate_value = rate_value.replace(',', '.')
             return float(rate_value)
         except Exception as e:
-            print(f"Ошибка при получении курса {ticker}: {e}")
-            return None 
+            self._logger.add_critical(f"{str(self.__class__.__name__)}. Ошибка при получении курса {ticker}: {e}")
+            return 9999999999 
 
     def get_crypto_to_fiat(self, crypto: str, fiat: str) -> float:
         url = f'https://api.coingecko.com/api/v3/simple/price?ids={crypto.lower()}&vs_currencies={fiat.lower()}'
@@ -207,20 +210,20 @@ class OnlineConvector:
                 raise ValueError(f"{crypto.upper()} to {fiat.upper()} не найден в API.")
             return float(price)
         except Exception as e:
-            print(f"Ошибка при получении курса {crypto.upper()} к {fiat.upper()}: {e}")
-            return None
+            self._logger.add_critical(f"{str(self.__class__.__name__)}. Ошибка при получении курса {crypto.upper()} к {fiat.upper()}: {e}")
+            return 9999999999
 
     def usd_to_rub(self, amount: float) -> float:
         rate = self.get_fiat_rate('usd')
         if rate is not None:
             return amount * rate
-        return None
+        return 9999999999
 
     def usd_to_bit(self, amount: float) -> float:
         btc_price = self.get_crypto_to_fiat('bitcoin', 'usd')
         if btc_price:
             return amount / btc_price
-        return None
+        return 9999999999
 
     def usd_to_usdt(self, amount: float) -> float:
         return amount
