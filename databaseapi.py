@@ -169,8 +169,8 @@ class dbApi:
         self.db.execute_query(query)
 
     def update_user_action(self, userId, action) -> None:
-        query = "select from update_user_action({}, '{}');".format(userId, action)
-        self.db.execute_query(query)
+        query = 'UPDATE users SET wait_action = %s WHERE user_id = %s;'
+        self.db.execute_query(query, (action, userId))
 
     def update_user_search_status(self, user_id: int, is_search: bool) -> None:
         query = 'UPDATE users SET is_search = %s WHERE user_id = %s;'

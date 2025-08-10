@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "Нет"
 
 msgid "TR_SETTING"
-msgstr "Пока тут можно изменить только язык, но позже тут появятся другие настройки."
+msgstr "Настройки бота"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "Пока не реализовано!"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "Промт по умолчанию"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "Ваш текущий промт: {}"
+msgstr "Ваш текущий промт: \n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "Напишите промт, который будет прикрепляться в начале каждой переписки"

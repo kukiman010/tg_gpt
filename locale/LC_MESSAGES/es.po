@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "No"
 
 msgid "TR_SETTING"
-msgstr "Por ahora, solo puedes cambiar el idioma, pero en el futuro habrá más configuraciones disponibles."
+msgstr "Ajustes del bot"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "¡Aún no se ha implementado esta función!"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "Aviso predeterminado"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "Su aviso actual: {}"
+msgstr "Su aviso actual: \n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "Escribe un aviso que se adjuntará al comienzo de cada conversación"

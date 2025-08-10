@@ -314,6 +314,17 @@ def voice_processing(message):
 @bot.message_handler(func=lambda message: True)
 def handle_user_message(message):
     user = user_verification(message)
+
+    action = user.get_wait_action()
+    if action != '' and action != None:
+        # if len(titleMessId) != 0:
+            # for medId in titleMessId:
+                # bot.delete_message(chatId, medId)
+
+        action_handler(user.get_userId(), user, action, message.text)
+        return
+
+
     hasUser = _mediaWorker.find_userId(user.get_userId())
     media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
 
@@ -403,7 +414,7 @@ def handle_callback_query(call):
 
     elif key == 'menu_promt':
         bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_LANGUAGE')
+        t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_PROMT')
         markup = types.InlineKeyboardMarkup()
 
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_PROMT_NOW'),    callback_data='show_my_promt') )
@@ -851,7 +862,7 @@ def fix_markdown_blocks(array):
 def replace_stars_with_backticks(text):
     return re.sub(r'\*\*(.*?)\*\*', r'`\1`', text)
 
-def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
+def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None, isMarkdown=False):
     max_message_length = 4050
     hard_break_point = 3700
     soft_break_point = 3300
@@ -872,21 +883,34 @@ def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None):
     if text:
         results.append(text)
 
-    fix_markdown_blocks(results)
+    if isMarkdown:
+        fix_markdown_blocks(results)
 
     for chunk in results:
-        converted_text = replace_stars_with_backticks(chunk) # The telebot bug has been fixed. do not send markdown text with _ in the block **
+        converted_text = ''
+        if isMarkdown:
+            converted_text = replace_stars_with_backticks(chunk) # The telebot bug has been fixed. do not send markdown text with _ in the block **
+        else:
+            converted_text = chunk
+
         try:
             if id_message_for_edit:
-                bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=converted_text, reply_markup=reply_markup, parse_mode='Markdown')
+                if isMarkdown:
+                    bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=converted_text, reply_markup=reply_markup, parse_mode='Markdown')
+                else:
+                    bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=converted_text, reply_markup=reply_markup)
+
                 id_message_for_edit = None
             else:
-                bot.send_message(chat_id, converted_text, reply_markup=reply_markup, parse_mode='Markdown')
+                if isMarkdown:
+                    bot.send_message(chat_id, converted_text, reply_markup=reply_markup, parse_mode='Markdown')
+                else:
+                    bot.send_message(chat_id, converted_text, reply_markup=reply_markup)
 
                 
         except Exception as e:
             _logger.add_critical(f"Ошибка для chat_id:{chat_id} при отправке сообщения. Ошибка: {e}\n В этом тексте: \n{converted_text}")
-            bot.send_message(chat_id, converted_text)
+            bot.send_message(chat_id, converted_text, reply_markup=reply_markup)
 
 
 
@@ -927,14 +951,14 @@ def on_post_media(sender, userId, mediaList):
     _db.update_last_login(userId)
 
 
-    action = user.get_wait_action()
-    if action != '' and action != None:
-        if len(titleMessId) != 0:
-            for medId in titleMessId:
-                bot.delete_message(chatId, medId)
+    # action = user.get_wait_action()
+    # if action != '' and action != None:
+    #     if len(titleMessId) != 0:
+    #         for medId in titleMessId:
+    #             bot.delete_message(chatId, medId)
 
-        action_handler(chatId, user, action, message)
-        return
+    #     action_handler(chatId, user, action, message)
+    #     return
 
     content = post_gpt(chatId, user, message, user.get_model())
     MAX_CHAR = int(_env.get_count_char_for_gen_audio())
@@ -946,7 +970,7 @@ def on_post_media(sender, userId, mediaList):
     if not content.get_result() or content.get_code() >= 300:
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost ') )
-        send_text(chatId, locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT').format(content.get_result()), reply_markup=markup ) 
+        send_text(chatId, locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT').format(content.get_result()), reply_markup=markup, isMarkdown=True ) 
         return
 
     if len(content.get_result()) <= MAX_CHAR:

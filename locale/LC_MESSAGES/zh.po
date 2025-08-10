@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "否"
 
 msgid "TR_SETTING"
-msgstr "当前只支持更改语言设置，未来将添加更多选项。"
+msgstr "机器人设置"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "该功能尚未实现！"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "默认提示"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "您当前的提示：{}"
+msgstr "您当前的提示：\n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "写下将在每次对话的开头附加的提示"

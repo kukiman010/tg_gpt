@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "No"
 
 msgid "TR_SETTING"
-msgstr "So far, you can only change the language here, but later other settings will appear here"
+msgstr "Bot settings"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "Not implemented yet!"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "Default Prompt"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "Your current prompt: {}"
+msgstr "Your current prompt: \n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "Write a prompt that will be attached at the beginning of each conversation"

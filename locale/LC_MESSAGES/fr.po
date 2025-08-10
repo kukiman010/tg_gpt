@@ -51,7 +51,7 @@ msgid "TR_NO"
 msgstr "Non"
 
 msgid "TR_SETTING"
-msgstr "Pour l'instant, vous ne pouvez changer que la langue, mais d'autres paramètres seront disponibles plus tard."
+msgstr "Paramètres du bot"
 
 msgid "TR_DONT_RELEASES_FUNC"
 msgstr "Pas encore implémenté !"
@@ -156,7 +156,7 @@ msgid "TR_BUTTOM_DEFAULT_PROMT"
 msgstr "Invite par défaut"
 
 msgid "TR_SHOW_PROMT_NOW"
-msgstr "Votre invite actuelle : {}"
+msgstr "Votre invite actuelle : \n\n{}"
 
 msgid "TR_SET_PROMT"
 msgstr "Écrivez une invite qui sera attachée au début de chaque conversation"
