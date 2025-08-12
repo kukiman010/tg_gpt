@@ -1,5 +1,6 @@
 import logging
 import re
+import os
 
 GREEN = '\033[92m'
 RED = '\033[91m'
@@ -8,25 +9,30 @@ RESET = '\033[0m'  # Сброс цвета
 
 class LoggerSingleton(object):
     instance = None
-    
+
     @classmethod
     def new_instance(cls, *args, **kwargs):
         if not cls.instance:
             cls.instance = cls(*args, **kwargs)
         return cls.instance
-    
-    def __init__(self, log_file):
+
+    def init(self, log_file):
         self.log_file = log_file
+
+        log_dir = os.path.dirname(log_file)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
         self.logger = logging.getLogger(log_file)
         self.logger.setLevel(logging.DEBUG)
-        
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
-        file_handler.setLevel(logging.DEBUG)
-        
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        file_handler.setFormatter(formatter)
-        
-        self.logger.addHandler(file_handler)
+
+        if not self.logger.handlers:
+            file_handler = logging.FileHandler(log_file, encoding='utf-8')
+            file_handler.setLevel(logging.DEBUG)
+
+            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
     
     def add_debug(self, mes):
         self.logger.debug(mes)
