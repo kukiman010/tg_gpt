@@ -7,6 +7,9 @@ import os
 import re
 import datetime
 
+from configure      import Settings
+_setting = Settings()
+
 import Gpt_models.yandexgpt
 # import Gpt_models.sbergpt
 import Gpt_models.metagpt
@@ -18,7 +21,6 @@ import Control.context_model
 
 from logger         import LoggerSingleton
 from openai         import OpenAIError
-from configure      import Settings
 from databaseapi    import dbApi
 from telebot        import types
 from translator     import Locale
@@ -26,7 +28,7 @@ from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
 from data_models    import languages_api
 from payments.payment_manager import PaymentManager
-from threading import Thread
+from threading import Thread, Lock
 
 
 from blinker            import signal
@@ -36,10 +38,11 @@ from Control.user       import User
 from Control.user_media import UserMedia
 from Control.environment import Environment
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 
 import signals
 
-_setting = Settings()
+
 sys.stdout.reconfigure(encoding='utf-8')
 _logger = LoggerSingleton.new_instance('logs/log_gpt.log')
 locale = Locale('locale/LC_MESSAGES/')
@@ -48,6 +51,8 @@ post_signal = signal('post_media')
 # post_signal_payment = signal('finish_payment')
 _converterFile = FileConverter()
 _env = Environment()
+_scheduler = None
+_scheduler_lock = Lock()
 
 _db = dbApi(
     dbname =    _setting.get_db_dbname(),
@@ -234,7 +239,33 @@ def update_environment (message):
         send_text(chatId, answer, reply_markup=markup)
     else:
         send_text(chatId, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
-        
+
+
+@bot.message_handler(commands=['update_lang_models_pay'])
+def update_data (message):
+    user = user_verification(message)
+    chatId = message.chat.id
+    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
+        bot.send_message(chatId, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
+        return
+
+    _logger.add_info("Запущено обновление переменных _payMan, _assistent_api, _languages_api, _scheduler")
+
+    # update list pay system
+    _payMan.update(_db.get_payment_systems())
+    # update list model list
+    _assistent_api.clear()
+    _assistent_api.load_models( _db.get_assistant_ai() )
+    # update list languages
+    _languages_api.clear()
+    _languages_api.load_models( _db.get_languages() )
+    # update timer check subscrube
+    update_scheduler_time()
+
+    send_text(chatId, locale.find_translation(user.get_language(), 'TR_UPDATE_DATA'))
+
+    
+
 
 @bot.message_handler(commands=['help'])
 def help(message):
@@ -454,8 +485,6 @@ def handle_callback_query(call):
         else:
             send_text(chat_id, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'), id_message_for_edit=message_id)
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
-            
-        # bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=None)
 
     elif key == "no_update_env":
         send_text(chat_id, locale.find_translation(user.get_language(), 'TR_TR_CHANGES_NOT_APPLICED'), id_message_for_edit=message_id)
@@ -1062,9 +1091,9 @@ def on_post_media(sender, userId, mediaList):
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
 
-        send_text(chatId, content.get_result(), reply_markup=markup)
+        send_text(chatId, content.get_result(), reply_markup=markup, isMarkdown=True)
     else:    
-        send_text(chatId, content.get_result())
+        send_text(chatId, content.get_result(), isMarkdown=True)
 
 
 def on_finish_payment(sender, userId, data):
@@ -1117,7 +1146,7 @@ def main_menu(user, charId, id_message = None):
 def action_handler(chatId, user, action, text):
     if action == 'wait_new_prompt':
         _db.update_user_action(user.get_userId(), '')
-        _db.update_user_prompt(user.get_userId(), text)
+        _db.update_user_prompt(user.get_userId(),  text.replace("'", ' '))
 
         t_mes = locale.find_translation(user.get_language(), 'TR_PROMT_APPLY')
         markup = types.InlineKeyboardMarkup()
@@ -1176,7 +1205,6 @@ def subscription_verification():
 
             user = user_verification_easy(userId)
 
-            # _db.add_invoice_journal(userId, userSub.last_label, userSub.last_label, userSub.tarif, 'subscription ended', 0, 'none', None, 'Подписка истекла', datetime.datetime.now(), False)
             _db.update_invoice_journal(userSub.last_label, userSub.last_label, 'subscription ended', None , None, 0, datetime.datetime.now())
             _db.remove_subscription_ended(userSub.last_label)
             _db.update_status_in_users(userId, 1)
@@ -1187,15 +1215,33 @@ def subscription_verification():
         else:
             continue
 
-def run_scheduler():
-    scheduler = BlockingScheduler(timezone="Europe/Moscow")
-    scheduler.add_job(subscription_verification, 'cron', hour=13, minute=0)
-    scheduler.start()
+
+def start_or_restart_scheduler(hour: int, minute: int):
+    global _scheduler
+    with _scheduler_lock:
+        # Остановить старый планировщик, если есть
+        if _scheduler:
+            _scheduler.remove_all_jobs()
+            _scheduler.shutdown(wait=False)
+        
+        _scheduler = BackgroundScheduler(timezone="Europe/Moscow")
+        _scheduler.add_job(subscription_verification, 'cron', hour=hour, minute=minute)
+        _scheduler.start()
+
+def update_scheduler_time():
+    data_dict = _db.get_environment()
+    time_str = data_dict.get("check_premium")
+    if time_str == None:
+        time_str = _env.get_check_premium()  
+        
+    hour, minute = map(int, time_str.split(':'))
+    start_or_restart_scheduler(hour, minute)
+
 
 
 try:
     subscription_verification()
-    Thread(target=run_scheduler, daemon=True).start()
+    update_scheduler_time() 
 
     post_signal.connect(on_post_media, sender='MediaWorker')
     signals.finish_payment.connect(on_finish_payment, sender='PaymentManager')

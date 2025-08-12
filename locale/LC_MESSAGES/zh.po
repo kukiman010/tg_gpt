@@ -174,7 +174,7 @@ msgid "TR_GET_HELP"
 msgstr "关于软件：\n使用GPT生成响应。默认使用gpt-3.5-turbo模型。\n语音消息的识别和生成是通过Yandex SpeechKit v1进行的（我们将来会切换到v3）。\n\n命令：\n/dropcontext - 删除整个对话上下文。"
 
 msgid "TR_GET_HELP_ADMIN"
-msgstr "\n\n仅限管理员使用！请小心使用命令\n/notify_all <文本> - 此命令将向所有聊天发送您的文本，请小心\n/update_env - 此命令更新机器人的变量\n这里会有更多命令..."
+msgstr "\n\n仅管理员可用！请谨慎使用这些命令。\n/notify_all <内容> - 此命令会将你的内容发送到所有聊天，请小心使用。\n/update_env - 此命令会更新机器人的变量。\n/update_lang_models_pay payments - 将从数据库中更新语言、模型、支付系统和订阅检查定时器等数据。\n这里将会有更多命令 ..."
 
 msgid "TR_MESSAGE_SUPPORT"
 msgstr "如果您遇到任何问题，请在此处写信 @assistant_gpts_help"
@@ -244,6 +244,9 @@ msgstr "很抱歉，您的订阅已过期。您可以在 /premium 部分续订�
 
 msgid "TR_DUBLICATE_PAY"
 msgstr "很抱歉，您无法通过此链接再次付款。"
+
+msgid "TR_UPDATE_DATA"
+msgstr "语言、模型、支付系统以及订阅检查定时器的数据将从数据库获取！"
 
 msgid "TR_"
 msgstr ""

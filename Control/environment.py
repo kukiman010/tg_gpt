@@ -19,6 +19,7 @@ class Environment():
         self._global_payment = ''
         self._support_chat = ''
         self._payments_tariff = ''
+        self._check_premium = ''
 
     def is_valid(self) -> bool:
         if self._sum_max_file_size and self._count_char_for_gen_audio and self._language:
@@ -46,6 +47,7 @@ class Environment():
         self._global_payment =              data_dict.get("global_payment", self._global_payment)
         self._support_chat =                data_dict.get('support_chat', self._support_chat)
         self._payments_tariff =             data_dict.get('payments_tariff', self._payments_tariff)
+        self._check_premium =               data_dict.get('check_premium', self._check_premium)
         
         return self.is_valid()
     
@@ -110,5 +112,8 @@ class Environment():
         
     def get_payments_tariff(self) -> str:
         return self._payments_tariff
+    
+    def get_check_premium(self) -> str:
+        return self._check_premium
     
     

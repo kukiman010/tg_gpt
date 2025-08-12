@@ -174,7 +174,7 @@ msgid "TR_GET_HELP"
 msgstr "Acerca del software:\nLas respuestas se generan usando GPT. Por defecto, se utiliza el modelo gpt-3.5-turbo.\nEl reconocimiento y generación de mensajes de voz se realizan utilizando Yandex SpeechKit v1 (después cambiaremos a v3).\n\nComandos:\n/dropcontext - elimina todo el contexto de conversación."
 
 msgid "TR_GET_HELP_ADMIN"
-msgstr "\n\n¡Disponible solo para el administrador! Ten cuidado con los comandos\n/notify_all <texto> - Este comando enviará tu texto a todos los chats, por favor, ten cuidado\n/update_env - Este comando actualiza las variables del bot\nHabrá más comandos aquí ..."
+msgstr "\n\n¡Disponible solo para administradores! Ten cuidado con estos comandos.\n/notify_all <texto> - Este comando enviará tu texto a todos los chats, por favor, úsalo con precaución.\n/update_env - Este comando actualiza las variables del bot.\n/update_lang_models_pay payments - Actualiza los datos de idiomas, modelos, sistemas de pago y el temporizador de verificación de suscripción desde la base de datos.\nPronto habrá más comandos ..."
 
 msgid "TR_MESSAGE_SUPPORT"
 msgstr "Si encuentras algún problema, escribe aquí @assistant_gpts_help"
@@ -244,6 +244,9 @@ msgstr "Desafortunadamente, su suscripción ha expirado. Puede renovarla en la s
 
 msgid "TR_DUBLICATE_PAY"
 msgstr "Desafortunadamente, no se puede pagar de nuevo usando este enlace."
+
+msgid "TR_UPDATE_DATA"
+msgstr "¡Los datos de idiomas, modelos, sistemas de pago y el temporizador de verificación de suscripción se recuperarán de la base de datos!"
 
 msgid "TR_"
 msgstr ""

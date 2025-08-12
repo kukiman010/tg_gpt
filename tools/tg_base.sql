@@ -584,5 +584,6 @@ Ill answer as the world-famous <specific field> scientists with <most prestigiou
 insert into default_data values ('global_payment',                  'True');
 insert into default_data values ('support_chat',                    '@assistant_gpts_help');
 insert into default_data values ('payments_tariff',                 'https://t.me/assistant_gpts/2');
+insert into default_data values ('check_premium',                   '13:00');
 
 -- insert into default_data values ('',     '');
