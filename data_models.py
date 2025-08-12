@@ -36,13 +36,21 @@ class assistent_model:
 
 class assistent_api:
     def __init__(self, a_model):
+        self._init_models(a_model)
+        
+    def _init_models(self, a_model):
         self.model = a_model
         self.button_name = []
         self.text_to_button = {}
 
         for i in range(len(self.model)):
-            self.button_name.append( "set_model_" + str(i) )
-            self.text_to_button[i] = str( self.model[i].get_company_ai() + ":\n" + self.model[i].get_description())
+            self.button_name.append("set_model_" + str(i))
+            self.text_to_button[i] = str(
+                self.model[i].get_company_ai() + ":\n" + self.model[i].get_description()
+            )
+    
+    def load_models(self, new_models):
+        self._init_models(new_models)
 
     def find_button(self, key):
         if self.button_name[key] != None:
@@ -90,6 +98,12 @@ class assistent_api:
                 return self.model[i].get_description()
             
         return ""
+    
+    def clear(self):
+        self.model = []
+        self.button_name = []
+        self.text_to_button = {}
+
 
 
 
@@ -151,13 +165,19 @@ class languages_model:
 
 class languages_api:
     def __init__(self, a_model):
+        self._init_models(a_model)
+    
+    def _init_models(self, a_model):
         self.model = a_model
         self.button_name = []
         self.text_to_button = {}
 
         for i in range(len(self.model)):
-            self.button_name.append( "set_lang_model_" + str(i) )
-            self.text_to_button[i] = str( self.model[i].get_language() )
+            self.button_name.append("set_lang_model_" + str(i))
+            self.text_to_button[i] = str(self.model[i].get_language())
+    
+    def load_models(self, new_models):
+        self._init_models(new_models)
 
     def find_button(self, key):
         if self.button_name[key] != None:
@@ -196,6 +216,11 @@ class languages_api:
     #         if self.model[i].get_model_name() == model:
     #             return self.model[i].get_token_size()
     #     return 0
+
+    def clear(self):
+        self.model = []
+        self.button_name = []
+        self.text_to_button = {}
 
 
 

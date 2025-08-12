@@ -16,7 +16,7 @@ class LoggerSingleton(object):
             cls.instance = cls(*args, **kwargs)
         return cls.instance
 
-    def init(self, log_file):
+    def __init__(self, log_file):
         self.log_file = log_file
 
         log_dir = os.path.dirname(log_file)
