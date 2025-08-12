@@ -1062,9 +1062,9 @@ def on_post_media(sender, userId, mediaList):
         markup = types.InlineKeyboardMarkup()
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
 
-        send_text(chatId, content.get_result(), reply_markup=markup)
+        send_text(chatId, content.get_result(), reply_markup=markup, isMarkdown=True)
     else:    
-        send_text(chatId, content.get_result())
+        send_text(chatId, content.get_result(), isMarkdown=True)
 
 
 def on_finish_payment(sender, userId, data):
@@ -1117,7 +1117,7 @@ def main_menu(user, charId, id_message = None):
 def action_handler(chatId, user, action, text):
     if action == 'wait_new_prompt':
         _db.update_user_action(user.get_userId(), '')
-        _db.update_user_prompt(user.get_userId(), text)
+        _db.update_user_prompt(user.get_userId(),  text.replace("'", ' '))
 
         t_mes = locale.find_translation(user.get_language(), 'TR_PROMT_APPLY')
         markup = types.InlineKeyboardMarkup()
@@ -1176,7 +1176,6 @@ def subscription_verification():
 
             user = user_verification_easy(userId)
 
-            # _db.add_invoice_journal(userId, userSub.last_label, userSub.last_label, userSub.tarif, 'subscription ended', 0, 'none', None, 'Подписка истекла', datetime.datetime.now(), False)
             _db.update_invoice_journal(userSub.last_label, userSub.last_label, 'subscription ended', None , None, 0, datetime.datetime.now())
             _db.remove_subscription_ended(userSub.last_label)
             _db.update_status_in_users(userId, 1)
