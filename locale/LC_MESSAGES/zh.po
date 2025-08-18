@@ -248,5 +248,20 @@ msgstr "很抱歉，您无法通过此链接再次付款。"
 msgid "TR_UPDATE_DATA"
 msgstr "语言、模型、支付系统以及订阅检查定时器的数据将从数据库获取！"
 
+msgid "TR_TARIF_ONE_DESCRIPTION"
+msgstr "Ultimate套餐可访问所有功能。请选择支付方式："
+
+msgid "TR_TARIFFS_MENU"
+msgstr "可用的套餐有：\n{}\n\n请选择一个套餐进行支付。"
+
+msgid "TR_TARIF_PATERN"
+msgstr "{} 包含：\n {}\n 价格为 {} / {}"
+
+msgid "TR_TARIF_PATERN_EMPTY"
+msgstr "{} 价格为：\n {} / {}"
+
+msgid "TR_TARIF_ALL"
+msgstr "所有模型"
+
 msgid "TR_"
 msgstr ""

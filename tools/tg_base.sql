@@ -164,6 +164,16 @@ CREATE TABLE subscription_users (
     id                  SERIAL PRIMARY KEY
 );
 
+CREATE TABLE tariffs(
+    tariff_id           INT UNIQUE NOT NULL,
+    tariff_name         TEXT,
+    price_usd           FLOAT,
+    price_rub           FLOAT NOT NULL,
+    price_stars         FLOAT,
+    description_code    TEXT,
+    rules_json          jsonb,
+    isView              BOOLEAN DEFAULT TRUE
+);
 
 
 -- CREATE TABLE user_statistic (
@@ -587,3 +597,7 @@ insert into default_data values ('payments_tariff',                 'https://t.m
 insert into default_data values ('check_premium',                   '13:00');
 
 -- insert into default_data values ('',     '');
+
+
+insert into tariffs values (1, 'Ultimate', 12, 990, 599,  'TR_TARIF_ONE_DESCRIPTION', '{  "voice_acting": "all",  "gpt_models": "all",  "photo_generation": "all",  "photo_recognition": "all"}', TRUE);
+

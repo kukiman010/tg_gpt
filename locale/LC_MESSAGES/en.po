@@ -248,5 +248,20 @@ msgstr "Unfortunately, you cannot pay again using this link."
 msgid "TR_UPDATE_DATA"
 msgstr "Languages, models, payment systems, and subscription check timer data will be fetched from the database!"
 
+msgid "TR_TARIF_ONE_DESCRIPTION"
+msgstr "The Ultimate plan provides access to all features. Please choose a payment method:"
+
+msgid "TR_TARIFFS_MENU"
+msgstr "The following plans are available:\n{}\n\nSelect a plan to pay."
+
+msgid "TR_TARIF_PATERN"
+msgstr "{} includes:\n {}\n for {} / {}"
+
+msgid "TR_TARIF_PATERN_EMPTY"
+msgstr "{} for:\n {} / {}"
+
+msgid "TR_TARIF_ALL"
+msgstr "All models"
+
 msgid "TR_"
 msgstr ""

@@ -248,5 +248,20 @@ msgstr "Malheureusement, il n'est pas possible de payer à nouveau avec ce lien.
 msgid "TR_UPDATE_DATA"
 msgstr "Les données des langues, modèles, systèmes de paiement et du minuteur de vérification d’abonnement seront récupérées depuis la base de données !"
 
+msgid "TR_TARIF_ONE_DESCRIPTION"
+msgstr "Le forfait Ultimate donne accès à toutes les fonctionnalités. Veuillez choisir un mode de paiement :"
+
+msgid "TR_TARIFFS_MENU"
+msgstr "Les forfaits suivants sont disponibles :\n{}\n\nSélectionnez un forfait pour le paiement."
+
+msgid "TR_TARIF_PATERN"
+msgstr "{} comprend :\n {}\n pour {} / {}"
+
+msgid "TR_TARIF_PATERN_EMPTY"
+msgstr "{} pour :\n {} / {}"
+
+msgid "TR_TARIF_ALL"
+msgstr "Tous les modèles"
+
 msgid "TR_"
 msgstr ""

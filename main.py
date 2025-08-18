@@ -27,8 +27,9 @@ from translator     import Locale
 from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
 from data_models    import languages_api
+from data_models    import tariffs_api
 from payments.payment_manager import PaymentManager
-from threading import Thread, Lock
+from threading      import Lock
 
 
 from blinker            import signal
@@ -37,7 +38,6 @@ from file_worker        import FileConverter
 from Control.user       import User
 from Control.user_media import UserMedia
 from Control.environment import Environment
-from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
 import signals
@@ -128,6 +128,7 @@ _speak = speech.speaker()
 _speak.start_key_generation()
 _assistent_api = assistent_api( _db.get_assistant_ai() )
 _languages_api = languages_api( _db.get_languages() )
+_tariffs_api =   tariffs_api(_db.get_tariffs())
 
 try:
     bot = telebot.TeleBot( TOKEN_TG )
@@ -259,6 +260,9 @@ def update_data (message):
     # update list languages
     _languages_api.clear()
     _languages_api.load_models( _db.get_languages() )
+    # update list tariffs
+    _tariffs_api.clear()
+    _tariffs_api.load_models( _db.get_tariffs() )
     # update timer check subscrube
     update_scheduler_time()
 
@@ -450,6 +454,10 @@ def handle_callback_query(call):
     payments_pattern = r'^set_payments_(\S+)$'
     payments_match = re.match(payments_pattern, key)
 
+
+    tariff_pattern = r'^set_tariff_model_(\d+)$'
+    tariff_match = re.match(tariff_pattern, key)
+
     # check_pay_pattern = r'^check_pay_(\S+)$'
     # check_pay_match = re.match(check_pay_pattern, key)
 
@@ -558,7 +566,76 @@ def handle_callback_query(call):
         send_text(chat_id, text, reply_markup=markup, id_message_for_edit=message_id)
 
     elif key == 'menu_premium':
-        premium_button(user, True, message_id)
+        # premium_button(user, True, message_id)
+
+        code_lang = user.get_language()
+        tarifs = _db.get_tariffs()
+        rub_countries = {
+            'RU',  # Россия
+            'UZ',  # Узбекистан
+            'TJ',  # Таджикистан
+            'KG',  # Кыргызстан
+            'AM',  # Армения
+            'AZ',  # Азербайджан
+            'KZ',  # Казахстан
+            'UA',  # Украина
+            'BY',  # Беларусь
+            'MD',  # Молдова
+        }
+
+        main_currency = ''
+        if code_lang.upper() in rub_countries:
+            main_currency = 'RUB'
+        else:
+            main_currency = 'USD'
+        
+        text_tarifs = ''
+
+        t_all = locale.find_translation(user.get_language(), 'TR_TARIF_ALL')
+        for node in tarifs:
+            if node.tariff_name != None:
+                
+                if node.price_rub <= 0 and node.price_usd <= 0 and node.price_stars <= 0:
+                    continue
+                
+                config_tarif = ''
+
+                for key, value in node.rules_json.items():
+                    if value == "all":
+                        config_tarif += key + ': ' + t_all + '\n'
+                    elif isinstance(value, list):
+                        config_tarif += key + ': ' + value + '\n'
+
+
+                if node.price_usd  <= 0:
+                    node.price_usd = _payMan.convector.custom_round(node.price_rub / _payMan.convector.usd_to_rub(1))
+
+                if node.price_stars <= 0:
+                    node.price_stars = _payMan.convector.custom_round( _payMan.convector.usd_to_tgStars(node.price_usd) )
+
+
+                main_price = ''
+                if main_currency == 'RUB':
+                    main_price = str(node.price_rub) + '₽'
+                else:
+                    main_price = str(node.price_usd) + '$'
+
+                if config_tarif:
+                    text_tarifs += locale.find_translation(user.get_language(), 'TR_TARIF_PATERN').format(node.tariff_name, config_tarif, main_price, str(node.price_stars) + '⭐️') + '\n'
+                else:
+                    text_tarifs += locale.find_translation(user.get_language(), 'TR_TARIF_PATERN_EMPTY').format(node.tariff_name, main_price, str(node.price_stars) + '⭐️') + '\n'
+
+            
+
+        buttons = _tariffs_api.available_by_status()
+        markup = types.InlineKeyboardMarkup()
+        for key, value in buttons.items():
+            markup.add(types.InlineKeyboardButton(value, callback_data=key))
+
+        t_mes = locale.find_translation(user.get_language(), 'TR_TARIFFS_MENU').format(text_tarifs)
+
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
+        send_text(user.get_userId(), t_mes, reply_markup=markup, id_message_for_edit=message_id)
 
     elif key == 'menu_support':
         bot.answer_callback_query(call.id, text = '')
@@ -701,6 +778,20 @@ def handle_callback_query(call):
                 markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
                 
                 send_text(chat_id, description, markup, message_id)
+
+
+    elif tariff_match:
+        code_tariff = _tariffs_api.find_bottom( int(tariff_match.group(1)) )
+
+        tariffs = _db.get_tariffs()
+
+        for node in tariffs:
+            if node.tariff_id == code_tariff:
+                premium_button(user, True, node.description_code, message_id)
+                # return
+
+
+        # print()
 
 
     else:
@@ -1171,19 +1262,19 @@ def command_help(user):
     return text
 
 
-def premium_button(user: User, callFromMenu: bool, id_message_for_edit : int = 0):
+def premium_button(user: User, callFromMenu: bool, tarif_description = 'TR_TARIFF_ONCE', id_message_for_edit : int = 0):
     buttons = _payMan.get_buttons()
     markup = types.InlineKeyboardMarkup()
 
     if len(buttons) > 0:
-        text = locale.find_translation(user.get_language(), 'TR_TARIFF_ONCE').format(_env.get_payments_tariff())
+        text = locale.find_translation(user.get_language(), tarif_description).format(_env.get_payments_tariff())
 
         for key, value in buttons.items():
             button = types.InlineKeyboardButton(value, callback_data=key)
             markup.add(button)
 
         if callFromMenu:
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), callback_data='menu_premium') )
             send_text(user.get_userId(), text, reply_markup=markup, id_message_for_edit=id_message_for_edit)
         else:
             send_text(user.get_userId(), text, reply_markup=markup)

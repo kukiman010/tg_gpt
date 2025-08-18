@@ -2,6 +2,7 @@ from database import Database
 from data_models import assistent_model
 from data_models import languages_model
 from data_models import payments_model
+from data_models import tariffs_model
 from Control.user import User
 from typing import List
 from Control.subscription_data import SubscriptionData
@@ -260,6 +261,22 @@ class dbApi:
                 return False
             
         return False
+    
+    def get_tariffs(self) -> List[tariffs_model]:
+        query = "SELECT * FROM tariffs;"
+        data = self.db.execute_query(query)
+        array = []
+
+        for i in data:
+            tm = tariffs_model()
+            tm.set_model(i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7])
+
+            array.append(tm)
+
+        return array
+
+
+
 
     def __del__(self):
         self.db.close_pool()
