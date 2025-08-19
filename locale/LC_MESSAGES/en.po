@@ -228,7 +228,7 @@ msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
 msgstr "Payments are not being accepted at this time."
 
 msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
-msgstr "Subscribe for 1 month!"
+msgstr "Subscription for {} days!"
 
 msgid "TR_PAY"
 msgstr "Pay {}{}"
@@ -247,6 +247,27 @@ msgstr "Unfortunately, you cannot pay again using this link."
 
 msgid "TR_UPDATE_DATA"
 msgstr "Languages, models, payment systems, and subscription check timer data will be fetched from the database!"
+
+msgid "TR_TARIF_ONE_DESCRIPTION"
+msgstr "The Ultimate plan provides access to all features. Please choose a payment method:"
+
+msgid "TR_TARIFFS_MENU"
+msgstr "The following tariffs are available: \n{}\n\nPlease select a tariff for payment."
+
+msgid "TR_TARIF_PATERN"
+msgstr "{} includes:\n{}\nfor {} / {} for {} days"
+
+msgid "TR_TARIF_PATERN_EMPTY"
+msgstr "{} for:\n{} / {} for {} days"
+
+msgid "TR_TARIF_ALL"
+msgstr "All models"
+
+msgid "TR_TARRIF_DONT_LOAD"
+msgstr "Unfortunately, the tariffs did not load. Please try again later or contact {}"
+
+msgid "TR_SUBSCRIPTION_RENEWAL"
+msgstr "You already have this subscription. It is valid for another {} days.\nIf you want to renew it in advance, please select a payment method:"
 
 msgid "TR_"
 msgstr ""

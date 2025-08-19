@@ -60,18 +60,22 @@ class PaymentManager:
 
 
 
-    def create_invoice(self, payment_system, price_in_usd, userId, description: str)-> SubscriptionPaymentInfo:
+    def create_invoice(self, payment_system, price, curency_code, userId, description: str)-> SubscriptionPaymentInfo:
+        if  curency_code != 'USD' and curency_code != 'RUB':
+            self._logger.add_critical('{} Передан неверный валютный код: {}!'.format(str(self.__class__.__name__), curency_code))
+            return None
+
         if not self.global_enabled :
             self._logger.add_error("{}. В данный момент оплата отключена".format(str(self.__class__.__name__)))
             return None
 
         for payment in self.payment_systems:
             if isinstance(payment, Yookassa) and payment.payment_system_name == payment_system:
-                price = self.convector.usd_to_rub(price_in_usd)
-                price = self.convector.custom_round(price)
+                # price = self.convector.usd_to_rub(price_in_usd)
+                # price = self.convector.custom_round(price)
 
                 payment: Yookassa  # type: ignore
-                pay_info = payment.createInvoice(userId, price, 'RUB',description)
+                pay_info = payment.createInvoice(userId, price, curency_code,description)
                 # datetime.time
                 pay_info.diedTime = datetime.now() + timedelta(minutes=30)
                 self._logger.add_info('{}. Создание платежа {} для пользователя {}, payment_id= {}'.format(str(self.__class__.__name__), payment_system, userId, pay_info.payment_id))

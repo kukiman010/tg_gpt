@@ -135,7 +135,6 @@ https://lmarena.ai/
 https://openlm.ai/chatbot-arena/
 https://huggingface.co/spaces/lmarena-ai/chatbot-arena-leaderboard
 - [ ] Добавить в настройки отключение возможность отключения markdown стиля для сообщений
-- [ ] добавить систему тарифов
 - [ ] добавить систему промокодом
 - [ ] узнать, могут ли модели присылать фото по обычному запросу
 - [ ] 

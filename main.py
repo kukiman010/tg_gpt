@@ -27,8 +27,9 @@ from translator     import Locale
 from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
 from data_models    import languages_api
+from data_models    import tariffs_api
 from payments.payment_manager import PaymentManager
-from threading import Thread, Lock
+from threading      import Lock
 
 
 from blinker            import signal
@@ -37,7 +38,6 @@ from file_worker        import FileConverter
 from Control.user       import User
 from Control.user_media import UserMedia
 from Control.environment import Environment
-from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
 import signals
@@ -128,6 +128,7 @@ _speak = speech.speaker()
 _speak.start_key_generation()
 _assistent_api = assistent_api( _db.get_assistant_ai() )
 _languages_api = languages_api( _db.get_languages() )
+_tariffs_api =   tariffs_api(_db.get_tariffs())
 
 try:
     bot = telebot.TeleBot( TOKEN_TG )
@@ -163,12 +164,14 @@ def send_welcome(message):
     bot.reply_to(message, t_mes.format(username) )
     
 
+
 @bot.message_handler(commands=['dropcontext'])
 def drop_context(message):
     user = user_verification(message)
     _db.delete_user_context(message.from_user.id, message.chat.id)
     t_mes = locale.find_translation(user.get_language(), 'TR_CLEAR_CONTEXT')
     bot.send_message(message.chat.id, t_mes )
+
 
 
 @bot.message_handler(commands=['lastlog'])
@@ -200,6 +203,7 @@ def lastlog(message):
         bot.send_message(message.chat.id, t_mes)
 
 
+
 @bot.message_handler(commands=['notify_all'])
 def notify_all(message):
     user = user_verification(message)
@@ -218,6 +222,7 @@ def notify_all(message):
             for k in j:  # итерация по вложенному списку
                 # print (k, result)
                 bot.send_message(k, result)
+
 
 
 @bot.message_handler(commands=['update_env'])
@@ -241,6 +246,7 @@ def update_environment (message):
         send_text(chatId, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
 
 
+
 @bot.message_handler(commands=['update_lang_models_pay'])
 def update_data (message):
     user = user_verification(message)
@@ -259,6 +265,9 @@ def update_data (message):
     # update list languages
     _languages_api.clear()
     _languages_api.load_models( _db.get_languages() )
+    # update list tariffs
+    _tariffs_api.clear()
+    _tariffs_api.load_models( _db.get_tariffs() )
     # update timer check subscrube
     update_scheduler_time()
 
@@ -274,17 +283,15 @@ def help(message):
     send_text(message.chat.id, text)
 
 
+
 @bot.message_handler(commands=['premium'])
 def premium(message):
     user = user_verification(message)
-    # send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC'))
-
-    if user.get_status() == 0: 
-        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'))
-        return
+    if not user.is_valid():
+        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR'))
+        return 
     
-    premium_button(user, False)
-
+    premium_button(user)
         
 
 
@@ -293,6 +300,7 @@ def settings(message):
     user = user_verification(message)
     main_menu(user, message.chat.id)
     
+
 
 @bot.message_handler(commands=['assistantmode'])
 def help(message):
@@ -313,6 +321,7 @@ def help(message):
 
     text = locale.find_translation(user.get_language(), 'TR_DESCRIPTION_MODELS').format(descrption_model, user.get_companyAi())
     send_text(message.chat.id, text, reply_markup=markup)
+
 
 
 @bot.message_handler(content_types=['voice'])
@@ -369,7 +378,7 @@ def handle_user_message(message):
     _mediaWorker.add_data(media)
 
 
-# Обработчик проверки платежа
+
 @bot.pre_checkout_query_handler(func=lambda query: True)
 def handle_pre_checkout_query(pre_checkout_query):
     label = pre_checkout_query.invoice_payload
@@ -412,16 +421,31 @@ def handle_successful_payment(message):
     tarif = _db.get_tarif_by_paylabel(label)
     fee = 0 # коммисия
 
-
     userId = user.get_userId()
 
-    hours_tarif = 720 # 720h == 30 days
-    _db.update_invoice_journal(payment_id, label, 'succeeded', 'stars', None, fee, datetime.datetime.now())
-    # нужно продумать тарифы, но в данный момент tarrif_id=1 - тариф который открывает доступ ко всему
-    _db.add_successful_payments(userId, label, tarif, float(amount - fee), currency, 'TelegramStarsPay', 'stars', '', datetime.datetime.now() )
-    _db.upsert_subscription_user(userId, user.get_login(), tarif, '', hours_tarif, label)
+    tariffs_data = None
+    tarifs_data = _db.get_tariffs(tarif)
+    for node in tarifs_data:
+        if node.tariff_id == int(tarif):
+            tariffs_data = node
 
-    if tarif == 1:
+    if tariffs_data == None:
+        send_text(userId, locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat() )) )
+
+    
+    hours_tarif = 720 # 720h == 30 days
+    hours_tarif = tariffs_data.activity_day * 24
+    have_sub = _db.its_have_this_subscribe(user.get_userId(), tarif, datetime.datetime.now())
+
+
+    _db.update_invoice_journal(payment_id, label, 'succeeded', 'stars', None, fee, datetime.datetime.now())
+    _db.add_successful_payments(userId, label, tarif, float(amount - fee), currency, 'TelegramStarsPay', 'stars', '', datetime.datetime.now() )
+    if have_sub:
+        _db.update_subscribe_date(user.get_userId(), tarif, hours_tarif, label)
+    else:
+        _db.upsert_subscription_user(userId, user.get_login(), tarif, '', hours_tarif , label)
+
+    if int(tarif == 1):
         user = user_verification_easy(userId)
 
         user.get_language()
@@ -447,11 +471,11 @@ def handle_callback_query(call):
     language_pattern = r'^set_lang_model_(\d+)$'
     language_match = re.match(language_pattern, key)
 
-    payments_pattern = r'^set_payments_(\S+)$'
+    payments_pattern = r'^set_payments_(\S+)_(\d+)$'
     payments_match = re.match(payments_pattern, key)
 
-    # check_pay_pattern = r'^check_pay_(\S+)$'
-    # check_pay_match = re.match(check_pay_pattern, key)
+    tariff_pattern = r'^set_tariff_model_(\d+)$'
+    tariff_match = re.match(tariff_pattern, key)
 
     message_id = call.message.message_id
     chat_id = call.message.chat.id
@@ -558,7 +582,7 @@ def handle_callback_query(call):
         send_text(chat_id, text, reply_markup=markup, id_message_for_edit=message_id)
 
     elif key == 'menu_premium':
-        premium_button(user, True, message_id)
+        premium_button(user, message_id)
 
     elif key == 'menu_support':
         bot.answer_callback_query(call.id, text = '')
@@ -651,25 +675,36 @@ def handle_callback_query(call):
     elif payments_match:
         bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
         paymet_system = payments_match.group(1)
+        tarif_id = payments_match.group(2)
         
-        description = locale.find_translation(user.get_language(), 'TR_SUBSCRIBE_FOR_ONE_MOUNTH')
-        price_in_usd = 12 ###################################################################################### !!! ввести тарифы
-        tarif = 1         ###################################################################################### !!! пока по умолчанию, нужно ввести систему тарифов
         
+        
+        tariffs_data = None
+        tarifs_data = _db.get_tariffs(tarif_id)
+        for node in tarifs_data:
+            if node.tariff_id == int(tarif_id):
+                tariffs_data = node
+
+        if tariffs_data == None:
+            markup = types.InlineKeyboardMarkup()
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), callback_data='menu_premium') )
+            send_text(chat_id, locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat())), markup, message_id)
+            return
+
+        description = locale.find_translation(user.get_language(), 'TR_SUBSCRIBE_FOR_ONE_MOUNTH').format(tariffs_data.activity_day)
 
         if paymet_system == 'TelegramStarsPay':
-            price = _payMan.convector.usd_to_tgStars(price_in_usd)
-            price = _payMan.convector.custom_round(price)
+            # price = _payMan.convector.usd_to_tgStars(price_in_usd)
+            # price = _payMan.convector.custom_round(price)
 
             label = _payMan.generate_payment_label(user.get_userId())
 
             markup = types.InlineKeyboardMarkup()
-            pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(price, ' stars')
+            pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(tariffs_data.price_stars, ' stars')
             markup.add( types.InlineKeyboardButton(pay_description,                                                     pay=True) )
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), pay=False,  callback_data='menu_premium') )
 
-            # price =1 
-            prices = [types.LabeledPrice(label="XTR", amount=price)]  
+            prices = [types.LabeledPrice(label="XTR", amount=int(tariffs_data.price_stars))]  
             bot.send_invoice(
                 chat_id,
                 title=description,
@@ -680,13 +715,16 @@ def handle_callback_query(call):
                 prices=prices,
                 reply_markup=markup
             )
+            bot.delete_message(chat_id, message_id)
 
-            _db.add_invoice_journal(user.get_userId(), label, label, tarif, 'pending', price, 'XTR', paymet_system, description, datetime.datetime.now(), False)
+            _db.add_invoice_journal(user.get_userId(), label, label, tarif_id, 'pending', tariffs_data.price_stars, 'XTR', paymet_system, description, datetime.datetime.now(), False)
             
 
         else:
-            pay_info = _payMan.create_invoice(paymet_system, price_in_usd, user.get_userId(), description)
-            pay_info.tarrif = tarif
+            # if user.get_language() == 'ru':
+            pay_info = _payMan.create_invoice(paymet_system, int(tariffs_data.price_rub), 'RUB', user.get_userId(), description)
+
+            pay_info.tarrif = tarif_id
             pay_info.user_name = user.get_login()
 
             if pay_info.status == 'pending':
@@ -701,6 +739,16 @@ def handle_callback_query(call):
                 markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
                 
                 send_text(chat_id, description, markup, message_id)
+
+    elif tariff_match:
+        code_tariff = _tariffs_api.find_bottom( int(tariff_match.group(1)) )
+
+        tariffs = _db.get_tariffs()
+
+        for node in tariffs:
+            if node.tariff_id == code_tariff:
+                pay_button(user, True, node.tariff_id, node.description_code, message_id)
+                break
 
 
     else:
@@ -746,6 +794,7 @@ def handle_docs(message):
 
         except Exception as e:
             bot.reply_to(message, f'Произошла ошибка при обработке файла: {e}')
+
 
 
 @bot.message_handler(content_types=['photo'])
@@ -822,8 +871,8 @@ def handle_message(message):
         t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_OPENAI')
         bot.reply_to(message, t_mes.format(err))
         _logger.add_critical("OpenAI: {}".format(err))
+ 
 
-    
 
 def user_verification(message) -> User:
     user = User()
@@ -842,6 +891,8 @@ def user_verification(message) -> User:
 
     return user
 
+
+
 def user_verification_custom(userId, chatId, chat_username, chatType, lang_code):
     user = User()
     if _db.find_user(userId) == False:
@@ -857,6 +908,8 @@ def user_verification_custom(userId, chatId, chat_username, chatType, lang_code)
         return None
 
     return user
+
+
 
 def user_verification_easy(userId) -> User:
     user = User()
@@ -939,6 +992,7 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
     return content
 
 
+
 def find_substring_occurrences(text, substring):
     if not substring or not text:
         # raise ValueError("Подстрока для поиска не должна быть пустой")
@@ -954,6 +1008,7 @@ def find_substring_occurrences(text, substring):
             start += len(substring)
 
     return indices[-1] if len(indices) % 2 != 0 else -1
+
 
 
 def fix_markdown_blocks(array):
@@ -983,8 +1038,12 @@ def fix_markdown_blocks(array):
             fix_block = block_bold
             array[i] += block_bold
 
+
+
 def replace_stars_with_backticks(text):
     return re.sub(r'\*\*(.*?)\*\*', r'`\1`', text)
+
+
 
 def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None, isMarkdown=False):
     max_message_length = 4050
@@ -1043,6 +1102,7 @@ def encode_image(image_path):
     return base64.b64encode(image_file.read()).decode('utf-8')
   
 
+
 def on_post_media(sender, userId, mediaList):
     message = ''
     textMes = ''
@@ -1096,17 +1156,35 @@ def on_post_media(sender, userId, mediaList):
         send_text(chatId, content.get_result(), isMarkdown=True)
 
 
+
 def on_finish_payment(sender, userId, data):
     if sender != 'PaymentManager':
         _logger.add_critical('Сигнал on_finish_payment инициализирован {}, а не PaymentManager'.format(sender))
         return
-    hours_tarif = 720 # 720h == 30 days
-    _db.update_invoice_journal(data.payment_id, data.label_pay, data.status, data.card_type, data.card_number, data.fee, data.expires_at)
-    # нужно продумать тарифы, но в данный момент tarrif_id=1 - тариф который открывает доступ ко всему
-    _db.add_successful_payments(data.user_id, data.payment_id, data.tarrif, float(data.amount - data.fee), data.currency, data.payment_system, data.card_type, data.email, data.expires_at )
-    _db.upsert_subscription_user(data.user_id, data.user_name, data.tarrif, data.email, hours_tarif, data.payment_id)
+    
+    tariffs_data = None
+    tarifs_data = _db.get_tariffs(data.tarrif)
+    for node in tarifs_data:
+        if node.tariff_id == int(data.tarrif):
+            tariffs_data = node
 
-    if data.tarrif == 1:
+    if tariffs_data == None:
+        send_text(userId, locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat() )) )
+
+    
+    hours_tarif = 720 # 720h == 30 days
+    hours_tarif = tariffs_data.activity_day * 24
+    have_sub = _db.its_have_this_subscribe(userId, data.tarrif, datetime.datetime.now())
+
+
+    _db.update_invoice_journal(data.payment_id, data.label_pay, data.status, data.card_type, data.card_number, data.fee, data.expires_at)
+    _db.add_successful_payments(data.user_id, data.payment_id, data.tarrif, float(data.amount - data.fee), data.currency, data.payment_system, data.card_type, data.email, data.expires_at )
+    if have_sub:
+        _db.update_subscribe_date(data.user_id, data.tarrif, hours_tarif, data.payment_id)
+    else:
+        _db.upsert_subscription_user(data.user_id, data.user_name, data.tarrif, data.email, hours_tarif, data.payment_id)
+
+    if int(data.tarrif) == 1:
         user = user_verification_easy(userId)
 
         user.get_language()
@@ -1143,6 +1221,7 @@ def main_menu(user, charId, id_message = None):
     send_text(charId, t_mes, reply_markup=markup, id_message_for_edit=id_message)
     
 
+
 def action_handler(chatId, user, action, text):
     if action == 'wait_new_prompt':
         _db.update_user_action(user.get_userId(), '')
@@ -1159,8 +1238,9 @@ def action_handler(chatId, user, action, text):
         _logger.add_critical('There is no processing of such a scenario: {}, the action will be reset'.format(action))
 
 
+
 def command_help(user):
-    if not user.is_active():
+    if not user.is_valid():
         return locale.find_translation(user.get_language(), 'TR_ERROR')
 
     text = locale.find_translation(user.get_language(), 'TR_GET_HELP')
@@ -1171,25 +1251,115 @@ def command_help(user):
     return text
 
 
-def premium_button(user: User, callFromMenu: bool, id_message_for_edit : int = 0):
+
+def pay_button(user: User, callFromMenu: bool, tarif_id: str, tarif_description = 'TR_TARIFF_ONCE', id_message_for_edit : int = 0):
     buttons = _payMan.get_buttons()
     markup = types.InlineKeyboardMarkup()
 
+    have_sub, hours = _db.its_have_this_subscribe(user.get_userId(), tarif_id, datetime.datetime.now())
+
     if len(buttons) > 0:
-        text = locale.find_translation(user.get_language(), 'TR_TARIFF_ONCE').format(_env.get_payments_tariff())
+        if have_sub:
+            text = locale.find_translation(user.get_language(), 'TR_SUBSCRIPTION_RENEWAL').format(round(hours / 24, 1))
+        else:
+            text = locale.find_translation(user.get_language(), tarif_description)
 
         for key, value in buttons.items():
-            button = types.InlineKeyboardButton(value, callback_data=key)
+            button = types.InlineKeyboardButton(value, callback_data=key + '_' + str(tarif_id))
             markup.add(button)
 
         if callFromMenu:
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), callback_data='menu_premium') )
             send_text(user.get_userId(), text, reply_markup=markup, id_message_for_edit=id_message_for_edit)
         else:
             send_text(user.get_userId(), text, reply_markup=markup)
         
     else:
         send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_SYSTEM_EMPTY') )
+
+
+
+def premium_button(user: User, id_message_for_edit : int = 0):
+    if user.get_status() == 0: 
+        if id_message_for_edit != 0:
+            markup = types.InlineKeyboardMarkup()
+            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
+            send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'), reply_markup=markup)
+        else:
+            send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'))
+        return
+
+    code_lang = user.get_language()
+    tarifs = _db.get_tariffs()
+    rub_countries = {
+        'RU',  # Россия
+        'UZ',  # Узбекистан
+        'TJ',  # Таджикистан
+        'KG',  # Кыргызстан
+        'AM',  # Армения
+        'AZ',  # Азербайджан
+        'KZ',  # Казахстан
+        'UA',  # Украина
+        'BY',  # Беларусь
+        'MD',  # Молдова
+    }
+
+    main_currency = ''
+    if code_lang.upper() in rub_countries:
+        main_currency = 'RUB'
+    else:
+        main_currency = 'USD'
+    
+    text_tarifs = ''
+
+    t_all = locale.find_translation(user.get_language(), 'TR_TARIF_ALL')
+    for node in tarifs:
+        if node.tariff_name != None:
+            
+            if node.price_rub <= 0 and node.price_usd <= 0 and node.price_stars <= 0:
+                continue
+            
+            config_tarif = ''
+
+            for key, value in node.rules_json.items():
+                if value == "all":
+                    config_tarif += key + ': ' + t_all + '\n'
+                elif isinstance(value, list):
+                    config_tarif += key + ': ' + value + '\n'
+
+
+            if node.price_usd  <= 0:
+                node.price_usd = _payMan.convector.custom_round(node.price_rub / _payMan.convector.usd_to_rub(1))
+
+            if node.price_stars <= 0:
+                node.price_stars = _payMan.convector.custom_round( _payMan.convector.usd_to_tgStars(node.price_usd) )
+
+
+            main_price = ''
+            if main_currency == 'RUB':
+                main_price = str(node.price_rub) + '₽'
+            else:
+                main_price = str(node.price_usd) + '$'
+
+            if config_tarif:
+                text_tarifs += locale.find_translation(user.get_language(), 'TR_TARIF_PATERN').format(node.tariff_name, config_tarif, main_price, str(node.price_stars) + '⭐️', node.activity_day) + '\n'
+            else:
+                text_tarifs += locale.find_translation(user.get_language(), 'TR_TARIF_PATERN_EMPTY').format(node.tariff_name, main_price, str(node.price_stars) + '⭐️', node.activity_day) + '\n'
+
+
+    buttons = _tariffs_api.available_by_status()
+    markup = types.InlineKeyboardMarkup()
+    for key, value in buttons.items():
+        markup.add(types.InlineKeyboardButton(value, callback_data=key))
+
+    if id_message_for_edit != 0:
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
+    
+    t_mes = locale.find_translation(user.get_language(), 'TR_TARIFFS_MENU').format(text_tarifs)
+    send_text(user.get_userId(), t_mes, reply_markup=markup)
+    if id_message_for_edit != 0:
+        bot.delete_message(user.get_userId(), id_message_for_edit)
+
 
 
 def subscription_verification():
@@ -1216,6 +1386,7 @@ def subscription_verification():
             continue
 
 
+
 def start_or_restart_scheduler(hour: int, minute: int):
     global _scheduler
     with _scheduler_lock:
@@ -1227,6 +1398,8 @@ def start_or_restart_scheduler(hour: int, minute: int):
         _scheduler = BackgroundScheduler(timezone="Europe/Moscow")
         _scheduler.add_job(subscription_verification, 'cron', hour=hour, minute=minute)
         _scheduler.start()
+
+
 
 def update_scheduler_time():
     data_dict = _db.get_environment()

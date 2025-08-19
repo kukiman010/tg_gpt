@@ -30,7 +30,7 @@ class User:
         # self._lastActivity = None
         # self._donate = 0
 
-    def is_active(self):
+    def is_valid(self):
         return self._user_id != 0 and self._login != ''
         
     def set_default_data(self, language, permission, company_ai, assistant_model, 

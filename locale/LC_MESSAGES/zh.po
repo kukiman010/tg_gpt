@@ -228,7 +228,7 @@ msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
 msgstr "目前不接受支付。"
 
 msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
-msgstr "订阅 1 个月！"
+msgstr "订阅 {} 天！"
 
 msgid "TR_PAY"
 msgstr "支付 {}{}"
@@ -248,5 +248,27 @@ msgstr "很抱歉，您无法通过此链接再次付款。"
 msgid "TR_UPDATE_DATA"
 msgstr "语言、模型、支付系统以及订阅检查定时器的数据将从数据库获取！"
 
+msgid "TR_TARIF_ONE_DESCRIPTION"
+msgstr "Ultimate套餐可访问所有功能。请选择支付方式："
+
+msgid "TR_TARIFFS_MENU"
+msgstr "可用的套餐如下：\n{}\n\n请选择一个套餐进行支付。"
+
+msgid "TR_TARIF_PATERN"
+msgstr "{} 包含：\n{}\n价格为 {} / {}，有效期为 {} 天"
+
+msgid "TR_TARIF_PATERN_EMPTY"
+msgstr "{}：\n{} / {}，有效期为 {} 天"
+
+msgid "TR_TARIF_ALL"
+msgstr "所有模型"
+
+msgid "TR_TARRIF_DONT_LOAD"
+msgstr "很抱歉，套餐加载失败。请稍后重试或联系 {}"
+
+msgid "TR_SUBSCRIPTION_RENEWAL"
+msgstr "您已经拥有此订阅，有效期还有 {} 天。\n如需提前续费，请选择支付方式："
+
 msgid "TR_"
 msgstr ""
+
