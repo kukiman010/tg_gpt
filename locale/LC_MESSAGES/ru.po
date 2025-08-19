@@ -228,7 +228,7 @@ msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
 msgstr "В данный момент платежи не принимаются."
 
 msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
-msgstr "Оформление подписки на 1 месяц!"
+msgstr "Оформление подписки на {} дней!"
 
 msgid "TR_PAY"
 msgstr "Оплатить {}{}"
@@ -255,13 +255,19 @@ msgid "TR_TARIFFS_MENU"
 msgstr "Доступны следующие тарифы: \n{}\n\nВыберете тариф для оплаты."
 
 msgid "TR_TARIF_PATERN"
-msgstr "{} включает в себя:\n {}\n за {} / {}"
+msgstr "{} включает в себя:\n{}\nза {} / {} на {} дней"
 
 msgid "TR_TARIF_PATERN_EMPTY"
-msgstr "{} за:\n {} / {}"
+msgstr "{} за:\n{} / {} на {} дней"
 
 msgid "TR_TARIF_ALL"
 msgstr "Все модели"
+
+msgid "TR_TARRIF_DONT_LOAD"
+msgstr "К сожалению, тарифы не загрузились. Попробуйте позже или напишите в {}"
+
+msgid "TR_SUBSCRIPTION_RENEWAL"
+msgstr "У вас уже есть эта подписка. Она действует ещё {} дней. \nЕсли хотите продлить её заранее, выберите способ оплаты:"
 
 msgid "TR_"
 msgstr ""

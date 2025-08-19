@@ -241,6 +241,7 @@ class tariffs_model:
     def __init__(self) :
         self.tariff_id = 0
         self.tariff_name = ''
+        self.activity_day = 0
         self.price_usd = 0
         self.price_rub = 0
         self.price_stars = 0
@@ -248,9 +249,10 @@ class tariffs_model:
         self.rules_json = '{}'
         self.isView = False
 
-    def set_model(self, tariff_id, tariff_name, usd, rub, stars, description_code, rules_json, isView):
+    def set_model(self, tariff_id, tariff_name, activity_day, usd, rub, stars, description_code, rules_json, isView):
         self.tariff_id = tariff_id
         self.tariff_name = tariff_name
+        self.activity_day = activity_day
         self.price_usd = usd
         self.price_rub = rub
         self.price_stars = stars

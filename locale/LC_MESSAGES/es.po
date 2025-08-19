@@ -228,7 +228,7 @@ msgid "TR_PAYMENT_SYSTEM_DONT_WORK_NOW"
 msgstr "Actualmente no se aceptan pagos."
 
 msgid "TR_SUBSCRIBE_FOR_ONE_MOUNTH"
-msgstr "¡Suscripción por 1 mes!"
+msgstr "¡Suscripción por {} días!"
 
 msgid "TR_PAY"
 msgstr "Pagar {}{}"
@@ -252,16 +252,23 @@ msgid "TR_TARIF_ONE_DESCRIPTION"
 msgstr "El plan Ultimate ofrece acceso a todas las funciones. Elige un método de pago:"
 
 msgid "TR_TARIFFS_MENU"
-msgstr "Están disponibles los siguientes planes:\n{}\n\nSelecciona un plan para pagar."
+msgstr "Hay disponibles las siguientes tarifas: \n{}\n\nSeleccione una tarifa para el pago."
 
 msgid "TR_TARIF_PATERN"
-msgstr "{} incluye:\n {}\n por {} / {}"
+msgstr "{} incluye:\n{}\npor {} / {} durante {} días"
 
 msgid "TR_TARIF_PATERN_EMPTY"
-msgstr "{} por:\n {} / {}"
+msgstr "{} por:\n{} / {} durante {} días"
 
 msgid "TR_TARIF_ALL"
 msgstr "Todos los modelos"
 
+msgid "TR_TARRIF_DONT_LOAD"
+msgstr "Desafortunadamente, las tarifas no se cargaron. Intente de nuevo más tarde o contacte a {}"
+
+msgid "TR_SUBSCRIPTION_RENEWAL"
+msgstr "Ya tiene esta suscripción. Es válida por {} días más.\nSi desea renovarla anticipadamente, seleccione un método de pago:"
+
 msgid "TR_"
 msgstr ""
+

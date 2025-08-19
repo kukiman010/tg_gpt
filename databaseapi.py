@@ -262,20 +262,40 @@ class dbApi:
             
         return False
     
-    def get_tariffs(self) -> List[tariffs_model]:
-        query = "SELECT * FROM tariffs;"
+    def get_tariffs(self, tarif_id:int = None) -> List[tariffs_model]:
+        if tarif_id == None:
+            query = "SELECT * FROM tariffs;"
+        else:
+            query = "SELECT * FROM tariffs where tariff_id={};".format(tarif_id)
+
         data = self.db.execute_query(query)
         array = []
 
         for i in data:
             tm = tariffs_model()
-            tm.set_model(i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7])
+            tm.set_model(i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7],i[8])
 
             array.append(tm)
 
         return array
+    
+    def its_have_this_subscribe(self, userId, tariff_id, date):
+        query = "SELECT * FROM check_user_subscription(%s,%s,%s);"
+        data = self.db.execute_query(query, (userId, tariff_id, date))
+        
+        if len(data) == 1:
+            return bool(data[0][0]), int(data[0][1])
+            
+        return False, 0
 
-
+    def update_subscribe_date(self, userId, tarrifId, hours, paymentId):
+        query = "SELECT extend_subscription(%s,%s,%s,%s);"
+        data = self.db.execute_query(query, (userId, tarrifId, hours, paymentId))
+        
+        if len(data) == 1:
+            return bool(data[0][0])
+            
+        return False
 
 
     def __del__(self):

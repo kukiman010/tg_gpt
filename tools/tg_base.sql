@@ -167,6 +167,7 @@ CREATE TABLE subscription_users (
 CREATE TABLE tariffs(
     tariff_id           INT UNIQUE NOT NULL,
     tariff_name         TEXT,
+    activity_day        INT,
     price_usd           FLOAT,
     price_rub           FLOAT NOT NULL,
     price_stars         FLOAT,
@@ -493,6 +494,66 @@ $$ LANGUAGE plpgsql;
 
 
 
+CREATE OR REPLACE FUNCTION check_user_subscription(
+    in_user_id INT,
+    in_tarrif_id INT,
+    in_now TIMESTAMP WITH TIME ZONE
+)
+RETURNS TABLE(is_active BOOLEAN, hours_left INT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        CASE 
+            WHEN su.active_until > in_now THEN TRUE
+            ELSE FALSE
+        END AS is_active,
+        CASE 
+            WHEN su.active_until > in_now THEN FLOOR(EXTRACT(EPOCH FROM (su.active_until - in_now)) / 3600)::INT
+            ELSE 0
+        END AS hours_left
+    FROM subscription_users su
+    WHERE su.user_id = in_user_id
+      AND su.tarrif_id = in_tarrif_id
+    ORDER BY su.active_until DESC -- если подписок несколько по тарифу — берем последнюю
+    LIMIT 1;
+END;
+$$;
+
+
+
+CREATE OR REPLACE FUNCTION extend_subscription(
+    p_user_id INT,
+    p_tarrif_id INT,
+    p_hours INT,
+    p_last_payment_id TEXT
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+    updated_rows INT;
+BEGIN
+    UPDATE subscription_users
+    SET
+        active_until = 
+            CASE 
+                WHEN active_until IS NOT NULL
+                    THEN active_until + (p_hours || ' hour')::interval
+                ELSE now() + (p_hours || ' hour')::interval
+            END,
+        last_payment_id = p_last_payment_id
+    WHERE user_id = p_user_id AND tarrif_id = p_tarrif_id;
+
+    GET DIAGNOSTICS updated_rows = ROW_COUNT;
+    IF updated_rows > 0 THEN
+        RETURN TRUE;
+    ELSE
+        RETURN FALSE;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
 
 
 
@@ -599,5 +660,5 @@ insert into default_data values ('check_premium',                   '13:00');
 -- insert into default_data values ('',     '');
 
 
-insert into tariffs values (1, 'Ultimate', 12, 990, 599,  'TR_TARIF_ONE_DESCRIPTION', '{  "voice_acting": "all",  "gpt_models": "all",  "photo_generation": "all",  "photo_recognition": "all"}', TRUE);
+insert into tariffs values (1, 'Ultimate',30, 12, 990, 599,  'TR_TARIF_ONE_DESCRIPTION', '{  "voice_acting": "all",  "gpt_models": "all",  "photo_generation": "all",  "photo_recognition": "all"}', TRUE);
 
