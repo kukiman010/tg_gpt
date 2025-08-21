@@ -479,6 +479,9 @@ def handle_callback_query(call):
     tariff_pattern = r'^set_tariff_model_(\d+)$'
     tariff_match = re.match(tariff_pattern, key)
 
+    check_pay_pattern = r'^check_pay_(\S+-\S+-\S+-\S+)$'
+    check_pay_match = re.match(check_pay_pattern, key)
+
     message_id = call.message.message_id
     chat_id = call.message.chat.id
 
@@ -737,7 +740,7 @@ def handle_callback_query(call):
                 chech_key = 'check_pay_' + pay_info.payment_id
                 pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(pay_info.amount, pay_info.currency)
                 markup.add( types.InlineKeyboardButton(pay_description,                                                     url=pay_info.url_pay) )
-                markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_CHECK_PAY'),        callback_data=chech_key) )
+                # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_CHECK_PAY'),        callback_data=chech_key) )
                 markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
                 
                 send_text(chat_id, description, markup, message_id)
@@ -751,6 +754,10 @@ def handle_callback_query(call):
             if node.tariff_id == code_tariff:
                 pay_button(user, True, node.tariff_id, node.description_code, message_id)
                 break
+
+    elif check_pay_match:
+        payment_id = check_pay_match.group(1)
+        print()
 
 
     else:
