@@ -435,11 +435,13 @@ def handle_successful_payment(message):
     
     hours_tarif = 720 # 720h == 30 days
     hours_tarif = tariffs_data.activity_day * 24
-    have_sub = _db.its_have_this_subscribe(user.get_userId(), tarif, datetime.datetime.now())
+    date_time_now = datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) )
+
+    have_sub = _db.its_have_this_subscribe(user.get_userId(), tarif, date_time_now)
 
 
-    _db.update_invoice_journal(payment_id, label, 'succeeded', 'stars', None, fee, datetime.datetime.now())
-    _db.add_successful_payments(userId, label, tarif, float(amount - fee), currency, 'TelegramStarsPay', 'stars', '', datetime.datetime.now() )
+    _db.update_invoice_journal(payment_id, label, 'succeeded', 'stars', None, fee, date_time_now)
+    _db.add_successful_payments(userId, label, tarif, float(amount - fee), currency, 'TelegramStarsPay', 'stars', '', date_time_now )
     if have_sub:
         _db.update_subscribe_date(user.get_userId(), tarif, hours_tarif, label)
     else:
@@ -717,7 +719,7 @@ def handle_callback_query(call):
             )
             bot.delete_message(chat_id, message_id)
 
-            _db.add_invoice_journal(user.get_userId(), label, label, tarif_id, 'pending', tariffs_data.price_stars, 'XTR', paymet_system, description, datetime.datetime.now(), False)
+            _db.add_invoice_journal(user.get_userId(), label, label, tarif_id, 'pending', tariffs_data.price_stars, 'XTR', paymet_system, description, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ), False)
             
 
         else:
@@ -1174,7 +1176,7 @@ def on_finish_payment(sender, userId, data):
     
     hours_tarif = 720 # 720h == 30 days
     hours_tarif = tariffs_data.activity_day * 24
-    have_sub = _db.its_have_this_subscribe(userId, data.tarrif, datetime.datetime.now())
+    have_sub = _db.its_have_this_subscribe(userId, data.tarrif, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ))
 
 
     _db.update_invoice_journal(data.payment_id, data.label_pay, data.status, data.card_type, data.card_number, data.fee, data.expires_at)
@@ -1256,7 +1258,7 @@ def pay_button(user: User, callFromMenu: bool, tarif_id: str, tarif_description 
     buttons = _payMan.get_buttons()
     markup = types.InlineKeyboardMarkup()
 
-    have_sub, hours = _db.its_have_this_subscribe(user.get_userId(), tarif_id, datetime.datetime.now())
+    have_sub, hours = _db.its_have_this_subscribe(user.get_userId(), tarif_id, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ))
 
     if len(buttons) > 0:
         if have_sub:
@@ -1375,7 +1377,7 @@ def subscription_verification():
 
             user = user_verification_easy(userId)
 
-            _db.update_invoice_journal(userSub.last_label, userSub.last_label, 'subscription ended', None , None, 0, datetime.datetime.now())
+            _db.update_invoice_journal(userSub.last_label, userSub.last_label, 'subscription ended', None , None, 0, datetime.datetime.now(tz_moscow))
             _db.remove_subscription_ended(userSub.last_label)
             _db.update_status_in_users(userId, 1)
 
