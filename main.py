@@ -1183,7 +1183,7 @@ def on_finish_payment(sender, userId, data):
     
     hours_tarif = 720 # 720h == 30 days
     hours_tarif = tariffs_data.activity_day * 24
-    have_sub = _db.its_have_this_subscribe(userId, data.tarrif, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ))
+    have_sub, hours = _db.its_have_this_subscribe(userId, data.tarrif, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ))
 
 
     _db.update_invoice_journal(data.payment_id, data.label_pay, data.status, data.card_type, data.card_number, data.fee, data.expires_at)
