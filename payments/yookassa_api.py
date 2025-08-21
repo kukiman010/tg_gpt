@@ -47,53 +47,38 @@ class Yookassa(BasePaymentSystem):
             payment = Payment.create(
                 {
                     "amount": {
-                        "value": sum,
-                        "currency": money_code
+                        "value": str(sum),
+                        "currency": money_code,
                     },
                     "confirmation": {
                         "type": "redirect",
-                        "return_url": self.redirect_uri
+                        "return_url": self.redirect_uri,
                     },
                     "capture": self.capture,
                     "description": description,
                     "metadata": {
                         "user_id": userId,
-                        "payment_label": label_pay
-                        # 'orderNumber': '72'
+                        "payment_label": label_pay,
+                    },
+                    "receipt": {
+                        "customer": {
+                            "email": "user@example.com"
+                        },
+                        "items": [
+                            {
+                                "description": description,
+                                "quantity": "1.00",
+                                "amount": {
+                                    "value": str(sum),
+                                    "currency": money_code,
+                                },
+                                "vat_code": 1
+                            }
+                        ]
                     }
-
-                    # "receipt": {
-                    #     "customer": {
-                    #         "full_name": "Ivanov Ivan Ivanovich",
-                    #         "email": "email@email.ru",
-                    #         "phone": "79211234567",
-                    #         "inn": "6321341814"
-                    #     },
-                    #     "items": [
-                    #         {
-                    #             "description": "Переносное зарядное устройство Хувей",
-                    #             "quantity": "1.00",
-                    #             "amount": {
-                    #                 "value": 1000,
-                    #                 "currency": "RUB"
-                    #             },
-                    #             "vat_code": "2",
-                    #             "payment_mode": "full_payment",
-                    #             "payment_subject": "commodity",
-                    #             "country_of_origin_code": "CN",
-                    #             "product_code": "44 4D 01 00 21 FA 41 00 23 05 41 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 12 00 AB 00",
-                    #             "customs_declaration_number": "10714040/140917/0090376",
-                    #             "excise": "20.00",
-                    #             "supplier": {
-                    #                 "name": "string",
-                    #                 "phone": "string",
-                    #                 "inn": "string"
-                    #             }
-                    #         },
-                    #     ]
-                    # }
                 }
             )
+
         except Exception as e:
             self._logger.add_critical(f"{str(self.__class__.__name__)}. Ошибка: {str(e)}")
             return None
