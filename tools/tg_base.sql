@@ -110,7 +110,7 @@ CREATE TABLE payment_services (
 );
 
 CREATE TABLE invoice_journal (
-    user_id             INTEGER NOT NULL,
+    user_id             BIGINT NOT NULL,
     user_name           TEXT,
     payment_id          TEXT UNIQUE NOT NULL,
     label_pay           TEXT,
@@ -137,7 +137,7 @@ CREATE TABLE invoice_journal (
 );
 
 CREATE TABLE successful_payments (
-    user_id             INT,
+    user_id             BIGINT,
     payment_id          TEXT UNIQUE NOT NULL REFERENCES invoice_journal(payment_id),
     tarrif_id           INT,
     final_amount        FLOAT,
@@ -153,7 +153,7 @@ CREATE TABLE successful_payments (
 );
 
 CREATE TABLE subscription_users (
-    user_id             INT NOT NULL,
+    user_id             BIGINT NOT NULL,
     user_name           TEXT,
     tarrif_id           INT,
     email               TEXT,
@@ -447,7 +447,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION upsert_subscription_user(
-    in_user_id INT,
+    in_user_id BIGINT,
     in_user_name TEXT,
     in_tarrif_id INT,
     in_email TEXT,
@@ -495,7 +495,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION check_user_subscription(
-    in_user_id INT,
+    in_user_id BIGINT,
     in_tarrif_id INT,
     in_now TIMESTAMP WITH TIME ZONE
 )
@@ -524,7 +524,7 @@ $$;
 
 
 CREATE OR REPLACE FUNCTION extend_subscription(
-    p_user_id INT,
+    p_user_id BIGINT,
     p_tarrif_id INT,
     p_hours INT,
     p_last_payment_id TEXT
