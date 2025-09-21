@@ -908,9 +908,10 @@ def mergeConversationContext(chatId, user:User, text_to_photo, photos): # -> lis
     isPhoto = False
 
     for photo_to_base64 in photos:
-        mes_photo = Control.context_model.Context_model()
-        mes_photo.set_data(user.get_userId(), chatId,"user",chatId, photo_to_base64, True )
-        dict.append(mes_photo)
+        if photo_to_base64 and photo_to_base64 != None:
+            mes_photo = Control.context_model.Context_model()
+            mes_photo.set_data(user.get_userId(), chatId,"user",chatId, photo_to_base64, True )
+            dict.append(mes_photo)
 
     for node in dict:
         if node.get_isPhoto():
@@ -930,6 +931,7 @@ def poat_vision_gpt(user:User, json, model) -> Control.context_model.AnswerAssis
         content = _gpt.gpt_post_view(json, model, 1300 )
 
     except OpenAIError as err: 
+        print(json)
         _logger.add_critical("OpenAI: {}".format(err))
         content.code = 500
         content.result = str(err)
