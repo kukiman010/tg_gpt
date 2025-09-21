@@ -943,6 +943,7 @@ def mergeConversationContext(chatId, user:User, text_to_photo, photos, generate_
 
 def poat_generate_image(user:User, json, model) -> Control.context_model.AnswerAssistent :
     content = Control.context_model.AnswerAssistent()
+    model="gpt-4.1"
     try:
         content = _gpt.create_image(json, model )
 
