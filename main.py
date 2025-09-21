@@ -851,8 +851,12 @@ def user_verification(message) -> User:
     user = User()
 
     if _db.find_user(message.from_user.id) == False:
+        name = message.chat.username
+        if not name:
+            name = message.chat.first_name
+
         user.set_default_data(_env.get_language(), _env.get_permission(), _env.get_company_ai(), _env.get_assistant_model(), _env.get_recognizes_photo_model(), _env.get_generate_photo_model(), _env.get_text_to_audio(), _env.get_audio_to_text(), _env.get_speakerName(), _env.get_prompt())
-        _db.add_user(message.from_user.id, message.chat.username, message.chat.type, message.from_user.language_code )
+        _db.add_user(message.from_user.id, name, message.chat.type, message.from_user.language_code )
         _logger.add_info('создан новый пользователь {}'.format(message.chat.username))
     else:
         _db.add_users_in_groups(message.from_user.id, message.chat.id)
@@ -931,7 +935,7 @@ def poat_vision_gpt(user:User, json, model) -> Control.context_model.AnswerAssis
         content = _gpt.gpt_post_view(json, model, 1300 )
 
     except OpenAIError as err: 
-        print(json)
+        # print(json)
         _logger.add_critical("OpenAI: {}".format(err))
         content.code = 500
         content.result = str(err)
