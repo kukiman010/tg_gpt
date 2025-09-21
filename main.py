@@ -1112,11 +1112,12 @@ def encode_image(image_path):
   
 
 
-def on_post_media(sender, userId, mediaList):
+def on_post_media(sender, userId, mediaList: list[UserMedia]):
     message = ''
     textMes = ''
     chatId = ''
     titleMessId = []
+    isPhotos:bool = False
     for media in mediaList:
         if chatId == '':
             chatId = media._chatId
@@ -1128,6 +1129,9 @@ def on_post_media(sender, userId, mediaList):
             textMes += media._mediaData
         if media._type == "titleId":
             titleMessId.append( media._titleId)
+        if media._type == 'photo':
+            print('photo add')
+            isPhotos = True
 
         message = textMes + '\n' + message
         
