@@ -893,15 +893,11 @@ def user_verification_easy(userId) -> User:
         return user
 
 
-
-def poat_vision_gpt(chatId, user:User, text_to_photo, photos, model) -> Control.context_model.AnswerAssistent :
-    print('post_vision_gpt')
-    content = Control.context_model.AnswerAssistent()
-
+def mergeConversationContext(chatId, user:User, text_to_photo, photos): # -> list[str], bool:
     context = Control.context_model.Context_model()
     context.set_data(user.get_userId(), chatId, "system", chatId, user.get_prompt(), False )
 
-    dict = []
+    dict: list[Control.context_model.Context_model] = []
     dict.append( context )
     dict.extend(_db.get_context(user.get_userId(), chatId))
 
@@ -909,24 +905,29 @@ def poat_vision_gpt(chatId, user:User, text_to_photo, photos, model) -> Control.
     mes.set_data(user.get_userId(), chatId, "user", chatId, text_to_photo, False )
     dict.append(mes)
 
+    isPhoto = False
+
     for photo_to_base64 in photos:
         mes_photo = Control.context_model.Context_model()
         mes_photo.set_data(user.get_userId(), chatId,"user",chatId, photo_to_base64, True )
         dict.append(mes_photo)
 
+    for node in dict:
+        if node.get_isPhoto():
+            isPhoto = True
+            break
+
     json = Control.context_model.convert(user.get_companyAi(), dict, True)
-    model = "gpt-4o-mini"
+
+    return json, isPhoto
+
+
+def poat_vision_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
+    model = "gpt-4o"
+    content = Control.context_model.AnswerAssistent()
 
     try:
         content = _gpt.gpt_post_view(json, model, 1300 )
-
-
-        if content.get_code() == 200:
-            _db.add_context(user.get_userId(), chatId, "user",          chatId,     text_to_photo)
-            for photo_to_base64 in photos:
-                _db.add_context(user.get_userId(), chatId, "user",          chatId,     photo_to_base64,   True)
-            _db.add_context(user.get_userId(), chatId, "assistant",     chatId,     content.get_result())
-
 
     except OpenAIError as err: 
         _logger.add_critical("OpenAI: {}".format(err))
@@ -936,42 +937,8 @@ def poat_vision_gpt(chatId, user:User, text_to_photo, photos, model) -> Control.
     return content
 
 
-def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssistent :
-    mes = Control.context_model.Context_model()
-    mes.set_data(user.get_userId(), chatId, "user", chatId, text, False )
-
-    context = Control.context_model.Context_model()
-    context.set_data(user.get_userId(), chatId, "system", chatId, user.get_prompt(), False )
-
-    dict = []
-    dict.append( context )
-    dict.extend(_db.get_context(user.get_userId(), chatId))
-    # dict =_db.get_context(user.get_userId(), chatId)
-    dict.append(mes)
-    json = Control.context_model.convert(user.get_companyAi(), dict)
-
+def post_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
     content = Control.context_model.AnswerAssistent()
-    # tokenSizeNow = 0
-
-    # if str(user.get_companyAi()).upper() == str("OpenAi").upper():
-    #     # tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
-    #     tokenSizeNow = _gpt.count_tokens(json, model)
-    # elif str(user.get_companyAi()).upper() == str("Yandex").upper():
-    #     tokenSizeNow = _yag.count_tokens(json, model)
-    # elif str(user.get_companyAi()).upper() == str("Sber").upper():
-    #     tokenSizeNow = _sber.count_tokens(json, model)
-    # elif str(user.get_companyAi()).upper() == str("Meta").upper():
-    #     tokenSizeNow = _metaG.count_tokens(json, model)
-    
-
-    # maxToken = _assistent_api.getToken(model)
-
-    # if tokenSizeNow > maxToken:
-    #     markup = types.InlineKeyboardMarkup()
-    #     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost') )
-    #     # text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель или преобретите премиум /premium".format(tokenSizeNow, maxToken)
-    #     bot.reply_to(chatId, locale.find_translation(user.get_language(), 'TR_HAVE_NOT_TOKENS'), reply_markup=markup)
-    #     return ""
 
     try:
         if str(user.get_companyAi()).upper() == str("OpenAi").upper():
@@ -992,13 +959,6 @@ def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssi
         elif str(user.get_companyAi()).upper() == str("Google").upper():  
             content = _google.post_gpt(json, model)
         
-            
-
-
-        if content.get_code() == 200:
-            _db.add_context(user.get_userId(), chatId, "user",          chatId, text,       False)
-            _db.add_context(user.get_userId(), chatId, "assistant",     chatId, content.get_result(),    False)
-    
     except OpenAIError as err: 
         _logger.add_critical("OpenAI: {}".format(err))
         content.code = 500
@@ -1156,11 +1116,20 @@ def on_post_media(sender, userId, mediaList: list[UserMedia]):
 
     _db.update_last_login(userId)
     
+    json, boolPhotoResult = mergeConversationContext(chatId, user, message, photos)
 
-    if isPhotos:
-        content = poat_vision_gpt(chatId, user, message, photos, user.get_model())
+    if isPhotos or boolPhotoResult:
+        content = poat_vision_gpt(user, json, user.get_model())
     else:
-        content = post_gpt(chatId, user, message, user.get_model())
+        content = post_gpt(user, json, user.get_model())
+
+
+    if content and content.get_code() == 200:
+        _db.add_context(user.get_userId(), chatId, "user",          chatId,     message)
+        for photo_to_base64 in photos:
+            _db.add_context(user.get_userId(), chatId, "user",      chatId,     photo_to_base64,        True)
+        _db.add_context(user.get_userId(), chatId, "assistant",     chatId,     content.get_result())
+
         
     MAX_CHAR = int(_env.get_count_char_for_gen_audio())
 
