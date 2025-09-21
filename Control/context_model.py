@@ -38,7 +38,7 @@ class Context_model():
 
 class AnswerAssistent():
     def __init__(self) -> None:
-        self.code = 0
+        self.code = 404
         self.result = ""
         self.token = 0
 

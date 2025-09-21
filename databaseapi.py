@@ -87,7 +87,7 @@ class dbApi:
 
     # old
 
-    def add_context(self, userId, chatId, role, messageId, message, isPhoto):
+    def add_context(self, userId, chatId, role, messageId, message, isPhoto = False):
         query = "INSERT INTO context VALUES (%s,%s,%s,%s,%s,%s);"
         self.db.execute_query(query, (userId, chatId, role, messageId, str(message), isPhoto) )
 

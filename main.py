@@ -814,73 +814,37 @@ def handle_message(message):
         send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION_UPLOAD_PHOTO'))
         return
 
-    t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
-    send_mess = bot.send_message(message.chat.id, t_mes)
-
     file_id = message.photo[-1].file_id
     file_info = bot.get_file(file_id)
     
     downloaded_file = bot.download_file(file_info.file_path)
     
-    
     name = 'photo_{}_{}.jpg'.format(message.from_user.id, _speak.get_time_string())
     with open(os.path.join('users_media/photos/', f'{name}'), 'wb') as new_file:
         new_file.write(downloaded_file)
     
-    base64_image = encode_image(f'users_media/photos/{name}')
 
-    text_to_photo = message.caption
+    hasUser = _mediaWorker.find_userId(user.get_userId())
+    media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
 
-    # if text_to_photo == '' or text_to_photo == None:
-        # text_to_photo = 'What’s in this image?'
+    if hasUser == False:
+        t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
+        send_mess = bot.send_message(message.chat.id, t_mes)
+        del_mes = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
+        del_mes.add_del_mess_id(send_mess.message_id)
+        _mediaWorker.add_data(del_mes)
 
+    media = UserMedia(user.get_userId(), message.chat.id, user.get_login() )
 
-
-    mes = Control.context_model.Context_model()
-    mes_photo = Control.context_model.Context_model()
-    mes.set_data(message.from_user.id, message.chat.id,"user",message.message_id,text_to_photo,False )
-    mes_photo.set_data(message.from_user.id, message.chat.id,"user",message.message_id,base64_image,True )
-
-    dict = _db.get_context(user.get_userId(), message.chat.id)
-    dict.append(mes)
-    dict.append(mes_photo)
-    json = Control.context_model.convert(user.get_companyAi(), dict, True)
-
-    content = ""
-    # tokenSizeNow = 0
-    model = "gpt-4o-mini"
-
-    # if str(user.get_companyAi()).upper() == str("OpenAi").upper():
-        # tokenSizeNow = _gpt.num_tokens_from_messages(json, model)
-
-    # maxToken = _assistent_api.getToken(model)
-
-    # if tokenSizeNow > maxToken:
-    #     markup = types.InlineKeyboardMarkup()
-    #     markup.add( types.InlineKeyboardButton('Повторить запрос', callback_data='errorPost') )
-    #     text = "Извините, но ваш запрос привышает максималтную длинну контекста.\nВаш запрос: {}\nМаксимальная длинна: {}\n для продолжения спросте контекст командой /dropcontext, используйте другую модель  или преобретите премиум /premium".format(tokenSizeNow, maxToken)
-    #     bot.reply_to(message, text, reply_markup=markup)
-    #     return ""
+    if message.caption:
+        media.add_photo(str('users_media/photos/'+ name), name, file_info.file_size, message.caption)
+    else:
+        media.add_photo(str('users_media/photos/'+ name), name, file_info.file_size)
+        
+    # media.add_photo(name, str('users_media/photos/'+ name), file_info.file_size, message.caption)
+    _mediaWorker.add_data(media)
 
 
-    try:
-        content = _gpt.gpt_post_view(json, model, 1300 )
-
-        bot.delete_message(send_mess.chat.id, send_mess.message_id)
-
-        if content.get_code() == 200:
-            _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id,     text_to_photo,  False)
-            _db.add_context(message.from_user.id, message.chat.id, "user",          message.message_id,     base64_image,   True)
-            _db.add_context(message.from_user.id, message.chat.id, "assistant",     message.message_id,     content.get_result(),        False)
-
-
-        bot.reply_to(message, "{}".format(content.get_result()) )
-
-    except OpenAIError as err: 
-        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_OPENAI')
-        bot.reply_to(message, t_mes.format(err))
-        _logger.add_critical("OpenAI: {}".format(err))
- 
 
 
 def user_verification(message) -> User:
@@ -928,6 +892,48 @@ def user_verification_easy(userId) -> User:
         user = _db.get_user_def(userId)
         return user
 
+
+
+def poat_vision_gpt(chatId, user:User, text_to_photo, photos, model) -> Control.context_model.AnswerAssistent :
+    print('post_vision_gpt')
+    content = Control.context_model.AnswerAssistent()
+
+    context = Control.context_model.Context_model()
+    context.set_data(user.get_userId(), chatId, "system", chatId, user.get_prompt(), False )
+
+    dict = []
+    dict.append( context )
+    dict.extend(_db.get_context(user.get_userId(), chatId))
+
+    mes = Control.context_model.Context_model()
+    mes.set_data(user.get_userId(), chatId, "user", chatId, text_to_photo, False )
+    dict.append(mes)
+
+    for photo_to_base64 in photos:
+        mes_photo = Control.context_model.Context_model()
+        mes_photo.set_data(user.get_userId(), chatId,"user",chatId, photo_to_base64, True )
+        dict.append(mes_photo)
+
+    json = Control.context_model.convert(user.get_companyAi(), dict, True)
+    model = "gpt-4o-mini"
+
+    try:
+        content = _gpt.gpt_post_view(json, model, 1300 )
+
+
+        if content.get_code() == 200:
+            _db.add_context(user.get_userId(), chatId, "user",          chatId,     text_to_photo)
+            for photo_to_base64 in photos:
+                _db.add_context(user.get_userId(), chatId, "user",          chatId,     photo_to_base64,   True)
+            _db.add_context(user.get_userId(), chatId, "assistant",     chatId,     content.get_result())
+
+
+    except OpenAIError as err: 
+        _logger.add_critical("OpenAI: {}".format(err))
+        content.code = 500
+        content.result = str(err)
+
+    return content
 
 
 def post_gpt(chatId, user:User, text, model) -> Control.context_model.AnswerAssistent :
@@ -1117,6 +1123,7 @@ def on_post_media(sender, userId, mediaList: list[UserMedia]):
     textMes = ''
     chatId = ''
     titleMessId = []
+    photos = []
     isPhotos:bool = False
     for media in mediaList:
         if chatId == '':
@@ -1130,7 +1137,9 @@ def on_post_media(sender, userId, mediaList: list[UserMedia]):
         if media._type == "titleId":
             titleMessId.append( media._titleId)
         if media._type == 'photo':
-            print('photo add')
+            photos.append( encode_image(media._fileWay))
+            if media._mediaData:
+                textMes += media._mediaData
             isPhotos = True
 
         message = textMes + '\n' + message
@@ -1147,7 +1156,12 @@ def on_post_media(sender, userId, mediaList: list[UserMedia]):
 
     _db.update_last_login(userId)
     
-    content = post_gpt(chatId, user, message, user.get_model())
+
+    if isPhotos:
+        content = poat_vision_gpt(chatId, user, message, photos, user.get_model())
+    else:
+        content = post_gpt(chatId, user, message, user.get_model())
+        
     MAX_CHAR = int(_env.get_count_char_for_gen_audio())
 
     if len(titleMessId) != 0:
