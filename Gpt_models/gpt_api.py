@@ -147,4 +147,42 @@ class chatgpt():
                 tokens += len(encoding.encode(str(value)))
                 
         return tokens + 3 # Учёт завершающего токена
+    
+    def create_image(self, context: str, model) -> Control.context_model.AnswerAssistent:
+        answer = Control.context_model.AnswerAssistent()
+
+
+        try:
+            response = self.client.responses.create(
+                model=model,
+                tools=[{"type": "image_generation"}],
+                input=context
+            )
+        except Exception as e:
+            _logger.add_error(f"Source: {str(self.__class__.__name__)}. Unexpected error: {str(e)}")
+            answer.set_answer(500, "Unknown error occurred", 0)
+            return answer
+
+        try:
+            image_generation_calls = [
+                output
+                for output in response.output
+                if output.type == "image_generation_call"
+            ]
+
+            image_data = [output.result for output in image_generation_calls]
+
+            if image_data:
+                for base64 in image_data:
+                    answer.photos.append(base64)
+            else:
+                text = response.output.content
+        except (AttributeError, IndexError, KeyError) as e:
+            _logger.add_error(f"Source: {str(self.__class__.__name__)}. Invalid API response format: {str(e)}")
+            answer.set_answer(500, "Invalid API response format", 0)
+            return answer
+
+
+        answer.set_answer(200, text, 0)
+        return answer
 

@@ -292,6 +292,16 @@ def premium(message):
         return 
     
     premium_button(user)
+
+
+
+@bot.message_handler(commands=['img'])
+def premium(message):
+    user = user_verification(message)
+    if not user.is_valid():
+        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR'))
+        return 
+    generate_photo(user)
         
 
 
@@ -359,7 +369,7 @@ def handle_user_message(message):
     user = user_verification(message)
 
     action = user.get_wait_action()
-    if action != '' and action != None:
+    if action != '' and action != None and action != 'generate_image':
         action_handler(user.get_userId(), user, action, message.text)
         return
 
@@ -546,6 +556,10 @@ def handle_callback_query(call):
 
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
         send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+
+    elif key == 'menu_generate_image':
+        bot.answer_callback_query(call.id, text = '')
+        generate_photo(user, message_id)
 
     elif key == 'show_my_promt':
         bot.answer_callback_query(call.id, text = '')
@@ -897,7 +911,7 @@ def user_verification_easy(userId) -> User:
         return user
 
 
-def mergeConversationContext(chatId, user:User, text_to_photo, photos): # -> list[str], bool:
+def mergeConversationContext(chatId, user:User, text_to_photo, photos, generate_image:bool = False): # -> list[str], bool:
     context = Control.context_model.Context_model()
     context.set_data(user.get_userId(), chatId, "system", chatId, user.get_prompt(), False )
 
@@ -922,10 +936,23 @@ def mergeConversationContext(chatId, user:User, text_to_photo, photos): # -> lis
             isPhoto = True
             break
 
-    json = Control.context_model.convert(user.get_companyAi(), dict, True)
+    json = Control.context_model.convert(user.get_companyAi(), dict, True, generate_image)
 
     return json, isPhoto
 
+
+def poat_generate_image(user:User, json, model) -> Control.context_model.AnswerAssistent :
+    content = Control.context_model.AnswerAssistent()
+    try:
+        content = _gpt.create_image(json, model )
+
+    except OpenAIError as err: 
+        # print(json)
+        _logger.add_critical("OpenAI: {}".format(err))
+        content.code = 500
+        content.result = str(err)
+
+    return content
 
 def poat_vision_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
     model = "gpt-4o"
@@ -971,6 +998,18 @@ def post_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
         content.result = str(err)
 
     return content
+
+
+def generate_photo(user:User, id_message_for_edit:int = 0):
+    t_mes = locale.find_translation(user.get_language(), "TR_GEN_IMAGE_DESCRIPTION")
+    _db.update_user_action(user.get_userId(), "generate_image")
+
+    if id_message_for_edit > 0:
+        markup = types.InlineKeyboardMarkup()
+        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_UNDO'), callback_data='menu') )
+        send_text(user.get_userId(), t_mes, reply_markup=markup, id_message_for_edit=id_message_for_edit)
+    else:
+        send_text(user.get_userId(), t_mes)
 
 
 
@@ -1121,10 +1160,21 @@ def on_post_media(sender, userId, mediaList: list[UserMedia]):
         return
 
     _db.update_last_login(userId)
-    
-    json, boolPhotoResult = mergeConversationContext(chatId, user, message, photos)
 
-    if isPhotos or boolPhotoResult:
+    action = user.get_wait_action()
+
+    generate_image = False
+    if action == 'generate_image':
+        generate_image = True
+    
+    json, boolPhotoResult = mergeConversationContext(chatId, user, message, photos, generate_image)
+
+    action = user.get_wait_action()
+
+    if generate_image:
+        content = poat_generate_image(user, json, user.get_model_generate_photo())
+        _db.update_user_action(user.get_userId(), '')   
+    elif isPhotos or boolPhotoResult:
         content = poat_vision_gpt(user, json, user.get_model())
     else:
         content = post_gpt(user, json, user.get_model())
@@ -1210,6 +1260,7 @@ def main_menu(user, charId, id_message = None):
 
     markup = types.InlineKeyboardMarkup()
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LANGUAGE'),    callback_data='menu_language') )
+    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_GEN_IMAGE'),   callback_data='menu_generate_image') )
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PROMT'),       callback_data='menu_promt') )
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_WEBSEARCH'),   callback_data='menu_websearch') )
     # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_THINKS'),     callback_data='menu_think') )
