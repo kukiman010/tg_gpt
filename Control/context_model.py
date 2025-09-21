@@ -7,7 +7,7 @@ class Context_model():
         self.role    = ""
         self.message_id = 0
         self.message = ""
-        self.isPhoto = False
+        self.isPhoto:bool = False
 
     def set_data(self, userid, chatId, role, messageId, message, isPhoto):
         self.user_id = userid
@@ -27,8 +27,8 @@ class Context_model():
         return self.message_id
     def get_message(self):
         return self.message
-    def get_isPhoto(self):
-        return self.isPhoto
+    def get_isPhoto(self) -> bool:
+        return bool(self.isPhoto)
     
     def set_role(self, role):
         self.role = role
@@ -38,7 +38,7 @@ class Context_model():
 
 class AnswerAssistent():
     def __init__(self) -> None:
-        self.code = 0
+        self.code = 404
         self.result = ""
         self.token = 0
 
