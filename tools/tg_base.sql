@@ -570,6 +570,8 @@ insert into assistant_ai values('OpenAi',   'gpt-o3-pro',             'gpt-o3-pr
 insert into assistant_ai values('OpenAi',   'gpt-4.1',                'gpt-4.1',                1047576, 'Jun 01, 2024',    2, True);
 insert into assistant_ai values('OpenAi',   'gpt-5',                  'gpt-5',                  400000, 'Oct 04, 2024',     2, True);
 insert into assistant_ai values('OpenAi',   'gpt-5-mini',             'gpt-5-mini',             400000, 'May 31, 2024',     2, True);
+insert into assistant_ai values('OpenAi',   'gpt-5.1',                'gpt-5.1',                400000, 'Sep 30, 2024',     2, True);
+insert into assistant_ai values('OpenAi',   'gpt-5.2',                'gpt-5.2',                400000, 'Aug 31, 2025',     2, True);
 insert into assistant_ai values('Yandex',   'yandexgpt',              'Yandex GPT 5',           8000,   '06.12.2023',       2, True);
 insert into assistant_ai values('Yandex',   'yandexgpt-lite',         'Yandex Lite',            8000,   '06.12.2023',       2, False);
 insert into assistant_ai values('Yandex',   'yandexgpt-32k',          'Yandex GPT 5-32k',       32000,  '06.12.2023',       2, False);
