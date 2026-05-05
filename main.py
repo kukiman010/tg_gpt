@@ -1,7 +1,6 @@
 import requests
 import telebot
 import speech
-import base64
 import sys
 import os
 import re
@@ -18,8 +17,6 @@ import Gpt_models.x_ai
 import Gpt_models.google_api
 import Gpt_models.claude_api
 import Gpt_models.deepseak_api
-import Control.context_model
-
 from logger         import LoggerSingleton
 from databaseapi    import dbApi
 from translator     import Locale
@@ -44,6 +41,7 @@ from core.services.conversation_service import ConversationService
 from core.services.user_service import UserService
 from core.services.payment_service import PaymentService
 from core.services.assistant_service import AssistantService
+from core.services.post_media_service import PostMediaMarkups, PostMediaService
 from transport.telegram import TelegramMessageOutput
 from transport.telegram import ui as tg_ui
 from transport.telegram.callback_handlers import handle_telegram_callback
@@ -172,6 +170,20 @@ _conversation_service = ConversationService(
 _user_service = UserService(_db, _env, _logger)
 _payment_service = PaymentService(_db, _env, locale, _logger)
 _assistant_service = AssistantService(_db, _assistent_api, _languages_api)
+
+_post_media_service = PostMediaService(
+    _db,
+    _conversation_service,
+    _user_service,
+    _env,
+    locale,
+    _output,
+    _converterFile,
+    PostMediaMarkups(
+        error_repeat=lambda lc: tg_ui.error_repeat_request_markup(locale, lc),
+        vocalize=lambda lc: tg_ui.vocalize_markup(locale, lc),
+    ),
+)
 
 
 _payMan = PaymentManager( _env.get_global_payment())
@@ -561,23 +573,6 @@ def user_verification_easy(userId) -> User:
     return _user_service.verify_easy(userId)
 
 
-def mergeConversationContext(chatId, user:User, text_to_photo, photos, generate_image:bool = False): # -> list[str], bool:
-    return _conversation_service.merge_context(chatId, user, text_to_photo, photos, generate_image)
-
-
-def poat_generate_image(user:User, json, model) -> Control.context_model.AnswerAssistent :
-    model="gpt-4.1"
-    return _conversation_service.post_generate_image(user, json, model)
-
-def poat_vision_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
-    model = "gpt-4o"
-    return _conversation_service.post_vision(json, model)
-
-
-def post_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
-    return _conversation_service.post_chat(user, json, model)
-
-
 def generate_photo(user:User, id_message_for_edit:int = 0):
     t_mes = locale.find_translation(user.get_language(), "TR_GEN_IMAGE_DESCRIPTION")
     _user_service.set_wait_action(user.get_userId(), "generate_image")
@@ -594,100 +589,8 @@ def generate_photo(user:User, id_message_for_edit:int = 0):
 
 
 
-def encode_image(image_path):
-  with open(image_path, "rb") as image_file:
-    return base64.b64encode(image_file.read()).decode('utf-8')
-  
-
-
 def on_post_media(sender, userId, mediaList: list[UserMedia]):
-    message = ''
-    textMes = ''
-    chatId = ''
-    titleMessId = []
-    photos = []
-    isPhotos:bool = False
-    for media in mediaList:
-        if chatId == '':
-            chatId = media._chatId
-        
-        if media._type == "document":
-            message += _converterFile.convert_files_to_text('users_media/files/{}'.format(media._fileWay), media._fileName)
-            os.remove('users_media/files/{}'.format(media._fileWay))
-        if media._type == "message":
-            textMes += media._mediaData
-        if media._type == "titleId":
-            titleMessId.append( media._titleId)
-        if media._type == 'photo':
-            photos.append( encode_image(media._fileWay))
-            if media._mediaData:
-                textMes += media._mediaData
-            isPhotos = True
-
-        message = textMes + '\n' + message
-        
-    if chatId == '':
-        chatId = userId
-    
-    # print( "\n\n" + message)
-
-    user = user_verification_easy(userId)
-
-    if user == None:
-        return
-
-    _db.update_last_login(userId)
-
-    action = user.get_wait_action()
-
-    generate_image = False
-    if action == 'generate_image':
-        generate_image = True
-    
-    json, boolPhotoResult = mergeConversationContext(chatId, user, message, photos, generate_image)
-
-    action = user.get_wait_action()
-
-    if generate_image:
-        content = poat_generate_image(user, json, user.get_model_generate_photo())
-        _user_service.reset_action(user.get_userId())
-    elif isPhotos or boolPhotoResult:
-        content = poat_vision_gpt(user, json, user.get_model())
-    else:
-        content = post_gpt(user, json, user.get_model())
-
-
-    if content and content.get_code() == 200:
-        _db.add_context(user.get_userId(), chatId, "user",          chatId,     message)
-        for photo_to_base64 in photos:
-            _db.add_context(user.get_userId(), chatId, "user",      chatId,     photo_to_base64,        True)
-        _db.add_context(user.get_userId(), chatId, "assistant",     chatId,     content.get_result())
-
-        
-    MAX_CHAR = int(_env.get_count_char_for_gen_audio())
-
-    if len(titleMessId) != 0:
-        for medId in titleMessId:
-            _output.delete_message(chatId, medId)
-
-    if not content.get_result() or content.get_code() >= 300:
-        _output.send_text(
-            chatId,
-            locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT').format(content.get_result()),
-            reply_markup=tg_ui.error_repeat_request_markup(locale, user.get_language()),
-            isMarkdown=True,
-        )
-        return
-
-    if len(content.get_result()) <= MAX_CHAR:
-        _output.send_text(
-            chatId,
-            content.get_result(),
-            reply_markup=tg_ui.vocalize_markup(locale, user.get_language()),
-            isMarkdown=True,
-        )
-    else:    
-        _output.send_text(chatId, content.get_result(), isMarkdown=True)
+    _post_media_service.handle(sender, userId, mediaList, user_verification_easy)
 
 
 
