@@ -46,6 +46,7 @@ from core.services.user_service import UserService
 from core.services.payment_service import PaymentService
 from core.services.assistant_service import AssistantService
 from transport.telegram import TelegramMessageOutput
+from transport.telegram import ui as tg_ui
 
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -262,11 +263,11 @@ def update_environment (message):
 
     if mes:
         answer = locale.find_translation(user.get_language(), 'DATA_IS_NOT_RELEVANT').format(mes)
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_YES'), callback_data='update_env') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_NO'), callback_data='no_update_env') )
-
-        _output.send_text(chatId, answer, reply_markup=markup)
+        _output.send_text(
+            chatId,
+            answer,
+            reply_markup=tg_ui.env_update_confirm_markup(locale, user.get_language()),
+        )
     else:
         _output.send_text(chatId, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
 
@@ -347,15 +348,14 @@ def help(message):
     
     buttons = _assistent_api.available_by_status()
 
-    markup = types.InlineKeyboardMarkup()
-    for key, value in buttons.items():
-        but = types.InlineKeyboardButton(value, callback_data=key)
-        markup.add(but)
-
     descrption_model = _assistent_api.get_description( user.get_model(), user.get_companyAi() )
 
     text = locale.find_translation(user.get_language(), 'TR_DESCRIPTION_MODELS').format(descrption_model, user.get_companyAi())
-    _output.send_text(message.chat.id, text, reply_markup=markup)
+    _output.send_text(
+        message.chat.id,
+        text,
+        reply_markup=tg_ui.assistant_select_markup(locale, user.get_language(), buttons),
+    )
 
 
 
@@ -512,24 +512,22 @@ def handle_callback_query(call):
         t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_LANGUAGE')
         
         buttons = _languages_api.available_by_status()
-        markup = types.InlineKeyboardMarkup()
-        for key, value in buttons.items():
-            markup.add(types.InlineKeyboardButton(value, callback_data=key))
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
-        _output.send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        _output.send_text(
+            chat_id,
+            t_mes,
+            reply_markup=tg_ui.language_menu_markup(locale, user.get_language(), buttons),
+            id_message_for_edit=message_id,
+        )
 
     elif key == 'menu_promt':
         bot.answer_callback_query(call.id, text = '')
         t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_PROMT')
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_PROMT_NOW'),    callback_data='show_my_promt') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_SET_PROMT'),    callback_data='set_promt') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_DEFAULT_PROMT'),callback_data='set_default_promt') )
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
-        _output.send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        _output.send_text(
+            chat_id,
+            t_mes,
+            reply_markup=tg_ui.prompt_menu_markup(locale, user.get_language()),
+            id_message_for_edit=message_id,
+        )
 
     elif key == 'menu_generate_image':
         bot.answer_callback_query(call.id, text = '')
@@ -538,28 +536,33 @@ def handle_callback_query(call):
     elif key == 'show_my_promt':
         bot.answer_callback_query(call.id, text = '')
         t_mes = locale.find_translation(user.get_language(), 'TR_SHOW_PROMT_NOW').format(user.get_prompt())
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu_promt') )
-        _output.send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        _output.send_text(
+            chat_id,
+            t_mes,
+            reply_markup=tg_ui.back_only_markup(locale, user.get_language(), "menu_promt"),
+            id_message_for_edit=message_id,
+        )
 
     elif key == 'set_promt':
         bot.answer_callback_query(call.id, text = '')
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_UNDO'),                callback_data='menu') )
         t_mes = locale.find_translation(user.get_language(), 'TR_SET_PROMT')
         _user_service.set_wait_action(user.get_userId(), "wait_new_prompt")
-        _output.send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        _output.send_text(
+            chat_id,
+            t_mes,
+            reply_markup=tg_ui.set_prompt_undo_markup(locale, user.get_language()),
+            id_message_for_edit=message_id,
+        )
 
     elif key == 'set_default_promt':
         bot.answer_callback_query(call.id, text = '')
         t_mes = locale.find_translation(user.get_language(), 'TR_DEFAULT_PROMT').format(_env.get_prompt())
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_APPLY'),        callback_data='apply_default_promt') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu_promt') )
-        _output.send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        _output.send_text(
+            chat_id,
+            t_mes,
+            reply_markup=tg_ui.default_prompt_actions_markup(locale, user.get_language()),
+            id_message_for_edit=message_id,
+        )
 
     elif key == 'apply_default_promt': 
         bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
@@ -570,9 +573,12 @@ def handle_callback_query(call):
     elif key == 'menu_help':
         bot.answer_callback_query(call.id, text = '')
         text = command_help(user)
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
-        _output.send_text(chat_id, text, reply_markup=markup, id_message_for_edit=message_id)
+        _output.send_text(
+            chat_id,
+            text,
+            reply_markup=tg_ui.help_menu_markup(locale, user.get_language()),
+            id_message_for_edit=message_id,
+        )
 
     elif key == 'menu_premium':
         premium_button(user, message_id)
@@ -580,23 +586,27 @@ def handle_callback_query(call):
     elif key == 'menu_support':
         bot.answer_callback_query(call.id, text = '')
         t_mes = locale.find_translation(user.get_language(), 'TR_MESSAGE_SUPPORT').format(user.get_prompt())
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
-        _output.send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        _output.send_text(
+            chat_id,
+            t_mes,
+            reply_markup=tg_ui.support_message_markup(locale, user.get_language()),
+            id_message_for_edit=message_id,
+        )
     
     elif key == 'menu_websearch':
         bot.answer_callback_query(call.id, text = '')
-        markup = types.InlineKeyboardMarkup()
-
         if user.get_is_search():
             t_mes = locale.find_translation(user.get_language(), 'TR_TITLE_WEBSEARCH_ON')
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_OFF'),              callback_data='edit_websearch') )
         else:
             t_mes = locale.find_translation(user.get_language(), 'TR_TITLE_WEBSEARCH_OFF')
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_ON'),               callback_data='edit_websearch') )
-        
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_promt') )
-        _output.send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        _output.send_text(
+            chat_id,
+            t_mes,
+            reply_markup=tg_ui.websearch_toggle_menu_markup(
+                locale, user.get_language(), user.get_is_search()
+            ),
+            id_message_for_edit=message_id,
+        )
 
     elif key == 'edit_websearch':
         bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
@@ -608,9 +618,12 @@ def handle_callback_query(call):
             _db.update_user_search_status(user.get_userId(), True)
             t_mes = locale.find_translation(user.get_language(), 'TR_WEBSEARCH_ON')
 
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_websearch') )
-        _output.send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
+        _output.send_text(
+            chat_id,
+            t_mes,
+            reply_markup=tg_ui.websearch_after_toggle_markup(locale, user.get_language()),
+            id_message_for_edit=message_id,
+        )
 
     # elif key == 'menu_think':
 
@@ -675,9 +688,12 @@ def handle_callback_query(call):
                 tariffs_data = node
 
         if tariffs_data == None:
-            markup = types.InlineKeyboardMarkup()
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), callback_data='menu_premium') )
-            _output.send_text(chat_id, locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat())), markup, message_id)
+            _output.send_text(
+                chat_id,
+                locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat())),
+                reply_markup=tg_ui.back_to_premium_markup(locale, user.get_language()),
+                id_message_for_edit=message_id,
+            )
             return
 
         description = locale.find_translation(user.get_language(), 'TR_SUBSCRIBE_FOR_ONE_MOUNTH').format(tariffs_data.activity_day)
@@ -688,10 +704,8 @@ def handle_callback_query(call):
 
             label = _payMan.generate_payment_label(user.get_userId())
 
-            markup = types.InlineKeyboardMarkup()
             pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(tariffs_data.price_stars, ' stars')
-            markup.add( types.InlineKeyboardButton(pay_description,                                                     pay=True) )
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), pay=False,  callback_data='menu_premium') )
+            markup = tg_ui.stars_invoice_markup(locale, user.get_language(), pay_description)
 
             prices = [types.LabeledPrice(label="XTR", amount=int(tariffs_data.price_stars))]  
             bot.send_invoice(
@@ -720,14 +734,11 @@ def handle_callback_query(call):
                 _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.is_test)
                 _payMan.add_payment(pay_info)
 
-                markup = types.InlineKeyboardMarkup()
-                chech_key = 'check_pay_' + pay_info.payment_id
                 pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(pay_info.amount, pay_info.currency)
-                markup.add( types.InlineKeyboardButton(pay_description,                                                     url=pay_info.url_pay) )
-                # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_CHECK_PAY'),        callback_data=chech_key) )
-                markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
-                
-                _output.send_text(chat_id, description, markup, message_id)
+                markup = tg_ui.external_payment_markup(
+                    locale, user.get_language(), pay_description, pay_info.url_pay
+                )
+                _output.send_text(chat_id, description, reply_markup=markup, id_message_for_edit=message_id)
 
     elif cmd.action == "tariff_select":
         code_tariff = _tariffs_api.find_bottom(int(cmd.args["id"]))
@@ -867,9 +878,12 @@ def generate_photo(user:User, id_message_for_edit:int = 0):
     _user_service.set_wait_action(user.get_userId(), "generate_image")
 
     if id_message_for_edit > 0:
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_UNDO'), callback_data='menu') )
-        _output.send_text(user.get_userId(), t_mes, reply_markup=markup, id_message_for_edit=id_message_for_edit)
+        _output.send_text(
+            user.get_userId(),
+            t_mes,
+            reply_markup=tg_ui.generate_image_cancel_markup(locale, user.get_language()),
+            id_message_for_edit=id_message_for_edit,
+        )
     else:
         _output.send_text(user.get_userId(), t_mes)
 
@@ -952,16 +966,21 @@ def on_post_media(sender, userId, mediaList: list[UserMedia]):
             _output.delete_message(chatId, medId)
 
     if not content.get_result() or content.get_code() >= 300:
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost ') )
-        _output.send_text(chatId, locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT').format(content.get_result()), reply_markup=markup, isMarkdown=True ) 
+        _output.send_text(
+            chatId,
+            locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT').format(content.get_result()),
+            reply_markup=tg_ui.error_repeat_request_markup(locale, user.get_language()),
+            isMarkdown=True,
+        )
         return
 
     if len(content.get_result()) <= MAX_CHAR:
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
-
-        _output.send_text(chatId, content.get_result(), reply_markup=markup, isMarkdown=True)
+        _output.send_text(
+            chatId,
+            content.get_result(),
+            reply_markup=tg_ui.vocalize_markup(locale, user.get_language()),
+            isMarkdown=True,
+        )
     else:    
         _output.send_text(chatId, content.get_result(), isMarkdown=True)
 
@@ -987,20 +1006,12 @@ def main_menu(user, charId, id_message = None):
     if user.get_wait_action() == 'wait_new_prompt':
         _user_service.reset_action(user.get_userId())
 
-    markup = types.InlineKeyboardMarkup()
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LANGUAGE'),    callback_data='menu_language') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_GEN_IMAGE'),   callback_data='menu_generate_image') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PROMT'),       callback_data='menu_promt') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_WEBSEARCH'),   callback_data='menu_websearch') )
-    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_THINKS'),     callback_data='menu_think') )
-    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LOCATE'),     callback_data='menu_locate') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_HELP'),        callback_data='menu_help') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PREMIUM'),     callback_data='menu_premium') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_SUPPORT'),     callback_data='menu_support') )
-
-
-
-    _output.send_text(charId, t_mes, reply_markup=markup, id_message_for_edit=id_message)
+    _output.send_text(
+        charId,
+        t_mes,
+        reply_markup=tg_ui.main_menu_markup(locale, user.get_language()),
+        id_message_for_edit=id_message,
+    )
     
 
 
@@ -1009,10 +1020,11 @@ def action_handler(chatId, user, action, text):
         _user_service.apply_prompt_action(user, text)
 
         t_mes = locale.find_translation(user.get_language(), 'TR_PROMT_APPLY')
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_PROMT_NOW'),    callback_data='show_my_promt') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
-        _output.send_text(chatId, t_mes, reply_markup=markup)
+        _output.send_text(
+            chatId,
+            t_mes,
+            reply_markup=tg_ui.prompt_applied_markup(locale, user.get_language()),
+        )
 
     else:
         _user_service.reset_action(user.get_userId())
@@ -1035,7 +1047,6 @@ def command_help(user):
 
 def pay_button(user: User, callFromMenu: bool, tarif_id: str, tarif_description = 'TR_TARIFF_ONCE', id_message_for_edit : int = 0):
     buttons = _payMan.get_buttons()
-    markup = types.InlineKeyboardMarkup()
 
     have_sub, hours = _db.its_have_this_subscribe(user.get_userId(), tarif_id, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ))
 
@@ -1045,12 +1056,11 @@ def pay_button(user: User, callFromMenu: bool, tarif_id: str, tarif_description 
         else:
             text = locale.find_translation(user.get_language(), tarif_description)
 
-        for key, value in buttons.items():
-            button = types.InlineKeyboardButton(value, callback_data=key + '_' + str(tarif_id))
-            markup.add(button)
+        markup = tg_ui.payment_methods_markup(
+            locale, user.get_language(), buttons, str(tarif_id), callFromMenu
+        )
 
         if callFromMenu:
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), callback_data='menu_premium') )
             _output.send_text(user.get_userId(), text, reply_markup=markup, id_message_for_edit=id_message_for_edit)
         else:
             _output.send_text(user.get_userId(), text, reply_markup=markup)
@@ -1063,9 +1073,11 @@ def pay_button(user: User, callFromMenu: bool, tarif_id: str, tarif_description 
 def premium_button(user: User, id_message_for_edit : int = 0):
     if user.get_status() == 0: 
         if id_message_for_edit != 0:
-            markup = types.InlineKeyboardMarkup()
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
-            _output.send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'), reply_markup=markup)
+            _output.send_text(
+                user.get_userId(),
+                locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'),
+                reply_markup=tg_ui.premium_banned_markup(locale, user.get_language()),
+            )
         else:
             _output.send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'))
         return
@@ -1129,12 +1141,9 @@ def premium_button(user: User, id_message_for_edit : int = 0):
 
 
     buttons = _tariffs_api.available_by_status()
-    markup = types.InlineKeyboardMarkup()
-    for key, value in buttons.items():
-        markup.add(types.InlineKeyboardButton(value, callback_data=key))
-
-    if id_message_for_edit != 0:
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
+    markup = tg_ui.tariff_list_markup(
+        locale, user.get_language(), buttons, id_message_for_edit != 0
+    )
     
     t_mes = locale.find_translation(user.get_language(), 'TR_TARIFFS_MENU').format(text_tarifs)
     _output.send_text(user.get_userId(), t_mes, reply_markup=markup)
