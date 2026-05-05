@@ -559,32 +559,39 @@ $$ LANGUAGE plpgsql;
 
 -- -- https://platform.openai.com/docs/models/continuous-model-upgrades
 -- нужно добавить в эту таблицу больше данных о модели, умеет ли она работать с фото, синтезировать, распознавать делать поиск в интернете, и т.д.
-insert into assistant_ai values('OpenAi',   'gpt-3.5-turbo',          'gpt-3.5-turbo',          4097,   'Up to Sep 2021',   1, False);
-insert into assistant_ai values('OpenAi',   'gpt-4',                  'gpt-4',                  8192,   'Up to Sep 2021',   1, False);
-insert into assistant_ai values('OpenAi',   'gpt-4-turbo',            'gpt-4-turbo',            128000, 'Up to Dec 2023',   2, False);
-insert into assistant_ai values('OpenAi',   'gpt-4o',                 'gpt-4o',                 128000, 'Oct 01, 2023',     2, True);
-insert into assistant_ai values('OpenAi',   'gpt-4o-mini',            'gpt-4o-mini',            128000, 'Up to Oct 2023',   2, True);
-insert into assistant_ai values('OpenAi',   'o1-preview',             'o1',                     128000, 'Up to Oct 2023',   2, False);
-insert into assistant_ai values('OpenAi',   'o1-mini',                'o1-mini',                128000, 'Up to Oct 2023',   2, False);
-insert into assistant_ai values('OpenAi',   'gpt-o3-pro',             'gpt-o3-pro',             200000, 'Jul 01, 2024',     2, False);
-insert into assistant_ai values('OpenAi',   'gpt-4.1',                'gpt-4.1',                1047576, 'Jun 01, 2024',    2, True);
-insert into assistant_ai values('OpenAi',   'gpt-5',                  'gpt-5',                  400000, 'Oct 04, 2024',     2, True);
-insert into assistant_ai values('OpenAi',   'gpt-5-mini',             'gpt-5-mini',             400000, 'May 31, 2024',     2, True);
-insert into assistant_ai values('OpenAi',   'gpt-5.1',                'gpt-5.1',                400000, 'Sep 30, 2024',     2, True);
-insert into assistant_ai values('OpenAi',   'gpt-5.2',                'gpt-5.2',                400000, 'Aug 31, 2025',     2, True);
-insert into assistant_ai values('Yandex',   'yandexgpt',              'Yandex GPT 5',           8000,   '06.12.2023',       2, True);
-insert into assistant_ai values('Yandex',   'yandexgpt-lite',         'Yandex Lite',            8000,   '06.12.2023',       2, False);
-insert into assistant_ai values('Yandex',   'yandexgpt-32k',          'Yandex GPT 5-32k',       32000,  '06.12.2023',       2, False);
-insert into assistant_ai values('Sber',     'GigaChat',               'GigaChat',               4096,   '-',                1, False);
-insert into assistant_ai values('Meta',     'llama3-70b-8192',        'llama3-70b',             8192,   '-',                1, True);
-insert into assistant_ai values('X ai',     'grok-beta',              'grok',                   131072, '-',                2, False);
-insert into assistant_ai values('Claude',   'claude-3-7-sonnet-20250219', 'claude-3-7-sonnet',  200000, '2025.02.19',       2, False);
-insert into assistant_ai values('Claude',   'claude-opus-4-1',        'claude-opus-4-1',        200000, '2025.08.05',       2, True);
-insert into assistant_ai values('Claude',   'claude-opus-4-0',        'claude-opus-4-0',        200000, '2025.05.14',       2, True);
-insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',     'DeepSeek-R1',             64000,  '2025.01.20',       1, True);
-insert into assistant_ai values('DeepSeek', 'deepseek-chat',         'DeepSeek-V3',             64000,  '2025.03.29',       2, True);
-insert into assistant_ai values('Google',   'gemini-2.5-pro-exp-03-25','gemini-2.5-pro',        1048576,'2025.01.15',       2, False);
-insert into assistant_ai values('Google',   'gemini-2.0-flash',       'gemini-2.0',             1048576,'2024.05.15',       1, False);
+insert into assistant_ai values('OpenAi',   'gpt-3.5-turbo',              'gpt-3.5-turbo',          4097,    'Up to Sep 2021',   1, False);
+insert into assistant_ai values('OpenAi',   'gpt-4',                      'gpt-4',                  8192,    'Up to Sep 2021',   1, False);
+insert into assistant_ai values('OpenAi',   'gpt-4-turbo',                'gpt-4-turbo',            128000,  'Up to Dec 2023',   2, False);
+insert into assistant_ai values('OpenAi',   'gpt-4o',                     'gpt-4o',                 128000,  'Oct 01, 2023',     2, True);
+insert into assistant_ai values('OpenAi',   'gpt-4o-mini',                'gpt-4o-mini',            128000,  'Up to Oct 2023',   2, True);
+insert into assistant_ai values('OpenAi',   'o1-preview',                 'o1',                     128000,  'Up to Oct 2023',   2, False);
+insert into assistant_ai values('OpenAi',   'o1-mini',                    'o1-mini',                128000,  'Up to Oct 2023',   2, False);
+insert into assistant_ai values('OpenAi',   'gpt-4.5-preview',            'gpt-4.5',                128000,  'Up to Oct 2023',   2, False);
+insert into assistant_ai values('OpenAi',   'gpt-4.1',                    'gpt-4.1',                1047576, 'Jun 01, 2024',     2, False);
+insert into assistant_ai values('OpenAi',   'gpt-5',                      'gpt-5',                  400000,  'Oct 04, 2024',     2, False);
+insert into assistant_ai values('OpenAi',   'gpt-5-mini',                 'gpt-5-mini',             400000,  'May 31, 2024',     2, True);
+insert into assistant_ai values('OpenAi',   'gpt-5.1',                    'gpt-5.1',                400000,  'Sep 30, 2024',     2, False);
+insert into assistant_ai values('OpenAi',   'gpt-5.2',                    'gpt-5.2',                400000,  'Aug 31, 2025',     2, False);
+insert into assistant_ai values('OpenAi',   'gpt-5.3-chat-latest',        'gpt-5.3',                400000,  'Mar 03, 2026',     2, False);
+insert into assistant_ai values('OpenAi',   'gpt-5.4',                    'gpt-5.4',                400000,  'Mar 06, 2026',     2, True);
+insert into assistant_ai values('OpenAi',   'gpt-5.5',                    'gpt-5.5',                1050000, 'Mar 23, 2026',     2, True);
+insert into assistant_ai values('OpenAi',   'gpt-5.5-pro',                'gpt-5.5-pro',            1050000, 'Mar 23, 2026',     2, True);
+insert into assistant_ai values('Yandex',   'yandexgpt',                  'Yandex GPT 5',           8000,    '06.12.2023',       2, True);
+insert into assistant_ai values('Yandex',   'yandexgpt-lite',             'Yandex Lite',            8000,    '06.12.2023',       2, False);
+insert into assistant_ai values('Yandex',   'yandexgpt-32k',              'Yandex GPT 5-32k',       32000,   '06.12.2023',       2, False);
+insert into assistant_ai values('Sber',     'GigaChat',                   'GigaChat',               4096,    '-',                1, False);
+insert into assistant_ai values('Meta',     'llama3-70b-8192',            'llama3-70b',             8192,    '-',                1, False);
+insert into assistant_ai values('X ai',     'grok-beta',                  'grok',                   131072,  '-',                2, False);
+insert into assistant_ai values('DeepSeek', 'deepseek-reasoner',          'DeepSeek 3 Thinking',    64000,   '2025.01.20',       2, False);
+insert into assistant_ai values('DeepSeek', 'deepseek-chat',              'DeepSeek 3.2',           64000,   '2025.03.29',       2, False);
+insert into assistant_ai values('DeepSeek', 'deepseek-v4-pro',            'DeepSeek 4 pro',         1050000, '2026.04.24',       2, True);
+insert into assistant_ai values('DeepSeek', 'deepseek-v4-flash',          'DeepSeek 4',             1050000, '2026.04.24',       2, True);
+insert into assistant_ai values('Google',   'gemini-2.5-pro-exp-03-25',   'gemini-2.5-pro',         1048576, '2025.01.15',       2, False);
+insert into assistant_ai values('Google',   'gemini-2.0-flash',           'gemini-2.0',             1048576, '2024.05.15',       1, False);
+insert into assistant_ai values('Claude',   'claude-3-7-sonnet-20250219', 'Sonnet 3.7',             200000,  '2025.02.19',       2, True);
+insert into assistant_ai values('Claude',   'claude-opus-4-6',            'Opus 4.6',               200000,  '2025.08.05',       2, True);
+insert into assistant_ai values('Claude',   'claude-sonnet-4-6',          'Sonnet 4.6',             200000,  '2025.05.14',       2, True);
+
 
 
 
