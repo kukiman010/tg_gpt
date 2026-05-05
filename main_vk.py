@@ -1,8 +1,10 @@
 """
 VK transport entrypoint skeleton.
 
-This file intentionally contains only wiring placeholders.
-Business logic must be reused from core services.
+Business logic lives in ``core.services``; this process should only:
+parse VK updates, build ``core.dto.ChannelContext`` / ``InboundEvent``,
+call services, and send replies via an implementation of
+``core.ports.message_output.MessageOutputPort`` (e.g. ``VkMessageOutput``).
 """
 
 from configure import Settings
