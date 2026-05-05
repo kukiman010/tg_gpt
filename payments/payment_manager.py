@@ -22,6 +22,7 @@ from payments.yookassa_api import Yookassa
 from payments.base_pay_system import BasePaymentSystem
 from Control.payment_info import SubscriptionPaymentInfo
 import signals
+from core.callback_codec import CallbackCodec
 
 
 
@@ -142,7 +143,7 @@ class PaymentManager:
 
             for system in self.active_services:
                 if system.is_enabled:
-                    button_name = 'set_payments_' + system.name
+                    button_name = CallbackCodec.encode_payment_select(system.name, 0).rsplit("_", 1)[0]
                     self.buttons[button_name] = system.description
                     self.payment_system_and_code_buttons[system.name] = button_name
 

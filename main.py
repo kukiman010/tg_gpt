@@ -20,7 +20,6 @@ import Gpt_models.deepseak_api
 import Control.context_model
 
 from logger         import LoggerSingleton
-from openai         import OpenAIError
 from databaseapi    import dbApi
 from telebot        import types
 from translator     import Locale
@@ -41,6 +40,11 @@ from Control.environment import Environment
 from apscheduler.schedulers.background import BackgroundScheduler
 
 import signals
+from core.callback_codec import CallbackCodec
+from core.services.conversation_service import ConversationService
+from core.services.user_service import UserService
+from core.services.payment_service import PaymentService
+from core.services.assistant_service import AssistantService
 
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -145,6 +149,24 @@ _xai = Gpt_models.x_ai.Xai(TOKEN_XAI)
 _claude = Gpt_models.claude_api.Claud(TOKEN_CLAUDE)
 _deepseek = Gpt_models.deepseak_api.DeepSeek(TOKEN_DEEPSEEK)
 _google = Gpt_models.google_api.Google(TOKEN_GOOGLE_API)
+
+_conversation_service = ConversationService(
+    _db,
+    _speak,
+    _logger,
+    {
+        "OpenAi": _gpt,
+        "Yandex": _yag,
+        "Meta": _metaG,
+        "X ai": _xai,
+        "Claude": _claude,
+        "DeepSeek": _deepseek,
+        "Google": _google,
+    },
+)
+_user_service = UserService(_db, _env, _logger)
+_payment_service = PaymentService(_db, _env, locale, _logger)
+_assistant_service = AssistantService(_db, _assistent_api, _languages_api)
 
 
 _payMan = PaymentManager( _env.get_global_payment())
@@ -427,49 +449,11 @@ def handle_successful_payment(message):
     amount = message.successful_payment.total_amount
     currency = message.successful_payment.currency
     label = message.successful_payment.invoice_payload
-
-    tarif = _db.get_tarif_by_paylabel(label)
-    fee = 0 # коммисия
-
-    userId = user.get_userId()
-
-    tariffs_data = None
-    tarifs_data = _db.get_tariffs(tarif)
-    for node in tarifs_data:
-        if node.tariff_id == int(tarif):
-            tariffs_data = node
-
-    if tariffs_data == None:
-        send_text(userId, locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat() )) )
-
-    
-    hours_tarif = 720 # 720h == 30 days
-    hours_tarif = tariffs_data.activity_day * 24
-    date_time_now = datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) )
-
-    have_sub = _db.its_have_this_subscribe(user.get_userId(), tarif, date_time_now)
-
-
-    _db.update_invoice_journal(payment_id, label, 'succeeded', 'stars', None, fee, date_time_now)
-    _db.add_successful_payments(userId, label, tarif, float(amount - fee), currency, 'TelegramStarsPay', 'stars', '', date_time_now )
-    if have_sub:
-        _db.update_subscribe_date(user.get_userId(), tarif, hours_tarif, label)
-    else:
-        _db.upsert_subscription_user(userId, user.get_login(), tarif, '', hours_tarif , label)
-
-    if int(tarif == 1):
-        user = user_verification_easy(userId)
-
-        user.get_language()
-        _db.update_status_in_users(userId, 3)
-
-        if user == None:
-            send_text(userId, locale.find_translation('en', 'TR_SUCCESSFUL_PAYMENT')) 
-        else :
-            send_text(userId, locale.find_translation(user.get_language(), 'TR_SUCCESSFUL_PAYMENT'))
-
-    else:
-        _logger.add_critical('Пользователь {}, произвел оплату {}, но тариф {} не обработан'.format(userId, payment_id, tarif))
+    result = _payment_service.process_success(user, payment_id, amount, currency, label)
+    if not result.get("ok"):
+        send_text(user.get_userId(), result.get("error", locale.find_translation(user.get_language(), "TR_ERROR")))
+        return
+    send_text(user.get_userId(), locale.find_translation(user.get_language(), "TR_SUCCESSFUL_PAYMENT"))
 
 
 
@@ -477,20 +461,7 @@ def handle_successful_payment(message):
 def handle_callback_query(call):
     user = user_verification_custom(call.message.chat.id, call.message.message_id, call.message.chat.username, call.message.chat.type, call.from_user.language_code)    
     key = call.data
-    assistent_pattern = r'^set_model_(\d+)$'
-    assistent_match = re.match(assistent_pattern, key)
-    
-    language_pattern = r'^set_lang_model_(\d+)$'
-    language_match = re.match(language_pattern, key)
-
-    payments_pattern = r'^set_payments_(\S+)_(\d+)$'
-    payments_match = re.match(payments_pattern, key)
-
-    tariff_pattern = r'^set_tariff_model_(\d+)$'
-    tariff_match = re.match(tariff_pattern, key)
-
-    check_pay_pattern = r'^check_pay_(\S+-\S+-\S+-\S+)$'
-    check_pay_match = re.match(check_pay_pattern, key)
+    cmd = CallbackCodec.decode(key)
 
     message_id = call.message.message_id
     chat_id = call.message.chat.id
@@ -575,7 +546,7 @@ def handle_callback_query(call):
 
         markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_UNDO'),                callback_data='menu') )
         t_mes = locale.find_translation(user.get_language(), 'TR_SET_PROMT')
-        _db.update_user_action(user.get_userId(), "wait_new_prompt")
+        _user_service.set_wait_action(user.get_userId(), "wait_new_prompt")
         send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
 
     elif key == 'set_default_promt':
@@ -664,37 +635,33 @@ def handle_callback_query(call):
         media.add_mes(call.message)
         _mediaWorker.add_data(media)
 
-    elif assistent_match:
-        id = int(assistent_match.group(1))
-        assistent = _assistent_api.find_assistent(id)
+    elif cmd.action == "assistant_select":
+        idx = int(cmd.args["id"])
 
-        if not _assistent_api.isAvailable(id, user.get_status()):
+        if not _assistant_service.can_use_assistant(idx, user.get_status()):
             bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_NEED_PREMIUM_ASSISTANT'))
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION'))
             return
 
-        for first, second in assistent.items():
-            _db.update_user_assistent(user.get_userId(),second,first ) 
-            break
+        _assistant_service.set_assistant(user, idx)
         
         bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_USE_NEW_ASSISTANT'))
         bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
 
-    elif language_match:
-        id = int(language_match.group(1))
-        code_lang = _languages_api.find_bottom(id)
+    elif cmd.action == "language_select":
+        idx = int(cmd.args["id"])
+        code_lang = _assistant_service.set_language_by_button(user, idx)
         if locale.islanguage( code_lang ):
-            _db.update_user_lang_code(user.get_userId(), code_lang)
             bot.send_message(chat_id, locale.find_translation(code_lang, 'TR_SYSTEM_LANGUAGE_CHANGE'))
             bot.answer_callback_query(call.id, locale.find_translation(code_lang, 'TR_SUCCESS'))
         else:
             bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_SUPPORT'))
             bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
 
-    elif payments_match:
+    elif cmd.action == "payment_select":
         bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
-        paymet_system = payments_match.group(1)
-        tarif_id = payments_match.group(2)
+        paymet_system = cmd.args["system"]
+        tarif_id = cmd.args["tariff_id"]
         
         
         
@@ -759,8 +726,8 @@ def handle_callback_query(call):
                 
                 send_text(chat_id, description, markup, message_id)
 
-    elif tariff_match:
-        code_tariff = _tariffs_api.find_bottom( int(tariff_match.group(1)) )
+    elif cmd.action == "tariff_select":
+        code_tariff = _tariffs_api.find_bottom(int(cmd.args["id"]))
 
         tariffs = _db.get_tariffs()
 
@@ -769,8 +736,8 @@ def handle_callback_query(call):
                 pay_button(user, True, node.tariff_id, node.description_code, message_id)
                 break
 
-    elif check_pay_match:
-        payment_id = check_pay_match.group(1)
+    elif cmd.action == "check_payment":
+        payment_id = cmd.args["payment_id"]
         print()
 
 
@@ -862,148 +829,39 @@ def handle_message(message):
 
 
 def user_verification(message) -> User:
-    user = User()
-
-    if _db.find_user(message.from_user.id) == False:
-        name = message.chat.username
-        if not name:
-            name = message.chat.first_name
-
-        user.set_default_data(_env.get_language(), _env.get_permission(), _env.get_company_ai(), _env.get_assistant_model(), _env.get_recognizes_photo_model(), _env.get_generate_photo_model(), _env.get_text_to_audio(), _env.get_audio_to_text(), _env.get_speakerName(), _env.get_prompt())
-        _db.add_user(message.from_user.id, name, message.chat.type, message.from_user.language_code )
-        _logger.add_info('создан новый пользователь {}'.format(message.chat.username))
-    else:
-        _db.add_users_in_groups(message.from_user.id, message.chat.id)
-    
-    user = _db.get_user_def(message.from_user.id)
-
-    if user.get_status() == 0: 
-        return None
-
-    return user
+    return _user_service.verify_from_message(message)
 
 
 
 def user_verification_custom(userId, chatId, chat_username, chatType, lang_code):
-    user = User()
-    if _db.find_user(userId) == False:
-        user.set_default_data(_env.get_language(), _env.get_permission(), _env.get_company_ai(), _env.get_assistant_model(), _env.get_recognizes_photo_model(), _env.get_generate_photo_model(), _env.get_text_to_audio(), _env.get_audio_to_text(), _env.get_speakerName(), _env.get_prompt())
-        _db.add_user(userId, chat_username, chatType, lang_code )
-        _logger.add_info('создан новый пользователь {}'.format(chat_username))
-    else:
-        _db.add_users_in_groups(userId, chatId)
-    
-    user = _db.get_user_def(userId)
-
-    if user.get_status() == 0: # TODO: добавить проверку аккаунта на блокировку 
-        return None
-
-    return user
+    return _user_service.verify_custom(userId, chatId, chat_username, chatType, lang_code)
 
 
 
 def user_verification_easy(userId) -> User:
-    user = User()
-    if _db.find_user(userId) == False:
-        return None
-    else:
-        user = _db.get_user_def(userId)
-        return user
+    return _user_service.verify_easy(userId)
 
 
 def mergeConversationContext(chatId, user:User, text_to_photo, photos, generate_image:bool = False): # -> list[str], bool:
-    context = Control.context_model.Context_model()
-    context.set_data(user.get_userId(), chatId, "system", chatId, user.get_prompt(), False )
-
-    dict: list[Control.context_model.Context_model] = []
-    dict.append( context )
-    dict.extend(_db.get_context(user.get_userId(), chatId))
-
-    mes = Control.context_model.Context_model()
-    mes.set_data(user.get_userId(), chatId, "user", chatId, text_to_photo, False )
-    dict.append(mes)
-
-    isPhoto = False
-
-    for photo_to_base64 in photos:
-        if photo_to_base64 and photo_to_base64 != None:
-            mes_photo = Control.context_model.Context_model()
-            mes_photo.set_data(user.get_userId(), chatId,"user",chatId, photo_to_base64, True )
-            dict.append(mes_photo)
-
-    for node in dict:
-        if node.get_isPhoto():
-            isPhoto = True
-            break
-
-    json = Control.context_model.convert(user.get_companyAi(), dict, True, generate_image)
-
-    return json, isPhoto
+    return _conversation_service.merge_context(chatId, user, text_to_photo, photos, generate_image)
 
 
 def poat_generate_image(user:User, json, model) -> Control.context_model.AnswerAssistent :
-    content = Control.context_model.AnswerAssistent()
     model="gpt-4.1"
-    try:
-        content = _gpt.create_image(json, model )
-
-    except OpenAIError as err: 
-        # print(json)
-        _logger.add_critical("OpenAI: {}".format(err))
-        content.code = 500
-        content.result = str(err)
-
-    return content
+    return _conversation_service.post_generate_image(user, json, model)
 
 def poat_vision_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
     model = "gpt-4o"
-    content = Control.context_model.AnswerAssistent()
-
-    try:
-        content = _gpt.gpt_post_view(json, model, 1300 )
-
-    except OpenAIError as err: 
-        # print(json)
-        _logger.add_critical("OpenAI: {}".format(err))
-        content.code = 500
-        content.result = str(err)
-
-    return content
+    return _conversation_service.post_vision(json, model)
 
 
 def post_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
-    content = Control.context_model.AnswerAssistent()
-
-    try:
-        if str(user.get_companyAi()).upper() == str("OpenAi").upper():
-            content = _gpt.post_gpt(json, model, user.get_is_search())
-        elif str(user.get_companyAi()).upper() == str("Yandex").upper():
-            _yag.set_token( _speak.get_IAM() )
-            content = _yag.post_gpt(json, model)
-        # elif str(user.get_companyAi()).upper() == str("Sber").upper():
-            # content = _sber.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("Meta").upper():
-            content = _metaG.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("X ai").upper():  
-            content = _xai.post_gpt(model, json)
-        elif str(user.get_companyAi()).upper() == str("Claude").upper():  
-            content = _claude.post_gpt( json, model)
-        elif str(user.get_companyAi()).upper() == str("DeepSeek").upper():  
-            content = _deepseek.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("Google").upper():  
-            content = _google.post_gpt(json, model)
-        
-    except OpenAIError as err: 
-        _logger.add_critical("OpenAI: {}".format(err))
-        content.code = 500
-        content.result = str(err)
-
-    return content
+    return _conversation_service.post_chat(user, json, model)
 
 
 def generate_photo(user:User, id_message_for_edit:int = 0):
     t_mes = locale.find_translation(user.get_language(), "TR_GEN_IMAGE_DESCRIPTION")
-    _db.update_user_action(user.get_userId(), "generate_image")
+    _user_service.set_wait_action(user.get_userId(), "generate_image")
 
     if id_message_for_edit > 0:
         markup = types.InlineKeyboardMarkup()
@@ -1174,7 +1032,7 @@ def on_post_media(sender, userId, mediaList: list[UserMedia]):
 
     if generate_image:
         content = poat_generate_image(user, json, user.get_model_generate_photo())
-        _db.update_user_action(user.get_userId(), '')   
+        _user_service.reset_action(user.get_userId())
     elif isPhotos or boolPhotoResult:
         content = poat_vision_gpt(user, json, user.get_model())
     else:
@@ -1215,41 +1073,12 @@ def on_finish_payment(sender, userId, data):
         _logger.add_critical('Сигнал on_finish_payment инициализирован {}, а не PaymentManager'.format(sender))
         return
     
-    tariffs_data = None
-    tarifs_data = _db.get_tariffs(data.tarrif)
-    for node in tarifs_data:
-        if node.tariff_id == int(data.tarrif):
-            tariffs_data = node
-
-    if tariffs_data == None:
-        send_text(userId, locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat() )) )
-
-    
-    hours_tarif = 720 # 720h == 30 days
-    hours_tarif = tariffs_data.activity_day * 24
-    have_sub, hours = _db.its_have_this_subscribe(userId, data.tarrif, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ))
-
-
-    _db.update_invoice_journal(data.payment_id, data.label_pay, data.status, data.card_type, data.card_number, data.fee, data.expires_at)
-    _db.add_successful_payments(data.user_id, data.payment_id, data.tarrif, float(data.amount - data.fee), data.currency, data.payment_system, data.card_type, data.email, data.expires_at )
-    if have_sub:
-        _db.update_subscribe_date(data.user_id, data.tarrif, hours_tarif, data.payment_id)
-    else:
-        _db.upsert_subscription_user(data.user_id, data.user_name, data.tarrif, data.email, hours_tarif, data.payment_id)
-
-    if int(data.tarrif) == 1:
-        user = user_verification_easy(userId)
-
-        user.get_language()
-        _db.update_status_in_users(userId, 3)
-
-        if user == None:
-            send_text(userId, locale.find_translation('en', 'TR_SUCCESSFUL_PAYMENT')) 
-        else :
-            send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_SUCCESSFUL_PAYMENT'))
-
-    else:
-        _logger.add_critical('Пользователь {}, произвел оплату {}, но тариф {} не обработан'.format(userId, data.payment_id, data.tarrif))
+    result = _payment_service.process_finished_payment_signal(userId, data, user_verification_easy)
+    if not result.get("ok"):
+        _logger.add_critical("Не удалось обработать payment signal для user {}".format(userId))
+        return
+    lang = result.get("notify_lang", "en")
+    send_text(userId, locale.find_translation(lang, "TR_SUCCESSFUL_PAYMENT"))
     
 
 
@@ -1257,7 +1086,7 @@ def main_menu(user, charId, id_message = None):
     t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
     
     if user.get_wait_action() == 'wait_new_prompt':
-        _db.update_user_action(user.get_userId(), '')   
+        _user_service.reset_action(user.get_userId())
 
     markup = types.InlineKeyboardMarkup()
     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LANGUAGE'),    callback_data='menu_language') )
@@ -1278,8 +1107,7 @@ def main_menu(user, charId, id_message = None):
 
 def action_handler(chatId, user, action, text):
     if action == 'wait_new_prompt':
-        _db.update_user_action(user.get_userId(), '')
-        _db.update_user_prompt(user.get_userId(),  text.replace("'", ' '))
+        _user_service.apply_prompt_action(user, text)
 
         t_mes = locale.find_translation(user.get_language(), 'TR_PROMT_APPLY')
         markup = types.InlineKeyboardMarkup()
@@ -1288,7 +1116,7 @@ def action_handler(chatId, user, action, text):
         send_text(chatId, t_mes, reply_markup=markup)
 
     else:
-        _db.update_user_action(user.get_userId(), '')
+        _user_service.reset_action(user.get_userId())
         _logger.add_critical('There is no processing of such a scenario: {}, the action will be reset'.format(action))
 
 
