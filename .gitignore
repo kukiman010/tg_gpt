@@ -27,6 +27,7 @@ share/python-wheels/
 MANIFEST
 .vscode/
 architecture_memory.md
+MULTICHANNEL_DEVELOPER_GUIDE.md
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
