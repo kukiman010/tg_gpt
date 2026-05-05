@@ -45,7 +45,15 @@ from core.services.post_media_service import PostMediaMarkups, PostMediaService
 from transport.telegram import TelegramMessageOutput
 from transport.telegram import ui as tg_ui
 from transport.telegram.callback_handlers import handle_telegram_callback
+from transport.telegram.command_handlers import (
+    AdminCommandsDeps,
+    handle_lastlog,
+    handle_notify_all,
+    handle_update_env,
+    handle_update_lang_models_pay,
+)
 from transport.telegram.handler_context import TelegramAppContext
+from transport.telegram.inbound import inbound_from_telegram_message
 
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -216,101 +224,28 @@ def drop_context(message):
 @bot.message_handler(commands=['lastlog'])
 def lastlog(message):
     user = user_verification(message)
-    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
-        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
-        return
-    
-    words = message.text.split()
-
-    if len(words) == 2:
-        second_word = words[1]
-        if second_word.isdigit():
-            text = _logger.read_file_from_end(int(second_word))
-            t_mes = locale.find_translation(user.get_language(), 'TR_GET_LOG')
-            bot.send_message(message.chat.id, t_mes.format(second_word, text))
-
-    elif len(words) == 3:
-        second_word = words[1]
-        type_log = words[2]
-
-        if second_word.isdigit():
-            text = _logger.read_file_from_end(int(second_word), type_log)
-            t_mes = locale.find_translation(user.get_language(), 'TR_GET_LOG_POST')
-            bot.send_message(message.chat.id, t_mes.format(second_word, type_log, text))
-    else:
-        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_SINTAX')
-        bot.send_message(message.chat.id, t_mes)
+    handle_lastlog(message, user, _admin_deps)
 
 
 
 @bot.message_handler(commands=['notify_all'])
 def notify_all(message):
     user = user_verification(message)
-
-    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
-        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
-        return
-
-    data = _db.get_all_chat(message.from_user.id)
-    text = message.text
-    words = text.split()  
-    result = ' '.join(words[1:]) 
-
-    for i in data:  # итерация по внешнему списку
-        for j in i:  # итерация по внутреннему списку
-            for k in j:  # итерация по вложенному списку
-                # print (k, result)
-                bot.send_message(k, result)
+    handle_notify_all(message, user, _admin_deps)
 
 
 
 @bot.message_handler(commands=['update_env'])
 def update_environment (message):
     user = user_verification(message)
-    chatId = message.chat.id
-    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
-        bot.send_message(chatId, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
-        return
-
-    mes = _env.show_differences(_db.get_environment(), locale.find_translation(user.get_language(), 'TR_NEW_OLD_CHANGES'))
-
-    if mes:
-        answer = locale.find_translation(user.get_language(), 'DATA_IS_NOT_RELEVANT').format(mes)
-        _output.send_text(
-            chatId,
-            answer,
-            reply_markup=tg_ui.env_update_confirm_markup(locale, user.get_language()),
-        )
-    else:
-        _output.send_text(chatId, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
+    handle_update_env(message, user, _admin_deps)
 
 
 
 @bot.message_handler(commands=['update_lang_models_pay'])
 def update_data (message):
     user = user_verification(message)
-    chatId = message.chat.id
-    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
-        bot.send_message(chatId, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
-        return
-
-    _logger.add_info("Запущено обновление переменных _payMan, _assistent_api, _languages_api, _scheduler")
-
-    # update list pay system
-    _payMan.update(_db.get_payment_systems())
-    # update list model list
-    _assistent_api.clear()
-    _assistent_api.load_models( _db.get_assistant_ai() )
-    # update list languages
-    _languages_api.clear()
-    _languages_api.load_models( _db.get_languages() )
-    # update list tariffs
-    _tariffs_api.clear()
-    _tariffs_api.load_models( _db.get_tariffs() )
-    # update timer check subscrube
-    update_scheduler_time()
-
-    _output.send_text(chatId, locale.find_translation(user.get_language(), 'TR_UPDATE_DATA'))
+    handle_update_lang_models_pay(message, user, _admin_deps)
 
     
 
@@ -374,6 +309,7 @@ def help(message):
 
 @bot.message_handler(content_types=['voice'])
 def voice_processing(message):
+    inbound_from_telegram_message(message, "telegram_voice")
     user = user_verification(message)
     
     file_id = message.voice.file_id
@@ -404,6 +340,7 @@ def voice_processing(message):
 
 @bot.message_handler(func=lambda message: True)
 def handle_user_message(message):
+    inbound_from_telegram_message(message, "telegram_text", message.text)
     user = user_verification(message)
 
     action = user.get_wait_action()
@@ -807,6 +744,21 @@ def update_scheduler_time():
         
     hour, minute = map(int, time_str.split(':'))
     start_or_restart_scheduler(hour, minute)
+
+
+_admin_deps = AdminCommandsDeps(
+    bot=bot,
+    db=_db,
+    locale=locale,
+    output=_output,
+    env=_env,
+    logger=_logger,
+    pay_man=_payMan,
+    assistent_api=_assistent_api,
+    languages_api=_languages_api,
+    tariffs_api=_tariffs_api,
+    update_scheduler_time=update_scheduler_time,
+)
 
 
 def wire_telegram_app():
