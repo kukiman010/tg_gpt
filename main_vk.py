@@ -5,6 +5,8 @@ Business logic lives in ``core.services``; this process should only:
 parse VK updates, build ``core.dto.ChannelContext`` / ``InboundEvent``,
 call services, and send replies via an implementation of
 ``core.ports.message_output.MessageOutputPort`` (e.g. ``VkMessageOutput``).
+Mirror ``transport.telegram.handler_context.TelegramAppContext`` with a small
+``VkAppContext`` holding VK API client + the same core services.
 """
 
 from configure import Settings
