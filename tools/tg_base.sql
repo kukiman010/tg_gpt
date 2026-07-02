@@ -554,6 +554,65 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION grant_gift_subscription(
+    p_user_id   BIGINT,
+    p_days      INT DEFAULT 7,
+    p_tarrif_id INT DEFAULT 1
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+    v_payment_id  TEXT;
+    v_user_name   TEXT;
+    v_hours       INT;
+    v_extended    BOOLEAN;
+BEGIN
+    IF p_days IS NULL OR p_days <= 0 THEN
+        RAISE EXCEPTION 'p_days must be a positive integer';
+    END IF;
+
+    SELECT login
+      INTO v_user_name
+      FROM users
+     WHERE user_id = p_user_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'User % not found', p_user_id;
+    END IF;
+
+    v_hours := p_days * 24;
+    v_payment_id := 'gift_' || p_user_id::TEXT || '_' || replace(gen_random_uuid()::TEXT, '-', '');
+
+    INSERT INTO invoice_journal (
+        user_id, user_name, payment_id, label_pay, tarrif_id,
+        status, amount, fee, currency, payment_system, description, is_test
+    ) VALUES (
+        p_user_id, v_user_name, v_payment_id, 'gift_' || p_days::TEXT || 'd',
+        p_tarrif_id, 'succeeded', 0, 0, 'GIFT', 'gift',
+        'Gift premium subscription: ' || p_days::TEXT || ' days', TRUE
+    );
+
+    INSERT INTO successful_payments (
+        user_id, payment_id, tarrif_id, final_amount, currency, payment_system
+    ) VALUES (
+        p_user_id, v_payment_id, p_tarrif_id, 0, 'GIFT', 'gift'
+    );
+
+    v_extended := extend_subscription(p_user_id, p_tarrif_id, v_hours, v_payment_id);
+
+    IF NOT v_extended THEN
+        PERFORM upsert_subscription_user(
+            p_user_id, v_user_name, p_tarrif_id, NULL, v_hours, v_payment_id
+        );
+    END IF;
+
+    UPDATE users
+       SET status_user = 3
+     WHERE user_id = p_user_id;
+
+    RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
 
 
 
