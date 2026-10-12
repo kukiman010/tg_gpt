@@ -1,11 +1,11 @@
 import requests
 import telebot
 import speech
-import base64
 import sys
 import os
 import re
 import datetime
+from typing import Optional
 
 from configure      import Settings
 _setting = Settings()
@@ -17,12 +17,8 @@ import Gpt_models.x_ai
 import Gpt_models.google_api
 import Gpt_models.claude_api
 import Gpt_models.deepseak_api
-import Control.context_model
-
 from logger         import LoggerSingleton
-from openai         import OpenAIError
 from databaseapi    import dbApi
-from telebot        import types
 from translator     import Locale
 from Gpt_models.gpt_api        import chatgpt
 from data_models    import assistent_api
@@ -41,6 +37,23 @@ from Control.environment import Environment
 from apscheduler.schedulers.background import BackgroundScheduler
 
 import signals
+from core.services.conversation_service import ConversationService
+from core.services.user_service import UserService
+from core.services.payment_service import PaymentService
+from core.services.assistant_service import AssistantService
+from core.services.post_media_service import PostMediaMarkups, PostMediaService
+from transport.telegram import TelegramMessageOutput
+from transport.telegram import ui as tg_ui
+from transport.telegram.callback_handlers import handle_telegram_callback
+from transport.telegram.command_handlers import (
+    AdminCommandsDeps,
+    handle_lastlog,
+    handle_notify_all,
+    handle_update_env,
+    handle_update_lang_models_pay,
+)
+from transport.telegram.handler_context import TelegramAppContext
+from transport.telegram.inbound import inbound_from_telegram_message
 
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -136,6 +149,8 @@ except requests.exceptions.ConnectionError as e:
     print("{} Ошибка подключения:".format(_speak.get_time_string()), e)
     _logger.add_error('нет соединения с сервером telegram bot: {}'.format(e))
 
+_output = TelegramMessageOutput(bot, _logger)
+
 _gpt = chatgpt(TOKEN_GPT)
 _yag = Gpt_models.yandexgpt.YandexGpt( _speak.get_IAM(), TOKEN_FOLDER_ID)
 _metaG = Gpt_models.metagpt.MetaGpt(TOKEN_META_GPT)
@@ -146,12 +161,44 @@ _claude = Gpt_models.claude_api.Claud(TOKEN_CLAUDE)
 _deepseek = Gpt_models.deepseak_api.DeepSeek(TOKEN_DEEPSEEK)
 _google = Gpt_models.google_api.Google(TOKEN_GOOGLE_API)
 
+_conversation_service = ConversationService(
+    _db,
+    _speak,
+    _logger,
+    {
+        "OpenAi": _gpt,
+        "Yandex": _yag,
+        "Meta": _metaG,
+        "X ai": _xai,
+        "Claude": _claude,
+        "DeepSeek": _deepseek,
+        "Google": _google,
+    },
+)
+_user_service = UserService(_db, _env, _logger)
+_payment_service = PaymentService(_db, _env, locale, _logger)
+_assistant_service = AssistantService(_db, _assistent_api, _languages_api)
+
+_post_media_service = PostMediaService(
+    _db,
+    _conversation_service,
+    _user_service,
+    _env,
+    locale,
+    _output,
+    _converterFile,
+    PostMediaMarkups(
+        error_repeat=lambda lc: tg_ui.error_repeat_request_markup(locale, lc),
+        vocalize=lambda lc: tg_ui.vocalize_markup(locale, lc),
+    ),
+)
+
 
 _payMan = PaymentManager( _env.get_global_payment())
 _payMan.update(_db.get_payment_systems())
 _payMan.start_auto_checker()
 
-
+_telegram_app_ctx: Optional[TelegramAppContext] = None
 
 
 
@@ -177,101 +224,28 @@ def drop_context(message):
 @bot.message_handler(commands=['lastlog'])
 def lastlog(message):
     user = user_verification(message)
-    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
-        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
-        return
-    
-    words = message.text.split()
-
-    if len(words) == 2:
-        second_word = words[1]
-        if second_word.isdigit():
-            text = _logger.read_file_from_end(int(second_word))
-            t_mes = locale.find_translation(user.get_language(), 'TR_GET_LOG')
-            bot.send_message(message.chat.id, t_mes.format(second_word, text))
-
-    elif len(words) == 3:
-        second_word = words[1]
-        type_log = words[2]
-
-        if second_word.isdigit():
-            text = _logger.read_file_from_end(int(second_word), type_log)
-            t_mes = locale.find_translation(user.get_language(), 'TR_GET_LOG_POST')
-            bot.send_message(message.chat.id, t_mes.format(second_word, type_log, text))
-    else:
-        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR_SINTAX')
-        bot.send_message(message.chat.id, t_mes)
+    handle_lastlog(message, user, _admin_deps)
 
 
 
 @bot.message_handler(commands=['notify_all'])
 def notify_all(message):
     user = user_verification(message)
-
-    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
-        bot.send_message(message.chat.id, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
-        return
-
-    data = _db.get_all_chat(message.from_user.id)
-    text = message.text
-    words = text.split()  
-    result = ' '.join(words[1:]) 
-
-    for i in data:  # итерация по внешнему списку
-        for j in i:  # итерация по внутреннему списку
-            for k in j:  # итерация по вложенному списку
-                # print (k, result)
-                bot.send_message(k, result)
+    handle_notify_all(message, user, _admin_deps)
 
 
 
 @bot.message_handler(commands=['update_env'])
 def update_environment (message):
     user = user_verification(message)
-    chatId = message.chat.id
-    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
-        bot.send_message(chatId, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
-        return
-
-    mes = _env.show_differences(_db.get_environment(), locale.find_translation(user.get_language(), 'TR_NEW_OLD_CHANGES'))
-
-    if mes:
-        answer = locale.find_translation(user.get_language(), 'DATA_IS_NOT_RELEVANT').format(mes)
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_YES'), callback_data='update_env') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_NO'), callback_data='no_update_env') )
-
-        send_text(chatId, answer, reply_markup=markup)
-    else:
-        send_text(chatId, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'))
+    handle_update_env(message, user, _admin_deps)
 
 
 
 @bot.message_handler(commands=['update_lang_models_pay'])
 def update_data (message):
     user = user_verification(message)
-    chatId = message.chat.id
-    if _db.isAdmin(message.from_user.id, message.chat.username) == False:
-        bot.send_message(chatId, locale.find_translation(user.get_language(), 'TR_NO_PERMITION'))
-        return
-
-    _logger.add_info("Запущено обновление переменных _payMan, _assistent_api, _languages_api, _scheduler")
-
-    # update list pay system
-    _payMan.update(_db.get_payment_systems())
-    # update list model list
-    _assistent_api.clear()
-    _assistent_api.load_models( _db.get_assistant_ai() )
-    # update list languages
-    _languages_api.clear()
-    _languages_api.load_models( _db.get_languages() )
-    # update list tariffs
-    _tariffs_api.clear()
-    _tariffs_api.load_models( _db.get_tariffs() )
-    # update timer check subscrube
-    update_scheduler_time()
-
-    send_text(chatId, locale.find_translation(user.get_language(), 'TR_UPDATE_DATA'))
+    handle_update_lang_models_pay(message, user, _admin_deps)
 
     
 
@@ -280,7 +254,7 @@ def update_data (message):
 def help(message):
     user = user_verification(message)
     text = command_help(user)
-    send_text(message.chat.id, text)
+    _output.send_text(message.chat.id, text)
 
 
 
@@ -288,10 +262,20 @@ def help(message):
 def premium(message):
     user = user_verification(message)
     if not user.is_valid():
-        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR'))
+        _output.send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR'))
         return 
     
     premium_button(user)
+
+
+
+@bot.message_handler(commands=['img'])
+def premium(message):
+    user = user_verification(message)
+    if not user.is_valid():
+        _output.send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR'))
+        return 
+    generate_photo(user)
         
 
 
@@ -307,25 +291,25 @@ def help(message):
     user = user_verification(message)
 
     if user == None or _assistent_api.size() == 0:
-        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_FIND_MODELS'))
+        _output.send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_FIND_MODELS'))
         return
     
     buttons = _assistent_api.available_by_status()
 
-    markup = types.InlineKeyboardMarkup()
-    for key, value in buttons.items():
-        but = types.InlineKeyboardButton(value, callback_data=key)
-        markup.add(but)
-
     descrption_model = _assistent_api.get_description( user.get_model(), user.get_companyAi() )
 
     text = locale.find_translation(user.get_language(), 'TR_DESCRIPTION_MODELS').format(descrption_model, user.get_companyAi())
-    send_text(message.chat.id, text, reply_markup=markup)
+    _output.send_text(
+        message.chat.id,
+        text,
+        reply_markup=tg_ui.assistant_select_markup(locale, user.get_language(), buttons),
+    )
 
 
 
 @bot.message_handler(content_types=['voice'])
 def voice_processing(message):
+    inbound_from_telegram_message(message, "telegram_voice")
     user = user_verification(message)
     
     file_id = message.voice.file_id
@@ -356,10 +340,11 @@ def voice_processing(message):
 
 @bot.message_handler(func=lambda message: True)
 def handle_user_message(message):
+    inbound_from_telegram_message(message, "telegram_text", message.text)
     user = user_verification(message)
 
     action = user.get_wait_action()
-    if action != '' and action != None:
+    if action != '' and action != None and action != 'generate_image':
         action_handler(user.get_userId(), user, action, message.text)
         return
 
@@ -403,7 +388,7 @@ def handle_pre_checkout_query(pre_checkout_query):
             ok=False,
             error_message=t_mes
         )
-        send_text(user.get_userId(), t_mes )
+        _output.send_text(user.get_userId(), t_mes )
         return
     else:
         bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
@@ -417,353 +402,17 @@ def handle_successful_payment(message):
     amount = message.successful_payment.total_amount
     currency = message.successful_payment.currency
     label = message.successful_payment.invoice_payload
-
-    tarif = _db.get_tarif_by_paylabel(label)
-    fee = 0 # коммисия
-
-    userId = user.get_userId()
-
-    tariffs_data = None
-    tarifs_data = _db.get_tariffs(tarif)
-    for node in tarifs_data:
-        if node.tariff_id == int(tarif):
-            tariffs_data = node
-
-    if tariffs_data == None:
-        send_text(userId, locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat() )) )
-
-    
-    hours_tarif = 720 # 720h == 30 days
-    hours_tarif = tariffs_data.activity_day * 24
-    date_time_now = datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) )
-
-    have_sub = _db.its_have_this_subscribe(user.get_userId(), tarif, date_time_now)
-
-
-    _db.update_invoice_journal(payment_id, label, 'succeeded', 'stars', None, fee, date_time_now)
-    _db.add_successful_payments(userId, label, tarif, float(amount - fee), currency, 'TelegramStarsPay', 'stars', '', date_time_now )
-    if have_sub:
-        _db.update_subscribe_date(user.get_userId(), tarif, hours_tarif, label)
-    else:
-        _db.upsert_subscription_user(userId, user.get_login(), tarif, '', hours_tarif , label)
-
-    if int(tarif == 1):
-        user = user_verification_easy(userId)
-
-        user.get_language()
-        _db.update_status_in_users(userId, 3)
-
-        if user == None:
-            send_text(userId, locale.find_translation('en', 'TR_SUCCESSFUL_PAYMENT')) 
-        else :
-            send_text(userId, locale.find_translation(user.get_language(), 'TR_SUCCESSFUL_PAYMENT'))
-
-    else:
-        _logger.add_critical('Пользователь {}, произвел оплату {}, но тариф {} не обработан'.format(userId, payment_id, tarif))
+    result = _payment_service.process_success(user, payment_id, amount, currency, label)
+    if not result.get("ok"):
+        _output.send_text(user.get_userId(), result.get("error", locale.find_translation(user.get_language(), "TR_ERROR")))
+        return
+    _output.send_text(user.get_userId(), locale.find_translation(user.get_language(), "TR_SUCCESSFUL_PAYMENT"))
 
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_callback_query(call):
-    user = user_verification_custom(call.message.chat.id, call.message.message_id, call.message.chat.username, call.message.chat.type, call.from_user.language_code)    
-    key = call.data
-    assistent_pattern = r'^set_model_(\d+)$'
-    assistent_match = re.match(assistent_pattern, key)
-    
-    language_pattern = r'^set_lang_model_(\d+)$'
-    language_match = re.match(language_pattern, key)
-
-    payments_pattern = r'^set_payments_(\S+)_(\d+)$'
-    payments_match = re.match(payments_pattern, key)
-
-    tariff_pattern = r'^set_tariff_model_(\d+)$'
-    tariff_match = re.match(tariff_pattern, key)
-
-    check_pay_pattern = r'^check_pay_(\S+-\S+-\S+-\S+)$'
-    check_pay_match = re.match(check_pay_pattern, key)
-
-    message_id = call.message.message_id
-    chat_id = call.message.chat.id
-
-    if key == 'menu':
-        bot.answer_callback_query(call.id, text = '')
-        main_menu(user, chat_id, message_id)
-    elif key == 'sintez':
-        text = call.message.text
-
-        t_mes = locale.find_translation(user.get_language(), 'TR_START_DECODE_VOICE')
-        bot.answer_callback_query(call.id, text = t_mes)
-
-        files = _speak.speach(text, chat_id, 'alena')
-        
-        for file in files:
-            with open(file, "rb") as audio:
-                bot.send_audio(chat_id, audio)
-            os.remove(file)
-
-    elif key == "update_env":
-        data_dict = _db.get_environment()
-        mes = _env.show_differences(data_dict, locale.find_translation(user.get_language(), 'TR_NEW_OLD_CHANGES'))
-
-        if mes:
-            answer = locale.find_translation(user.get_language(), 'TR_CHANGES_HAVE_BEEN_APPLICED').format(mes)
-
-            _env.update(data_dict)
-            send_text(chat_id, answer, id_message_for_edit=message_id)
-            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
-        else:
-            send_text(chat_id, locale.find_translation(user.get_language(), 'TR_DATA_IS_UP_TO_DATE'), id_message_for_edit=message_id)
-            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
-
-    elif key == "no_update_env":
-        send_text(chat_id, locale.find_translation(user.get_language(), 'TR_TR_CHANGES_NOT_APPLICED'), id_message_for_edit=message_id)
-        # bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=None)
-        bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
-
-    elif key == "menu_language":
-        bot.answer_callback_query(call.id, text = '')
-        if user == None or _languages_api.size() == 0:
-            send_text(chat_id, locale.find_translation(user.get_language(), 'TR_ERROR_NOT_CHANGE_LANGUAGE'))
-            return
-        t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_LANGUAGE')
-        
-        buttons = _languages_api.available_by_status()
-        markup = types.InlineKeyboardMarkup()
-        for key, value in buttons.items():
-            markup.add(types.InlineKeyboardButton(value, callback_data=key))
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
-
-    elif key == 'menu_promt':
-        bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_SELECT_PROMT')
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_PROMT_NOW'),    callback_data='show_my_promt') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_SET_PROMT'),    callback_data='set_promt') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_DEFAULT_PROMT'),callback_data='set_default_promt') )
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
-
-    elif key == 'show_my_promt':
-        bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_SHOW_PROMT_NOW').format(user.get_prompt())
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu_promt') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
-
-    elif key == 'set_promt':
-        bot.answer_callback_query(call.id, text = '')
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_UNDO'),                callback_data='menu') )
-        t_mes = locale.find_translation(user.get_language(), 'TR_SET_PROMT')
-        _db.update_user_action(user.get_userId(), "wait_new_prompt")
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
-
-    elif key == 'set_default_promt':
-        bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_DEFAULT_PROMT').format(_env.get_prompt())
-        markup = types.InlineKeyboardMarkup()
-
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_APPLY'),        callback_data='apply_default_promt') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu_promt') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
-
-    elif key == 'apply_default_promt': 
-        bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
-        t_mes = locale.find_translation(user.get_language(), 'TR_PROMT_APPLY')
-        _db.update_user_prompt(user.get_userId(), _env.get_prompt())
-        send_text(chat_id, t_mes, id_message_for_edit=message_id)
-
-    elif key == 'menu_help':
-        bot.answer_callback_query(call.id, text = '')
-        text = command_help(user)
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
-        send_text(chat_id, text, reply_markup=markup, id_message_for_edit=message_id)
-
-    elif key == 'menu_premium':
-        premium_button(user, message_id)
-
-    elif key == 'menu_support':
-        bot.answer_callback_query(call.id, text = '')
-        t_mes = locale.find_translation(user.get_language(), 'TR_MESSAGE_SUPPORT').format(user.get_prompt())
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
-    
-    elif key == 'menu_websearch':
-        bot.answer_callback_query(call.id, text = '')
-        markup = types.InlineKeyboardMarkup()
-
-        if user.get_is_search():
-            t_mes = locale.find_translation(user.get_language(), 'TR_TITLE_WEBSEARCH_ON')
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_OFF'),              callback_data='edit_websearch') )
-        else:
-            t_mes = locale.find_translation(user.get_language(), 'TR_TITLE_WEBSEARCH_OFF')
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_ON'),               callback_data='edit_websearch') )
-        
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_promt') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
-
-    elif key == 'edit_websearch':
-        bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
-
-        if user.get_is_search():
-            _db.update_user_search_status(user.get_userId(), False)
-            t_mes = locale.find_translation(user.get_language(), 'TR_WEBSEARCH_OFF')
-        else:
-            _db.update_user_search_status(user.get_userId(), True)
-            t_mes = locale.find_translation(user.get_language(), 'TR_WEBSEARCH_ON')
-
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_websearch') )
-        send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
-
-    # elif key == 'menu_think':
-
-    # elif key == 'menu_locate':
-    #     bot.answer_callback_query(call.id, text = '')
-    #     t_mes = locale.find_translation(user.get_language(), 'TR_DONT_RELEASES_FUNC').format(user.get_prompt())
-    #     markup = types.InlineKeyboardMarkup()
-    #     markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),                callback_data='menu',request_location=True) )
-    #     send_text(chat_id, t_mes, reply_markup=markup, id_message_for_edit=message_id)
-
-
-    elif key == 'errorPost':
-        text = call.message.text
-        bot.edit_message_reply_markup(chat_id, message_id)
-        hasUser = _mediaWorker.find_userId(user.get_userId())
-        media = UserMedia(user.get_userId(), chat_id, user.get_login() )
-
-        if hasUser == False:
-            t_mes = locale.find_translation(user.get_language(), 'TR_WAIT_POST')
-            send_mess = bot.send_message(chat_id, t_mes)
-            del_mes = UserMedia(user.get_userId(), chat_id, user.get_login() )
-            del_mes.add_del_mess_id(send_mess.message_id)
-            _mediaWorker.add_data(del_mes)
-
-        media.add_mes(call.message)
-        _mediaWorker.add_data(media)
-
-    elif assistent_match:
-        id = int(assistent_match.group(1))
-        assistent = _assistent_api.find_assistent(id)
-
-        if not _assistent_api.isAvailable(id, user.get_status()):
-            bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_NEED_PREMIUM_ASSISTANT'))
-            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION'))
-            return
-
-        for first, second in assistent.items():
-            _db.update_user_assistent(user.get_userId(),second,first ) 
-            break
-        
-        bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_USE_NEW_ASSISTANT'))
-        bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_SUCCESS'))
-
-    elif language_match:
-        id = int(language_match.group(1))
-        code_lang = _languages_api.find_bottom(id)
-        if locale.islanguage( code_lang ):
-            _db.update_user_lang_code(user.get_userId(), code_lang)
-            bot.send_message(chat_id, locale.find_translation(code_lang, 'TR_SYSTEM_LANGUAGE_CHANGE'))
-            bot.answer_callback_query(call.id, locale.find_translation(code_lang, 'TR_SUCCESS'))
-        else:
-            bot.send_message(chat_id, locale.find_translation(user.get_language(), 'TR_SYSTEM_LANGUAGE_SUPPORT'))
-            bot.answer_callback_query(call.id, locale.find_translation(user.get_language(), 'TR_FAILURE'))
-
-    elif payments_match:
-        bot.answer_callback_query(call.id, text = locale.find_translation(user.get_language(), 'TR_SUCCESS'))
-        paymet_system = payments_match.group(1)
-        tarif_id = payments_match.group(2)
-        
-        
-        
-        tariffs_data = None
-        tarifs_data = _db.get_tariffs(tarif_id)
-        for node in tarifs_data:
-            if node.tariff_id == int(tarif_id):
-                tariffs_data = node
-
-        if tariffs_data == None:
-            markup = types.InlineKeyboardMarkup()
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), callback_data='menu_premium') )
-            send_text(chat_id, locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat())), markup, message_id)
-            return
-
-        description = locale.find_translation(user.get_language(), 'TR_SUBSCRIBE_FOR_ONE_MOUNTH').format(tariffs_data.activity_day)
-
-        if paymet_system == 'TelegramStarsPay':
-            # price = _payMan.convector.usd_to_tgStars(price_in_usd)
-            # price = _payMan.convector.custom_round(price)
-
-            label = _payMan.generate_payment_label(user.get_userId())
-
-            markup = types.InlineKeyboardMarkup()
-            pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(tariffs_data.price_stars, ' stars')
-            markup.add( types.InlineKeyboardButton(pay_description,                                                     pay=True) )
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), pay=False,  callback_data='menu_premium') )
-
-            prices = [types.LabeledPrice(label="XTR", amount=int(tariffs_data.price_stars))]  
-            bot.send_invoice(
-                chat_id,
-                title=description,
-                description=description,
-                invoice_payload=label,
-                provider_token="",
-                currency="XTR",
-                prices=prices,
-                reply_markup=markup
-            )
-            bot.delete_message(chat_id, message_id)
-
-            _db.add_invoice_journal(user.get_userId(), label, label, tarif_id, 'pending', tariffs_data.price_stars, 'XTR', paymet_system, description, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ), False)
-            
-
-        else:
-            # if user.get_language() == 'ru':
-            pay_info = _payMan.create_invoice(paymet_system, int(tariffs_data.price_rub), 'RUB', user.get_userId(), description)
-
-            pay_info.tarrif = tarif_id
-            pay_info.user_name = user.get_login()
-
-            if pay_info.status == 'pending':
-                _db.add_invoice_journal(pay_info.user_id, pay_info.payment_id, pay_info.label_pay, pay_info.tarrif, pay_info.status, pay_info.amount, pay_info.currency, pay_info.payment_system, pay_info.description, pay_info.created_at, pay_info.is_test)
-                _payMan.add_payment(pay_info)
-
-                markup = types.InlineKeyboardMarkup()
-                chech_key = 'check_pay_' + pay_info.payment_id
-                pay_description = locale.find_translation(user.get_language(), 'TR_PAY').format(pay_info.amount, pay_info.currency)
-                markup.add( types.InlineKeyboardButton(pay_description,                                                     url=pay_info.url_pay) )
-                # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_CHECK_PAY'),        callback_data=chech_key) )
-                markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'),             callback_data='menu_premium') )
-                
-                send_text(chat_id, description, markup, message_id)
-
-    elif tariff_match:
-        code_tariff = _tariffs_api.find_bottom( int(tariff_match.group(1)) )
-
-        tariffs = _db.get_tariffs()
-
-        for node in tariffs:
-            if node.tariff_id == code_tariff:
-                pay_button(user, True, node.tariff_id, node.description_code, message_id)
-                break
-
-    elif check_pay_match:
-        payment_id = check_pay_match.group(1)
-        print()
-
-
-    else:
-        t_mes = locale.find_translation(user.get_language(), 'TR_ERROR')
-        bot.answer_callback_query(call.id, text = t_mes)
-    
+    handle_telegram_callback(call, _telegram_app_ctx)
 
 
 @bot.message_handler(content_types=['document'])
@@ -811,7 +460,7 @@ def handle_message(message):
     user = user_verification(message)
 
     if user.get_status() < 2:
-        send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION_UPLOAD_PHOTO'))
+        _output.send_text(message.chat.id, locale.find_translation(user.get_language(), 'TR_NEED_PERMISSION_UPLOAD_PHOTO'))
         return
 
     file_id = message.photo[-1].file_id
@@ -848,314 +497,37 @@ def handle_message(message):
 
 
 def user_verification(message) -> User:
-    user = User()
-
-    if _db.find_user(message.from_user.id) == False:
-        name = message.chat.username
-        if not name:
-            name = message.chat.first_name
-
-        user.set_default_data(_env.get_language(), _env.get_permission(), _env.get_company_ai(), _env.get_assistant_model(), _env.get_recognizes_photo_model(), _env.get_generate_photo_model(), _env.get_text_to_audio(), _env.get_audio_to_text(), _env.get_speakerName(), _env.get_prompt())
-        _db.add_user(message.from_user.id, name, message.chat.type, message.from_user.language_code )
-        _logger.add_info('создан новый пользователь {}'.format(message.chat.username))
-    else:
-        _db.add_users_in_groups(message.from_user.id, message.chat.id)
-    
-    user = _db.get_user_def(message.from_user.id)
-
-    if user.get_status() == 0: 
-        return None
-
-    return user
+    return _user_service.verify_from_message(message)
 
 
 
 def user_verification_custom(userId, chatId, chat_username, chatType, lang_code):
-    user = User()
-    if _db.find_user(userId) == False:
-        user.set_default_data(_env.get_language(), _env.get_permission(), _env.get_company_ai(), _env.get_assistant_model(), _env.get_recognizes_photo_model(), _env.get_generate_photo_model(), _env.get_text_to_audio(), _env.get_audio_to_text(), _env.get_speakerName(), _env.get_prompt())
-        _db.add_user(userId, chat_username, chatType, lang_code )
-        _logger.add_info('создан новый пользователь {}'.format(chat_username))
-    else:
-        _db.add_users_in_groups(userId, chatId)
-    
-    user = _db.get_user_def(userId)
-
-    if user.get_status() == 0: # TODO: добавить проверку аккаунта на блокировку 
-        return None
-
-    return user
+    return _user_service.verify_custom(userId, chatId, chat_username, chatType, lang_code)
 
 
 
 def user_verification_easy(userId) -> User:
-    user = User()
-    if _db.find_user(userId) == False:
-        return None
+    return _user_service.verify_easy(userId)
+
+
+def generate_photo(user:User, id_message_for_edit:int = 0):
+    t_mes = locale.find_translation(user.get_language(), "TR_GEN_IMAGE_DESCRIPTION")
+    _user_service.set_wait_action(user.get_userId(), "generate_image")
+
+    if id_message_for_edit > 0:
+        _output.send_text(
+            user.get_userId(),
+            t_mes,
+            reply_markup=tg_ui.generate_image_cancel_markup(locale, user.get_language()),
+            id_message_for_edit=id_message_for_edit,
+        )
     else:
-        user = _db.get_user_def(userId)
-        return user
+        _output.send_text(user.get_userId(), t_mes)
 
-
-def mergeConversationContext(chatId, user:User, text_to_photo, photos): # -> list[str], bool:
-    context = Control.context_model.Context_model()
-    context.set_data(user.get_userId(), chatId, "system", chatId, user.get_prompt(), False )
-
-    dict: list[Control.context_model.Context_model] = []
-    dict.append( context )
-    dict.extend(_db.get_context(user.get_userId(), chatId))
-
-    mes = Control.context_model.Context_model()
-    mes.set_data(user.get_userId(), chatId, "user", chatId, text_to_photo, False )
-    dict.append(mes)
-
-    isPhoto = False
-
-    for photo_to_base64 in photos:
-        if photo_to_base64 and photo_to_base64 != None:
-            mes_photo = Control.context_model.Context_model()
-            mes_photo.set_data(user.get_userId(), chatId,"user",chatId, photo_to_base64, True )
-            dict.append(mes_photo)
-
-    for node in dict:
-        if node.get_isPhoto():
-            isPhoto = True
-            break
-
-    json = Control.context_model.convert(user.get_companyAi(), dict, True)
-
-    return json, isPhoto
-
-
-def poat_vision_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
-    model = "gpt-4o"
-    content = Control.context_model.AnswerAssistent()
-
-    try:
-        content = _gpt.gpt_post_view(json, model, 1300 )
-
-    except OpenAIError as err: 
-        # print(json)
-        _logger.add_critical("OpenAI: {}".format(err))
-        content.code = 500
-        content.result = str(err)
-
-    return content
-
-
-def post_gpt(user:User, json, model) -> Control.context_model.AnswerAssistent :
-    content = Control.context_model.AnswerAssistent()
-
-    try:
-        if str(user.get_companyAi()).upper() == str("OpenAi").upper():
-            content = _gpt.post_gpt(json, model, user.get_is_search())
-        elif str(user.get_companyAi()).upper() == str("Yandex").upper():
-            _yag.set_token( _speak.get_IAM() )
-            content = _yag.post_gpt(json, model)
-        # elif str(user.get_companyAi()).upper() == str("Sber").upper():
-            # content = _sber.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("Meta").upper():
-            content = _metaG.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("X ai").upper():  
-            content = _xai.post_gpt(model, json)
-        elif str(user.get_companyAi()).upper() == str("Claude").upper():  
-            content = _claude.post_gpt( json, model)
-        elif str(user.get_companyAi()).upper() == str("DeepSeek").upper():  
-            content = _deepseek.post_gpt(json, model)
-        elif str(user.get_companyAi()).upper() == str("Google").upper():  
-            content = _google.post_gpt(json, model)
-        
-    except OpenAIError as err: 
-        _logger.add_critical("OpenAI: {}".format(err))
-        content.code = 500
-        content.result = str(err)
-
-    return content
-
-
-
-def find_substring_occurrences(text, substring):
-    if not substring or not text:
-        # raise ValueError("Подстрока для поиска не должна быть пустой")
-        return -1
-
-    indices = []
-    start = 0
-
-    while start != -1:
-        start = text.find(substring, start)
-        if start != -1:
-            indices.append(start)
-            start += len(substring)
-
-    return indices[-1] if len(indices) % 2 != 0 else -1
-
-
-
-def fix_markdown_blocks(array):
-    block_code = '```'
-    block_bold = '**'
-    fix_block = ''
-
-    for i, text in enumerate(array):
-        if fix_block:
-            array[i] = fix_block + array[i]
-            fix_block = ''
-
-        find_block_code = find_substring_occurrences(array[i], block_code)
-        find_block_bold = find_substring_occurrences(array[i], block_bold)
-
-        if find_block_code != -1 and find_block_bold != -1:
-            if find_block_code < find_block_bold:
-                fix_block = block_code + block_bold
-                array[i] += block_bold + block_code
-            else:
-                fix_block = block_bold + block_code
-                array[i] += block_code + block_bold
-        elif find_block_code != -1:
-            fix_block = block_code
-            array[i] += block_code
-        elif find_block_bold != -1:
-            fix_block = block_bold
-            array[i] += block_bold
-
-
-
-def replace_stars_with_backticks(text):
-    return re.sub(r'\*\*(.*?)\*\*', r'`\1`', text)
-
-
-
-def send_text(chat_id, text, reply_markup=None, id_message_for_edit=None, isMarkdown=False):
-    max_message_length = 4050
-    hard_break_point = 3700
-    soft_break_point = 3300
-    results = []
-
-    while len(text) > max_message_length:
-        offset = text[soft_break_point:hard_break_point].rfind('\n')
-        if offset == -1:
-            offset = text[soft_break_point:max_message_length].rfind(' ')
-        if offset == -1:
-            results.append(text[:max_message_length])
-            text = text[max_message_length:]
-        else:
-            original_index = offset + soft_break_point
-            results.append(text[:original_index])
-            text = text[original_index:]
-
-    if text:
-        results.append(text)
-
-    if isMarkdown:
-        fix_markdown_blocks(results)
-
-    for chunk in results:
-        converted_text = ''
-        if isMarkdown:
-            converted_text = replace_stars_with_backticks(chunk) # The telebot bug has been fixed. do not send markdown text with _ in the block **
-        else:
-            converted_text = chunk
-
-        try:
-            if id_message_for_edit:
-                if isMarkdown:
-                    bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=converted_text, reply_markup=reply_markup, parse_mode='Markdown')
-                else:
-                    bot.edit_message_text(chat_id=chat_id, message_id=id_message_for_edit, text=converted_text, reply_markup=reply_markup)
-
-                id_message_for_edit = None
-            else:
-                if isMarkdown:
-                    bot.send_message(chat_id, converted_text, reply_markup=reply_markup, parse_mode='Markdown')
-                else:
-                    bot.send_message(chat_id, converted_text, reply_markup=reply_markup)
-
-                
-        except Exception as e:
-            _logger.add_critical(f"Ошибка для chat_id:{chat_id} при отправке сообщения. Ошибка: {e}\n В этом тексте: \n{converted_text}")
-            bot.send_message(chat_id, converted_text, reply_markup=reply_markup)
-
-
-
-def encode_image(image_path):
-  with open(image_path, "rb") as image_file:
-    return base64.b64encode(image_file.read()).decode('utf-8')
-  
 
 
 def on_post_media(sender, userId, mediaList: list[UserMedia]):
-    message = ''
-    textMes = ''
-    chatId = ''
-    titleMessId = []
-    photos = []
-    isPhotos:bool = False
-    for media in mediaList:
-        if chatId == '':
-            chatId = media._chatId
-        
-        if media._type == "document":
-            message += _converterFile.convert_files_to_text('users_media/files/{}'.format(media._fileWay), media._fileName)
-            os.remove('users_media/files/{}'.format(media._fileWay))
-        if media._type == "message":
-            textMes += media._mediaData
-        if media._type == "titleId":
-            titleMessId.append( media._titleId)
-        if media._type == 'photo':
-            photos.append( encode_image(media._fileWay))
-            if media._mediaData:
-                textMes += media._mediaData
-            isPhotos = True
-
-        message = textMes + '\n' + message
-        
-    if chatId == '':
-        chatId = userId
-    
-    # print( "\n\n" + message)
-
-    user = user_verification_easy(userId)
-
-    if user == None:
-        return
-
-    _db.update_last_login(userId)
-    
-    json, boolPhotoResult = mergeConversationContext(chatId, user, message, photos)
-
-    if isPhotos or boolPhotoResult:
-        content = poat_vision_gpt(user, json, user.get_model())
-    else:
-        content = post_gpt(user, json, user.get_model())
-
-
-    if content and content.get_code() == 200:
-        _db.add_context(user.get_userId(), chatId, "user",          chatId,     message)
-        for photo_to_base64 in photos:
-            _db.add_context(user.get_userId(), chatId, "user",      chatId,     photo_to_base64,        True)
-        _db.add_context(user.get_userId(), chatId, "assistant",     chatId,     content.get_result())
-
-        
-    MAX_CHAR = int(_env.get_count_char_for_gen_audio())
-
-    if len(titleMessId) != 0:
-        for medId in titleMessId:
-            bot.delete_message(chatId, medId)
-
-    if not content.get_result() or content.get_code() >= 300:
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_REPEAT_REQUEST'), callback_data='errorPost ') )
-        send_text(chatId, locale.find_translation(user.get_language(), 'TR_ERROR_GET_RESULT').format(content.get_result()), reply_markup=markup, isMarkdown=True ) 
-        return
-
-    if len(content.get_result()) <= MAX_CHAR:
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_VOCALIZE'), callback_data='sintez') )
-
-        send_text(chatId, content.get_result(), reply_markup=markup, isMarkdown=True)
-    else:    
-        send_text(chatId, content.get_result(), isMarkdown=True)
+    _post_media_service.handle(sender, userId, mediaList, user_verification_easy)
 
 
 
@@ -1164,41 +536,12 @@ def on_finish_payment(sender, userId, data):
         _logger.add_critical('Сигнал on_finish_payment инициализирован {}, а не PaymentManager'.format(sender))
         return
     
-    tariffs_data = None
-    tarifs_data = _db.get_tariffs(data.tarrif)
-    for node in tarifs_data:
-        if node.tariff_id == int(data.tarrif):
-            tariffs_data = node
-
-    if tariffs_data == None:
-        send_text(userId, locale.find_translation(user.get_language(), 'TR_TARRIF_DONT_LOAD'.format(_env.get_support_chat() )) )
-
-    
-    hours_tarif = 720 # 720h == 30 days
-    hours_tarif = tariffs_data.activity_day * 24
-    have_sub, hours = _db.its_have_this_subscribe(userId, data.tarrif, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ))
-
-
-    _db.update_invoice_journal(data.payment_id, data.label_pay, data.status, data.card_type, data.card_number, data.fee, data.expires_at)
-    _db.add_successful_payments(data.user_id, data.payment_id, data.tarrif, float(data.amount - data.fee), data.currency, data.payment_system, data.card_type, data.email, data.expires_at )
-    if have_sub:
-        _db.update_subscribe_date(data.user_id, data.tarrif, hours_tarif, data.payment_id)
-    else:
-        _db.upsert_subscription_user(data.user_id, data.user_name, data.tarrif, data.email, hours_tarif, data.payment_id)
-
-    if int(data.tarrif) == 1:
-        user = user_verification_easy(userId)
-
-        user.get_language()
-        _db.update_status_in_users(userId, 3)
-
-        if user == None:
-            send_text(userId, locale.find_translation('en', 'TR_SUCCESSFUL_PAYMENT')) 
-        else :
-            send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_SUCCESSFUL_PAYMENT'))
-
-    else:
-        _logger.add_critical('Пользователь {}, произвел оплату {}, но тариф {} не обработан'.format(userId, data.payment_id, data.tarrif))
+    result = _payment_service.process_finished_payment_signal(userId, data, user_verification_easy)
+    if not result.get("ok"):
+        _logger.add_critical("Не удалось обработать payment signal для user {}".format(userId))
+        return
+    lang = result.get("notify_lang", "en")
+    _output.send_text(userId, locale.find_translation(lang, "TR_SUCCESSFUL_PAYMENT"))
     
 
 
@@ -1206,37 +549,30 @@ def main_menu(user, charId, id_message = None):
     t_mes = locale.find_translation(user.get_language(), 'TR_SETTING')
     
     if user.get_wait_action() == 'wait_new_prompt':
-        _db.update_user_action(user.get_userId(), '')   
+        _user_service.reset_action(user.get_userId())
 
-    markup = types.InlineKeyboardMarkup()
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LANGUAGE'),    callback_data='menu_language') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PROMT'),       callback_data='menu_promt') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_WEBSEARCH'),   callback_data='menu_websearch') )
-    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_THINKS'),     callback_data='menu_think') )
-    # markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_LOCATE'),     callback_data='menu_locate') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_HELP'),        callback_data='menu_help') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_PREMIUM'),     callback_data='menu_premium') )
-    markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU_SUPPORT'),     callback_data='menu_support') )
-
-
-
-    send_text(charId, t_mes, reply_markup=markup, id_message_for_edit=id_message)
+    _output.send_text(
+        charId,
+        t_mes,
+        reply_markup=tg_ui.main_menu_markup(locale, user.get_language()),
+        id_message_for_edit=id_message,
+    )
     
 
 
 def action_handler(chatId, user, action, text):
     if action == 'wait_new_prompt':
-        _db.update_user_action(user.get_userId(), '')
-        _db.update_user_prompt(user.get_userId(),  text.replace("'", ' '))
+        _user_service.apply_prompt_action(user, text)
 
         t_mes = locale.find_translation(user.get_language(), 'TR_PROMT_APPLY')
-        markup = types.InlineKeyboardMarkup()
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BUTTOM_PROMT_NOW'),    callback_data='show_my_promt') )
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),                callback_data='menu') )
-        send_text(chatId, t_mes, reply_markup=markup)
+        _output.send_text(
+            chatId,
+            t_mes,
+            reply_markup=tg_ui.prompt_applied_markup(locale, user.get_language()),
+        )
 
     else:
-        _db.update_user_action(user.get_userId(), '')
+        _user_service.reset_action(user.get_userId())
         _logger.add_critical('There is no processing of such a scenario: {}, the action will be reset'.format(action))
 
 
@@ -1256,7 +592,6 @@ def command_help(user):
 
 def pay_button(user: User, callFromMenu: bool, tarif_id: str, tarif_description = 'TR_TARIFF_ONCE', id_message_for_edit : int = 0):
     buttons = _payMan.get_buttons()
-    markup = types.InlineKeyboardMarkup()
 
     have_sub, hours = _db.its_have_this_subscribe(user.get_userId(), tarif_id, datetime.datetime.now( datetime.timezone(datetime.timedelta(hours=3)) ))
 
@@ -1266,29 +601,30 @@ def pay_button(user: User, callFromMenu: bool, tarif_id: str, tarif_description 
         else:
             text = locale.find_translation(user.get_language(), tarif_description)
 
-        for key, value in buttons.items():
-            button = types.InlineKeyboardButton(value, callback_data=key + '_' + str(tarif_id))
-            markup.add(button)
+        markup = tg_ui.payment_methods_markup(
+            locale, user.get_language(), buttons, str(tarif_id), callFromMenu
+        )
 
         if callFromMenu:
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_BACK'), callback_data='menu_premium') )
-            send_text(user.get_userId(), text, reply_markup=markup, id_message_for_edit=id_message_for_edit)
+            _output.send_text(user.get_userId(), text, reply_markup=markup, id_message_for_edit=id_message_for_edit)
         else:
-            send_text(user.get_userId(), text, reply_markup=markup)
+            _output.send_text(user.get_userId(), text, reply_markup=markup)
         
     else:
-        send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_SYSTEM_EMPTY') )
+        _output.send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_SYSTEM_EMPTY') )
 
 
 
 def premium_button(user: User, id_message_for_edit : int = 0):
     if user.get_status() == 0: 
         if id_message_for_edit != 0:
-            markup = types.InlineKeyboardMarkup()
-            markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
-            send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'), reply_markup=markup)
+            _output.send_text(
+                user.get_userId(),
+                locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'),
+                reply_markup=tg_ui.premium_banned_markup(locale, user.get_language()),
+            )
         else:
-            send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'))
+            _output.send_text(user.get_userId(), locale.find_translation(user.get_language(), 'TR_PAYMENT_LOCK_FOR_BANED_USER'))
         return
 
     code_lang = user.get_language()
@@ -1350,17 +686,14 @@ def premium_button(user: User, id_message_for_edit : int = 0):
 
 
     buttons = _tariffs_api.available_by_status()
-    markup = types.InlineKeyboardMarkup()
-    for key, value in buttons.items():
-        markup.add(types.InlineKeyboardButton(value, callback_data=key))
-
-    if id_message_for_edit != 0:
-        markup.add( types.InlineKeyboardButton(locale.find_translation(user.get_language(), 'TR_MENU'),    callback_data='menu') )
+    markup = tg_ui.tariff_list_markup(
+        locale, user.get_language(), buttons, id_message_for_edit != 0
+    )
     
     t_mes = locale.find_translation(user.get_language(), 'TR_TARIFFS_MENU').format(text_tarifs)
-    send_text(user.get_userId(), t_mes, reply_markup=markup)
+    _output.send_text(user.get_userId(), t_mes, reply_markup=markup)
     if id_message_for_edit != 0:
-        bot.delete_message(user.get_userId(), id_message_for_edit)
+        _output.delete_message(user.get_userId(), id_message_for_edit)
 
 
 
@@ -1382,7 +715,7 @@ def subscription_verification():
             _db.update_status_in_users(userId, 1)
 
             text = locale.find_translation(user.get_language(), 'TR_SUBSCRIPRION_ENDED')
-            send_text(userId, text)
+            _output.send_text(userId, text)
 
         else:
             continue
@@ -1413,8 +746,48 @@ def update_scheduler_time():
     start_or_restart_scheduler(hour, minute)
 
 
+_admin_deps = AdminCommandsDeps(
+    bot=bot,
+    db=_db,
+    locale=locale,
+    output=_output,
+    env=_env,
+    logger=_logger,
+    pay_man=_payMan,
+    assistent_api=_assistent_api,
+    languages_api=_languages_api,
+    tariffs_api=_tariffs_api,
+    update_scheduler_time=update_scheduler_time,
+)
+
+
+def wire_telegram_app():
+    global _telegram_app_ctx
+    _telegram_app_ctx = TelegramAppContext(
+        bot=bot,
+        output=_output,
+        db=_db,
+        locale=locale,
+        env=_env,
+        speak=_speak,
+        media_worker=_mediaWorker,
+        pay_man=_payMan,
+        assistent_api=_assistent_api,
+        languages_api=_languages_api,
+        tariffs_api=_tariffs_api,
+        user_service=_user_service,
+        assistant_service=_assistant_service,
+        verify_callback_user=user_verification_custom,
+        command_help=command_help,
+        main_menu=main_menu,
+        premium_button=premium_button,
+        pay_button=pay_button,
+        generate_photo=generate_photo,
+    )
+
 
 try:
+    wire_telegram_app()
     subscription_verification()
     update_scheduler_time() 
 

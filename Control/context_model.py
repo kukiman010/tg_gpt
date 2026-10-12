@@ -41,6 +41,7 @@ class AnswerAssistent():
         self.code = 404
         self.result = ""
         self.token = 0
+        self.photos = []
 
     def set_answer(self, code:int, result:str, token:int=0):
         self.code = code
@@ -53,21 +54,25 @@ class AnswerAssistent():
         return self.result
     def get_token(self):
         return self.token
+    def isPhotos(self):
+        return len(self.photos) > 0
+    def get_hotos(self):
+        return self.photo
 
 
 # class convert_context_to_struct():
     # def convert(self, company:str, context:List[Context_model]) -> List:
 
-def convert(company:str, context:List[Context_model], isPhoto:bool = False) -> List:
+def convert(company:str, context:List[Context_model], isPhoto:bool = False, isGenerateImage:bool = False) -> List:
     dict = []
 
     if str(company).upper() == str("OpenAi").upper():
         for i in context:
-            if i.get_isPhoto() == True :
-                if isPhoto == False:
-                    continue
-                dict.append( {"role": i.get_role(),"content": [
-            {"type": "image_url","image_url": {"url": f"data:image/jpeg;base64,{i.get_message()}"},},  ]} )
+            if i.get_isPhoto():
+                if isGenerateImage:
+                    dict.append( {"role": i.get_role(),"content": [{"type": "input_image","image_url": f"data:image/jpeg;base64,       {i.get_message()}",}, ]} )
+                else:
+                    dict.append( {"role": i.get_role(),"content": [ {"type": "image_url","image_url": {"url": f"data:image/jpeg;base64,{i.get_message()}"},},]} )
             else:
                 dict.append( {"role": i.get_role(), "content": i.get_message()}, )
 

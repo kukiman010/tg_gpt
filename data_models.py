@@ -1,4 +1,7 @@
 
+from core.callback_codec import CallbackCodec
+
+
 class assistent_model:
     def __init__(self):
         self.company_ai = ""
@@ -44,7 +47,7 @@ class assistent_api:
         self.text_to_button = {}
 
         for i in range(len(self.model)):
-            self.button_name.append("set_model_" + str(i))
+            self.button_name.append(CallbackCodec.encode_assistant_select(i))
             self.text_to_button[i] = str(
                 self.model[i].get_company_ai() + ":\n" + self.model[i].get_description()
             )
@@ -173,7 +176,7 @@ class languages_api:
         self.text_to_button = {}
 
         for i in range(len(self.model)):
-            self.button_name.append("set_lang_model_" + str(i))
+            self.button_name.append(CallbackCodec.encode_language_select(i))
             self.text_to_button[i] = str(self.model[i].get_language())
     
     def load_models(self, new_models):
@@ -271,7 +274,7 @@ class tariffs_api:
         self.text_to_button = {}
 
         for i in range(len(self.model)):
-            self.button_name.append("set_tariff_model_" + str(i))
+            self.button_name.append(CallbackCodec.encode_tariff_select(i))
             self.text_to_button[i] = str(self.model[i].tariff_name)
     
     def load_models(self, new_models):
