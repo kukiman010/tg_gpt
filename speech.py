@@ -1,8 +1,7 @@
 # https://pypi.org/project/yandex-speechkit/
-import subprocess
+import requests
 import threading
 import time
-import re
 
 from speechkit import model_repository, configure_credentials, creds
 from speechkit.stt import AudioProcessingType
@@ -47,19 +46,19 @@ class speaker:
     
     
     def create_iam(self):
-        output = subprocess.check_output('yc iam create-token', shell=True, universal_newlines=True)
-        lines = output.split("\n")
-        pattern = r"^(t1.+)$"
+        with open("conf/yc_aim.conf", "r", encoding="utf-8") as file:
+            oauth_token = file.read().strip()
 
-        if len(lines) >2:
-            self._logger.add_warning("Не ожаданный результат, нужно проверить вывод \'yc iam create-token\' \nВывод: {}".format(lines))
-        
-        for line in lines:
-            match = re.findall(pattern, line)
-            if match:
-                return str(match[0])
-            
-        return ""
+        if not oauth_token:
+            raise ValueError("Yandex OAuth token is empty")
+
+        response = requests.post(
+            "https://iam.api.cloud.yandex.net/iam/v1/tokens",
+            json={"yandexPassportOauthToken": oauth_token},
+            timeout=30,
+        )
+        response.raise_for_status()
+        return response.json()["iamToken"]
     
     def start_key_generation(self): # Создаем и запускаем отдельный поток для генерации ключа
         thread = threading.Thread(target=self.generate_keys_periodically)
